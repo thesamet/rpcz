@@ -5,6 +5,7 @@ set (YOSH_STORE_VERSION_MAJOR 0)
 set (YOSH_STORE_VERSION_MINOR 9)
 
 add_subdirectory(proto)
+add_subdirectory(plugin)
 
 include_directories(${PROJECT_BINARY_DIR})
 
