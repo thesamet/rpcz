@@ -68,14 +68,17 @@
 #  License text for the above reference.)
 
 function(PROTOBUF_GENERATE_CPP SRCS HDRS)
-  PROTOBUF_GENERATE_MULTI(PLUGIN "cpp" PROTOS ${ARGN}
+  PROTOBUF_GENERATE_MULTI(PLUGIN "cpp"
+                          PLUGIN_NAME "C++"
+                          PROTOS ${ARGN}
                           OUTPUT_STRUCT "_SRCS:.pb.cc;_HDRS:.pb.h" )
   set(${SRCS} ${_SRCS} PARENT_SCOPE)
   set(${HDRS} ${_HDRS} PARENT_SCOPE)
 endfunction()
 
 function(PROTOBUF_GENERATE_MULTI)
-    CMAKE_PARSE_ARGUMENTS(OPTIONS "" "PLUGIN" "PROTOS;OUTPUT_STRUCT;FLAGS;DEPENDS" ${ARGN})
+  CMAKE_PARSE_ARGUMENTS(OPTIONS "" "PLUGIN;PLUGIN_NAME"
+                        "PROTOS;OUTPUT_STRUCT;FLAGS;DEPENDS" ${ARGN})
   if(NOT OPTIONS_PROTOS)
     message(SEND_ERROR "Error: PROTOBUF_GENERATE_MULTI() called without any proto files")
     return()
@@ -101,6 +104,7 @@ function(PROTOBUF_GENERATE_MULTI)
       list(APPEND _${VARNAME} ${OUTFILE})
     endforeach()
     PROTOBUF_GENERATE_SINGLE(PLUGIN ${OPTIONS_PLUGIN} FILE ${FIL}
+                             PLUGIN_NAME ${OPTIONS_PLUGIN_NAME}
                              OUTPUTS ${OUTPUTS}
                              DEPENDS ${OPTIONS_DEPENDS}
                              FLAGS ${INCLUDE_FLAG} ${OPTIONS_FLAGS})
@@ -134,8 +138,11 @@ endfunction()
 include(${CMAKE_ROOT}/Modules/CMakeParseArguments.cmake)
 
 function(PROTOBUF_GENERATE_SINGLE)
-  CMAKE_PARSE_ARGUMENTS(OPTIONS "" "PLUGIN;FILE" "FLAGS;OUTPUTS;DEPENDS"
+  CMAKE_PARSE_ARGUMENTS(OPTIONS "" "PLUGIN;PLUGIN_NAME;FILE" "FLAGS;OUTPUTS;DEPENDS"
                         ${ARGN})
+  if(NOT OPTIONS_PLUGIN_NAME)
+    set(OPTIONS_PLUGIN_NAME ${OPTIONS_PLUGIN})
+  endif(NOT OPTIONS_PLUGIN_NAME)
   get_filename_component(ABS_FILE ${OPTIONS_FILE} ABSOLUTE)
   add_custom_command(
     OUTPUT ${OPTIONS_OUTPUTS}
@@ -143,7 +150,7 @@ function(PROTOBUF_GENERATE_SINGLE)
     ARGS --${OPTIONS_PLUGIN}_out  ${CMAKE_CURRENT_BINARY_DIR} ${OPTIONS_FLAGS}
          ${ABS_FILE}
     DEPENDS ${OPTIONS_FILE} ${OPTIONS_DEPENDS}
-    COMMENT "Running ${OPTIONS_PLUGIN} protocol buffer compiler on ${OPTIONS_FILE}"
+    COMMENT "Running ${OPTIONS_PLUGIN_NAME} protocol buffer compiler on ${OPTIONS_FILE}"
     VERBATIM )
   set_source_files_properties(${OUTPUTS} PROPERTIES GENERATED TRUE)
 endfunction()
