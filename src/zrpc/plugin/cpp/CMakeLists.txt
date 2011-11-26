@@ -1,4 +1,4 @@
-find_package(Protobuf REQUIRED)
+find_package(ProtobufPlugin REQUIRED)
 include_directories($PROTOBUF_INCLUDE_DIR)
 
 set(ZRPC_SRCS zrpc_cpp_generator.cc file_generator.cc zrpc_cpp_main.cc

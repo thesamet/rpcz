@@ -1,4 +1,4 @@
-find_package(Protobuf REQUIRED)
+find_package(ProtobufPlugin REQUIRED)
 
 protobuf_generate_cpp(ZRPC_PB_SRCS ZRPC_PB_HDRS zrpc.proto)
 

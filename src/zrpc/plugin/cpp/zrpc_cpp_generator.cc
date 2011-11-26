@@ -93,7 +93,7 @@ bool ZRpcCppGenerator::Generate(
     ::google::protobuf::scoped_ptr<google::protobuf::io::ZeroCopyOutputStream> output(
         generator_context->Open(basename + ".cc"));
     ::google::protobuf::io::Printer printer(output.get(), '$');
-    // file_generator.GenerateSource(&printer);
+    file_generator.GenerateSource(&printer);
   }
 
   return true;

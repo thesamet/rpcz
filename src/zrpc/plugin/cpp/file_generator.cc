@@ -62,6 +62,11 @@ void FileGenerator::GenerateHeader(io::Printer* printer) {
     "filename_identifier", filename_identifier);
 }
 
+void FileGenerator::GenerateSource(io::Printer* printer) {
+  GenerateNamespaceOpeners(printer);
+  GenerateNamespaceClosers(printer);
+}
+
 void FileGenerator::GenerateNamespaceOpeners(io::Printer* printer) {
   if (package_parts_.size() > 0) printer->Print("\n");
 
