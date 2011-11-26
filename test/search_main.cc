@@ -8,7 +8,7 @@
 #include <glog/logging.h>
 #include <google/gflags.h>
 #include "proto/search.pb.h"
-#include "server.h"
+#include "zrpc/server.h"
 
 using namespace std;
 

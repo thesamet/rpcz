@@ -10,10 +10,10 @@
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/io/zero_copy_stream.h>
 #include <google/protobuf/descriptor.h>
-#include "zrpc_cpp_generator.h"
-#include "file_generator.h"
-#include "plugin/common/strutil.h"
-#include "plugin/common/common.h"
+#include "zrpc/plugin/cpp/zrpc_cpp_generator.h"
+#include "zrpc/plugin/cpp/file_generator.h"
+#include "zrpc/plugin/common/strutil.h"
+#include "zrpc/plugin/common/common.h"
 
 namespace zrpc {
 namespace plugin {
