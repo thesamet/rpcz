@@ -42,12 +42,7 @@
 // performance-minded Python code leverage the fast C++ implementation
 // directly.
 
-#include "zrpc/plugin/python/zrpc/python_generator.h"
-#include <limits>
-#include <map>
-#include <utility>
-#include <string>
-#include <vector>
+#include "zrpc/plugin/python/zrpc_python_generator.h"
 
 #include <google/protobuf/descriptor.pb.h>
 
@@ -55,8 +50,8 @@
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/io/zero_copy_stream.h>
-#include <google/protobuf/stubs/strutil.h>
-#include <google/protobuf/stubs/substitute.h>
+#include "zrpc/plugin/common/strutil.h"
+#include <zrpc/plugin/common/substitute.h>
 
 namespace zrpc {
 namespace plugin {
@@ -64,6 +59,9 @@ namespace python {
 
 namespace {
 
+using std::string;
+using namespace google::protobuf;
+using namespace google::protobuf::compiler;
 // Returns a copy of |filename| with any trailing ".protodevel" or ".proto
 // suffix stripped.
 // TODO(robinson): Unify with copy in compiler/cpp/internal/helpers.cc.
@@ -221,8 +219,7 @@ string StringifyDefaultValue(const FieldDescriptor& field) {
 }  // namespace
 
 
-Generator::Generator() : file_(NULL) {
-}
+Generator::Generator() { }
 
 Generator::~Generator() {
 }
@@ -231,30 +228,28 @@ bool Generator::Generate(const FileDescriptor* file,
                          const string& parameter,
                          GeneratorContext* context,
                          string* error) const {
-
-  // Completely serialize all Generate() calls on this instance.  The
-  // thread-safety constraints of the CodeGenerator interface aren't clear so
-  // just be as conservative as possible.  It's easier to relax this later if
-  // we need to, but I doubt it will be an issue.
-  // TODO(kenton):  The proper thing to do would be to allocate any state on
-  //   the stack and use that, so that the Generator class itself does not need
-  //   to have any mutable members.  Then it is implicitly thread-safe.
-  MutexLock lock(&mutex_);
-  file_ = file;
   string module_name = ModuleName(file->name());
   string filename = module_name;
   StripString(&filename, ".", '/');
   filename += ".py";
 
-  FileDescriptorProto fdp;
-  file_->CopyTo(&fdp);
-  fdp.SerializeToString(&file_descriptor_serialized_);
-
-
   scoped_ptr<io::ZeroCopyOutputStream> output(context->Open(filename));
   GOOGLE_CHECK(output.get());
   io::Printer printer(output.get(), '$');
-  printer_ = &printer;
+
+  FileGenerator file_generator(file, &printer);
+  return file_generator.Run();
+}
+
+FileGenerator::FileGenerator(const FileDescriptor* file,
+                             io::Printer* printer)
+    : file_(file), printer_(printer) {
+}
+
+bool FileGenerator::Run() {
+  FileDescriptorProto fdp;
+  file_->CopyTo(&fdp);
+  fdp.SerializeToString(&file_descriptor_serialized_);
 
   PrintTopBoilerplate(printer_, file_, GeneratingDescriptorProto());
   PrintImports();
@@ -269,18 +264,18 @@ bool Generator::Generate(const FileDescriptor* file,
   // since they need to call static RegisterExtension() methods on these
   // classes.
   FixForeignFieldsInExtensions();
-  if (HasGenericServices(file)) {
+  if (HasGenericServices(file_)) {
     PrintServices();
   }
 
-  printer.Print(
+  printer_->Print(
     "# @@protoc_insertion_point(module_scope)\n");
 
-  return !printer.failed();
+  return !printer_->failed();
 }
 
 // Prints Python imports for all modules imported by |file|.
-void Generator::PrintImports() const {
+void FileGenerator::PrintImports() const {
   for (int i = 0; i < file_->dependency_count(); ++i) {
     string module_name = ModuleName(file_->dependency(i)->name());
     printer_->Print("import $module$\n", "module",
@@ -290,7 +285,7 @@ void Generator::PrintImports() const {
 }
 
 // Prints the single file descriptor for this file.
-void Generator::PrintFileDescriptor() const {
+void FileGenerator::PrintFileDescriptor() const {
   map<string, string> m;
   m["descriptor_name"] = kDescriptorKey;
   m["name"] = file_->name();
@@ -315,7 +310,7 @@ void Generator::PrintFileDescriptor() const {
 
 // Prints descriptors and module-level constants for all top-level
 // enums defined in |file|.
-void Generator::PrintTopLevelEnums() const {
+void FileGenerator::PrintTopLevelEnums() const {
   vector<pair<string, int> > top_level_enum_values;
   for (int i = 0; i < file_->enum_type_count(); ++i) {
     const EnumDescriptor& enum_descriptor = *file_->enum_type(i);
@@ -338,7 +333,7 @@ void Generator::PrintTopLevelEnums() const {
 }
 
 // Prints all enums contained in all message types in |file|.
-void Generator::PrintAllNestedEnumsInFile() const {
+void FileGenerator::PrintAllNestedEnumsInFile() const {
   for (int i = 0; i < file_->message_type_count(); ++i) {
     PrintNestedEnums(*file_->message_type(i));
   }
@@ -347,7 +342,7 @@ void Generator::PrintAllNestedEnumsInFile() const {
 // Prints a Python statement assigning the appropriate module-level
 // enum name to a Python EnumDescriptor object equivalent to
 // enum_descriptor.
-void Generator::PrintEnum(const EnumDescriptor& enum_descriptor) const {
+void FileGenerator::PrintEnum(const EnumDescriptor& enum_descriptor) const {
   map<string, string> m;
   m["descriptor_name"] = ModuleLevelDescriptorName(enum_descriptor);
   m["name"] = enum_descriptor.name();
@@ -384,7 +379,7 @@ void Generator::PrintEnum(const EnumDescriptor& enum_descriptor) const {
 
 // Recursively prints enums in nested types within descriptor, then
 // prints enums contained at the top level in descriptor.
-void Generator::PrintNestedEnums(const Descriptor& descriptor) const {
+void FileGenerator::PrintNestedEnums(const Descriptor& descriptor) const {
   for (int i = 0; i < descriptor.nested_type_count(); ++i) {
     PrintNestedEnums(*descriptor.nested_type(i));
   }
@@ -394,7 +389,7 @@ void Generator::PrintNestedEnums(const Descriptor& descriptor) const {
   }
 }
 
-void Generator::PrintTopLevelExtensions() const {
+void FileGenerator::PrintTopLevelExtensions() const {
   const bool is_extension = true;
   for (int i = 0; i < file_->extension_count(); ++i) {
     const FieldDescriptor& extension_field = *file_->extension(i);
@@ -411,14 +406,14 @@ void Generator::PrintTopLevelExtensions() const {
 }
 
 // Prints Python equivalents of all Descriptors in |file|.
-void Generator::PrintMessageDescriptors() const {
+void FileGenerator::PrintMessageDescriptors() const {
   for (int i = 0; i < file_->message_type_count(); ++i) {
     PrintDescriptor(*file_->message_type(i));
     printer_->Print("\n");
   }
 }
 
-void Generator::PrintServices() const {
+void FileGenerator::PrintServices() const {
   for (int i = 0; i < file_->service_count(); ++i) {
     PrintServiceDescriptor(*file_->service(i));
     PrintServiceClass(*file_->service(i));
@@ -427,7 +422,7 @@ void Generator::PrintServices() const {
   }
 }
 
-void Generator::PrintServiceDescriptor(
+void FileGenerator::PrintServiceDescriptor(
     const ServiceDescriptor& descriptor) const {
   printer_->Print("\n");
   string service_name = ModuleLevelServiceDescriptorName(descriptor);
@@ -488,7 +483,7 @@ void Generator::PrintServiceDescriptor(
   printer_->Print("])\n\n");
 }
 
-void Generator::PrintServiceClass(const ServiceDescriptor& descriptor) const {
+void FileGenerator::PrintServiceClass(const ServiceDescriptor& descriptor) const {
   // Print the service.
   printer_->Print("class $class_name$(service.Service):\n",
                   "class_name", descriptor.name());
@@ -501,7 +496,7 @@ void Generator::PrintServiceClass(const ServiceDescriptor& descriptor) const {
   printer_->Outdent();
 }
 
-void Generator::PrintServiceStub(const ServiceDescriptor& descriptor) const {
+void FileGenerator::PrintServiceStub(const ServiceDescriptor& descriptor) const {
   // Print the service stub.
   printer_->Print("class $class_name$_Stub($class_name$):\n",
                   "class_name", descriptor.name());
@@ -518,7 +513,7 @@ void Generator::PrintServiceStub(const ServiceDescriptor& descriptor) const {
 // to a Python Descriptor object for message_descriptor.
 //
 // Mutually recursive with PrintNestedDescriptors().
-void Generator::PrintDescriptor(const Descriptor& message_descriptor) const {
+void FileGenerator::PrintDescriptor(const Descriptor& message_descriptor) const {
   PrintNestedDescriptors(message_descriptor);
 
   printer_->Print("\n");
@@ -593,7 +588,7 @@ void Generator::PrintDescriptor(const Descriptor& message_descriptor) const {
 // message_descriptor.
 //
 // Mutually recursive with PrintDescriptor().
-void Generator::PrintNestedDescriptors(
+void FileGenerator::PrintNestedDescriptors(
     const Descriptor& containing_descriptor) const {
   for (int i = 0; i < containing_descriptor.nested_type_count(); ++i) {
     PrintDescriptor(*containing_descriptor.nested_type(i));
@@ -601,7 +596,7 @@ void Generator::PrintNestedDescriptors(
 }
 
 // Prints all messages in |file|.
-void Generator::PrintMessages() const {
+void FileGenerator::PrintMessages() const {
   for (int i = 0; i < file_->message_type_count(); ++i) {
     PrintMessage(*file_->message_type(i));
     printer_->Print("\n");
@@ -615,7 +610,7 @@ void Generator::PrintMessages() const {
 // reflection.py will use to construct the meat of the class itself.
 //
 // Mutually recursive with PrintNestedMessages().
-void Generator::PrintMessage(
+void FileGenerator::PrintMessage(
     const Descriptor& message_descriptor) const {
   printer_->Print("class $name$(message.Message):\n", "name",
                   message_descriptor.name());
@@ -637,7 +632,7 @@ void Generator::PrintMessage(
 
 // Prints all nested messages within |containing_descriptor|.
 // Mutually recursive with PrintMessage().
-void Generator::PrintNestedMessages(
+void FileGenerator::PrintNestedMessages(
     const Descriptor& containing_descriptor) const {
   for (int i = 0; i < containing_descriptor.nested_type_count(); ++i) {
     printer_->Print("\n");
@@ -652,7 +647,7 @@ void Generator::PrintNestedMessages(
 //   descriptor: descriptor to print fields for.
 //   containing_descriptor: if descriptor is a nested type, this is its
 //       containing type, or NULL if this is a root/top-level type.
-void Generator::FixForeignFieldsInDescriptor(
+void FileGenerator::FixForeignFieldsInDescriptor(
     const Descriptor& descriptor,
     const Descriptor* containing_descriptor) const {
   for (int i = 0; i < descriptor.nested_type_count(); ++i) {
@@ -671,7 +666,7 @@ void Generator::FixForeignFieldsInDescriptor(
   }
 }
 
-void Generator::AddMessageToFileDescriptor(const Descriptor& descriptor) const {
+void FileGenerator::AddMessageToFileDescriptor(const Descriptor& descriptor) const {
   map<string, string> m;
   m["descriptor_name"] = kDescriptorKey;
   m["message_name"] = descriptor.name();
@@ -691,7 +686,7 @@ void Generator::AddMessageToFileDescriptor(const Descriptor& descriptor) const {
 // look the field up in the containing type.  (e.g., fields_by_name
 // or extensions_by_name).  We ignore python_dict_name if containing_type
 // is NULL.
-void Generator::FixForeignFieldsInField(const Descriptor* containing_type,
+void FileGenerator::FixForeignFieldsInField(const Descriptor* containing_type,
                                         const FieldDescriptor& field,
                                         const string& python_dict_name) const {
   const string field_referencing_expression = FieldReferencingExpression(
@@ -711,7 +706,7 @@ void Generator::FixForeignFieldsInField(const Descriptor* containing_type,
 }
 
 // Returns the module-level expression for the given FieldDescriptor.
-// Only works for fields in the .proto file this Generator is generating for.
+// Only works for fields in the .proto file this FileGenerator is generating for.
 //
 // containing_type may be NULL, in which case this is a module-level field.
 //
@@ -719,7 +714,7 @@ void Generator::FixForeignFieldsInField(const Descriptor* containing_type,
 // look the field up in the containing type.  (e.g., fields_by_name
 // or extensions_by_name).  We ignore python_dict_name if containing_type
 // is NULL.
-string Generator::FieldReferencingExpression(
+string FileGenerator::FieldReferencingExpression(
     const Descriptor* containing_type,
     const FieldDescriptor& field,
     const string& python_dict_name) const {
@@ -738,7 +733,7 @@ string Generator::FieldReferencingExpression(
 
 // Prints containing_type for nested descriptors or enum descriptors.
 template <typename DescriptorT>
-void Generator::FixContainingTypeInDescriptor(
+void FileGenerator::FixContainingTypeInDescriptor(
     const DescriptorT& descriptor,
     const Descriptor* containing_descriptor) const {
   if (containing_descriptor != NULL) {
@@ -756,7 +751,7 @@ void Generator::FixContainingTypeInDescriptor(
 // Python descriptor objects we've already output in ths file.  We must
 // do this in a separate step due to circular references (otherwise, we'd
 // just set everything in the initial assignment statements).
-void Generator::FixForeignFieldsInDescriptors() const {
+void FileGenerator::FixForeignFieldsInDescriptors() const {
   for (int i = 0; i < file_->message_type_count(); ++i) {
     FixForeignFieldsInDescriptor(*file_->message_type(i), NULL);
   }
@@ -769,7 +764,7 @@ void Generator::FixForeignFieldsInDescriptors() const {
 // We need to not only set any necessary message_type fields, but
 // also need to call RegisterExtension() on each message we're
 // extending.
-void Generator::FixForeignFieldsInExtensions() const {
+void FileGenerator::FixForeignFieldsInExtensions() const {
   // Top-level extensions.
   for (int i = 0; i < file_->extension_count(); ++i) {
     FixForeignFieldsInExtension(*file_->extension(i));
@@ -780,7 +775,7 @@ void Generator::FixForeignFieldsInExtensions() const {
   }
 }
 
-void Generator::FixForeignFieldsInExtension(
+void FileGenerator::FixForeignFieldsInExtension(
     const FieldDescriptor& extension_field) const {
   GOOGLE_CHECK(extension_field.is_extension());
   // extension_scope() will be NULL for top-level extensions, which is
@@ -801,7 +796,7 @@ void Generator::FixForeignFieldsInExtension(
   printer_->Print(m, "$extended_message_class$.RegisterExtension($field$)\n");
 }
 
-void Generator::FixForeignFieldsInNestedExtensions(
+void FileGenerator::FixForeignFieldsInNestedExtensions(
     const Descriptor& descriptor) const {
   // Recursively fix up extensions in all nested types.
   for (int i = 0; i < descriptor.nested_type_count(); ++i) {
@@ -815,7 +810,7 @@ void Generator::FixForeignFieldsInNestedExtensions(
 
 // Returns a Python expression that instantiates a Python EnumValueDescriptor
 // object for the given C++ descriptor.
-void Generator::PrintEnumValueDescriptor(
+void FileGenerator::PrintEnumValueDescriptor(
     const EnumValueDescriptor& descriptor) const {
   // TODO(robinson): Fix up EnumValueDescriptor "type" fields.
   // More circular references.  ::sigh::
@@ -836,7 +831,7 @@ void Generator::PrintEnumValueDescriptor(
 
 // Returns a Python expression that calls descriptor._ParseOptions using
 // the given descriptor class name and serialized options protobuf string.
-string Generator::OptionsValue(
+string FileGenerator::OptionsValue(
     const string& class_name, const string& serialized_options) const {
   if (serialized_options.length() == 0 || GeneratingDescriptorProto()) {
     return "None";
@@ -848,7 +843,7 @@ string Generator::OptionsValue(
 }
 
 // Prints an expression for a Python FieldDescriptor for |field|.
-void Generator::PrintFieldDescriptor(
+void FileGenerator::PrintFieldDescriptor(
     const FieldDescriptor& field, bool is_extension) const {
   string options_string;
   field.options().SerializeToString(&options_string);
@@ -879,7 +874,7 @@ void Generator::PrintFieldDescriptor(
 }
 
 // Helper for Print{Fields,Extensions}InDescriptor().
-void Generator::PrintFieldDescriptorsInDescriptor(
+void FileGenerator::PrintFieldDescriptorsInDescriptor(
     const Descriptor& message_descriptor,
     bool is_extension,
     const string& list_variable_name,
@@ -898,7 +893,7 @@ void Generator::PrintFieldDescriptorsInDescriptor(
 
 // Prints a statement assigning "fields" to a list of Python FieldDescriptors,
 // one for each field present in message_descriptor.
-void Generator::PrintFieldsInDescriptor(
+void FileGenerator::PrintFieldsInDescriptor(
     const Descriptor& message_descriptor) const {
   const bool is_extension = false;
   PrintFieldDescriptorsInDescriptor(
@@ -908,7 +903,7 @@ void Generator::PrintFieldsInDescriptor(
 
 // Prints a statement assigning "extensions" to a list of Python
 // FieldDescriptors, one for each extension present in message_descriptor.
-void Generator::PrintExtensionsInDescriptor(
+void FileGenerator::PrintExtensionsInDescriptor(
     const Descriptor& message_descriptor) const {
   const bool is_extension = true;
   PrintFieldDescriptorsInDescriptor(
@@ -916,7 +911,7 @@ void Generator::PrintExtensionsInDescriptor(
       &Descriptor::extension_count, &Descriptor::extension);
 }
 
-bool Generator::GeneratingDescriptorProto() const {
+bool FileGenerator::GeneratingDescriptorProto() const {
   return file_->name() == "google/protobuf/descriptor.proto";
 }
 
@@ -924,7 +919,7 @@ bool Generator::GeneratingDescriptorProto() const {
 // This name is module-qualified iff the given descriptor describes an
 // entity that doesn't come from the current file.
 template <typename DescriptorT>
-string Generator::ModuleLevelDescriptorName(
+string FileGenerator::ModuleLevelDescriptorName(
     const DescriptorT& descriptor) const {
   // FIXME(robinson):
   // We currently don't worry about collisions with underscores in the type
@@ -955,7 +950,7 @@ string Generator::ModuleLevelDescriptorName(
 // Like ModuleLevelDescriptorName(), module-qualifies the name iff
 // the given descriptor describes an entity that doesn't come from
 // the current file.
-string Generator::ModuleLevelMessageName(const Descriptor& descriptor) const {
+string FileGenerator::ModuleLevelMessageName(const Descriptor& descriptor) const {
   string name = NamePrefixedWithNestedTypes(descriptor, ".");
   if (descriptor.file() != file_) {
     name = ModuleName(descriptor.file()->name()) + "." + name;
@@ -965,7 +960,7 @@ string Generator::ModuleLevelMessageName(const Descriptor& descriptor) const {
 
 // Returns the unique Python module-level identifier given to a service
 // descriptor.
-string Generator::ModuleLevelServiceDescriptorName(
+string FileGenerator::ModuleLevelServiceDescriptorName(
     const ServiceDescriptor& descriptor) const {
   string name = descriptor.name();
   UpperString(&name);
@@ -985,7 +980,7 @@ string Generator::ModuleLevelServiceDescriptorName(
 // serialized_end=43,
 //
 template <typename DescriptorT, typename DescriptorProtoT>
-void Generator::PrintSerializedPbInterval(
+void FileGenerator::PrintSerializedPbInterval(
     const DescriptorT& descriptor, DescriptorProtoT& proto) const {
   descriptor.CopyTo(&proto);
   string sp;

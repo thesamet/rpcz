@@ -51,9 +51,6 @@ namespace io { class Printer; }
 }  // namespace protobuf
 }  // namespace google
 
-namespace compiler {
-namespace python {
-
 namespace zrpc {
 namespace plugin {
 namespace python {
@@ -62,94 +59,103 @@ namespace python {
 // If you create your own protocol compiler binary and you want it to support
 // Python output, you can do so by registering an instance of this
 // CodeGenerator with the CommandLineInterface in your main() function.
-class LIBPROTOC_EXPORT Generator : public CodeGenerator {
+class LIBPROTOC_EXPORT Generator
+    : public google::protobuf::compiler::CodeGenerator {
  public:
   Generator();
   virtual ~Generator();
 
   // CodeGenerator methods.
-  virtual bool Generate(const google::protobuf::FileDescriptor* file,
-                        const string& parameter,
-                        GeneratorContext* generator_context,
-                        string* error) const;
+  virtual bool Generate(
+      const google::protobuf::FileDescriptor* file,
+      const std::string& parameter,
+      google::protobuf::compiler::GeneratorContext* generator_context,
+      std::string* error) const;
+
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Generator);
+};
+
+class FileGenerator {
+ public:
+  FileGenerator(const google::protobuf::FileDescriptor* file,
+                google::protobuf::io::Printer* printer);
+
+  bool Run();
 
  private:
   void PrintImports() const;
   void PrintFileDescriptor() const;
   void PrintTopLevelEnums() const;
   void PrintAllNestedEnumsInFile() const;
-  void PrintNestedEnums(const Descriptor& descriptor) const;
-  void PrintEnum(const EnumDescriptor& enum_descriptor) const;
+  void PrintNestedEnums(const google::protobuf::Descriptor& descriptor) const;
+  void PrintEnum(const google::protobuf::EnumDescriptor& enum_descriptor) const;
 
   void PrintTopLevelExtensions() const;
 
   void PrintFieldDescriptor(
-      const FieldDescriptor& field, bool is_extension) const;
+      const google::protobuf::FieldDescriptor& field, bool is_extension) const;
   void PrintFieldDescriptorsInDescriptor(
-      const Descriptor& message_descriptor,
+      const google::protobuf::Descriptor& message_descriptor,
       bool is_extension,
-      const string& list_variable_name,
-      int (Descriptor::*CountFn)() const,
-      const FieldDescriptor* (Descriptor::*GetterFn)(int) const) const;
-  void PrintFieldsInDescriptor(const Descriptor& message_descriptor) const;
-  void PrintExtensionsInDescriptor(const Descriptor& message_descriptor) const;
+      const std::string& list_variable_name,
+      int (google::protobuf::Descriptor::*CountFn)() const,
+      const google::protobuf::FieldDescriptor* (google::protobuf::Descriptor::*GetterFn)(int) const) const;
+  void PrintFieldsInDescriptor(const google::protobuf::Descriptor& message_descriptor) const;
+  void PrintExtensionsInDescriptor(const google::protobuf::Descriptor& message_descriptor) const;
   void PrintMessageDescriptors() const;
-  void PrintDescriptor(const Descriptor& message_descriptor) const;
-  void PrintNestedDescriptors(const Descriptor& containing_descriptor) const;
+  void PrintDescriptor(const google::protobuf::Descriptor& message_descriptor) const;
+  void PrintNestedDescriptors(const google::protobuf::Descriptor& containing_descriptor) const;
 
   void PrintMessages() const;
-  void PrintMessage(const Descriptor& message_descriptor) const;
-  void PrintNestedMessages(const Descriptor& containing_descriptor) const;
+  void PrintMessage(const google::protobuf::Descriptor& message_descriptor) const;
+  void PrintNestedMessages(const google::protobuf::Descriptor& containing_descriptor) const;
 
   void FixForeignFieldsInDescriptors() const;
   void FixForeignFieldsInDescriptor(
-      const Descriptor& descriptor,
-      const Descriptor* containing_descriptor) const;
-  void FixForeignFieldsInField(const Descriptor* containing_type,
-                               const FieldDescriptor& field,
-                               const string& python_dict_name) const;
-  void AddMessageToFileDescriptor(const Descriptor& descriptor) const;
-  string FieldReferencingExpression(const Descriptor* containing_type,
-                                    const FieldDescriptor& field,
-                                    const string& python_dict_name) const;
+      const google::protobuf::Descriptor& descriptor,
+      const google::protobuf::Descriptor* containing_descriptor) const;
+  void FixForeignFieldsInField(const google::protobuf::Descriptor* containing_type,
+                               const google::protobuf::FieldDescriptor& field,
+                               const std::string& python_dict_name) const;
+  void AddMessageToFileDescriptor(const google::protobuf::Descriptor& descriptor) const;
+  std::string FieldReferencingExpression(const google::protobuf::Descriptor* containing_type,
+                                    const google::protobuf::FieldDescriptor& field,
+                                    const std::string& python_dict_name) const;
   template <typename DescriptorT>
   void FixContainingTypeInDescriptor(
       const DescriptorT& descriptor,
-      const Descriptor* containing_descriptor) const;
+      const google::protobuf::Descriptor* containing_descriptor) const;
 
   void FixForeignFieldsInExtensions() const;
   void FixForeignFieldsInExtension(
-      const FieldDescriptor& extension_field) const;
-  void FixForeignFieldsInNestedExtensions(const Descriptor& descriptor) const;
+      const google::protobuf::FieldDescriptor& extension_field) const;
+  void FixForeignFieldsInNestedExtensions(const google::protobuf::Descriptor& descriptor) const;
 
   void PrintServices() const;
-  void PrintServiceDescriptor(const ServiceDescriptor& descriptor) const;
-  void PrintServiceClass(const ServiceDescriptor& descriptor) const;
-  void PrintServiceStub(const ServiceDescriptor& descriptor) const;
+  void PrintServiceDescriptor(const google::protobuf::ServiceDescriptor& descriptor) const;
+  void PrintServiceClass(const google::protobuf::ServiceDescriptor& descriptor) const;
+  void PrintServiceStub(const google::protobuf::ServiceDescriptor& descriptor) const;
 
-  void PrintEnumValueDescriptor(const EnumValueDescriptor& descriptor) const;
-  string OptionsValue(const string& class_name,
-                      const string& serialized_options) const;
+  void PrintEnumValueDescriptor(const google::protobuf::EnumValueDescriptor& descriptor) const;
+  std::string OptionsValue(const std::string& class_name,
+                      const std::string& serialized_options) const;
   bool GeneratingDescriptorProto() const;
 
   template <typename DescriptorT>
-  string ModuleLevelDescriptorName(const DescriptorT& descriptor) const;
-  string ModuleLevelMessageName(const Descriptor& descriptor) const;
-  string ModuleLevelServiceDescriptorName(
-      const ServiceDescriptor& descriptor) const;
+  std::string ModuleLevelDescriptorName(const DescriptorT& descriptor) const;
+  std::string ModuleLevelMessageName(const google::protobuf::Descriptor& descriptor) const;
+  std::string ModuleLevelServiceDescriptorName(
+      const google::protobuf::ServiceDescriptor& descriptor) const;
 
   template <typename DescriptorT, typename DescriptorProtoT>
   void PrintSerializedPbInterval(
       const DescriptorT& descriptor, DescriptorProtoT& proto) const;
 
-  // Very coarse-grained lock to ensure that Generate() is reentrant.
-  // Guards file_, printer_ and file_descriptor_serialized_.
-  mutable Mutex mutex_;
-  mutable const FileDescriptor* file_;  // Set in Generate().  Under mutex_.
-  mutable string file_descriptor_serialized_;
-  mutable io::Printer* printer_;  // Set in Generate().  Under mutex_.
+  const google::protobuf::FileDescriptor* file_;
+  google::protobuf::io::Printer* printer_;
+  std::string file_descriptor_serialized_;
 
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Generator);
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FileGenerator);
 };
 }  // namespace python
 }  // namespace plugin

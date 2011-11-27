@@ -3,10 +3,10 @@
 //
 // Author: thesamet@gmail.com <Nadav Samet>
 
+#include "zrpc/plugin/python/zrpc_python_generator.h"
 #include <google/protobuf/compiler/plugin.h>
-#include "python_generator.h"
 
 int main(int argc, char* argv[]) {
-  zrpc::plugin::python::ZRpcCppGenerator generator;
+  zrpc::plugin::python::Generator generator;
   return google::protobuf::compiler::PluginMain(argc, argv, &generator);
 }
