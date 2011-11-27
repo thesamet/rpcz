@@ -8,7 +8,8 @@ from distutils import spawn
 from setuptools import setup
 
 
-def _generate_proto(source, output_dir):
+def _generate_proto(source, output_dir,
+                    with_plugin='python', suffix='_pb2.py', plugin_binary=None):
     """Invokes the Protocol Compiler to generate a _pb2.py from the given
     .proto file.  Does nothing if the output already exists and is newer than
     the input."""
@@ -19,7 +20,7 @@ def _generate_proto(source, output_dir):
 
     output = os.path.join(
             output_dir,
-            os.path.basename(source.replace(".proto", "_pb2.py")))
+            os.path.basename(source.replace(".proto", suffix)))
 
     if not os.path.exists(source):
         print "Can't find required file: " + source
@@ -32,26 +33,38 @@ def _generate_proto(source, output_dir):
 
     print "Generating %s" % output
 
-    protoc_command = protoc + ' -I "%s" --python_out="%s" "%s"' % (
-            os.path.dirname(source), output_dir, source)
+    protoc_command = protoc + ' -I "%s" --%s_out="%s" "%s"' % (
+            os.path.dirname(source), with_plugin, output_dir, source)
+    if plugin_binary:
+        protoc_command += ' --plugin=protoc-gen-%s=%s' % (with_plugin, plugin_binary)
+
     if os.system(protoc_command) != 0:
         print "Error running protoc."
         sys.exit(-1)
 
 
-def _build_my_proto():
+def _build_zrpc_proto():
     _generate_proto('../src/zrpc/proto/zrpc.proto', 'zrpc')
+
+
+def _build_test_protos():
+    _generate_proto('../test/proto/search.proto', 'tests')
+    _generate_proto(
+            '../test/proto/search.proto', 'tests',
+            with_plugin='pyzrpc', suffix='_zrpc.py',
+            plugin_binary='../build/src/zrpc/plugin/python/zrpc_python_plugin')
 
 
 class build(build_module.build):
     def run(self):
-        _build_my_proto()
+        _build_zrpc_proto()
         build_module.build.run(self)
 
 
 class develop(develop_module.develop):
     def run(self):
-        _build_my_proto()
+        _build_zrpc_proto()
+        _build_test_protos()
         develop_module.develop.run(self)
 
     

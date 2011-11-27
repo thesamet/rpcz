@@ -1,8 +1,8 @@
 package zrpc;
 
 message SearchRequest {
-  optional string query = 1;
-  optional int32 page_number = 2;
+  required string query = 1;
+  optional int32 page_number = 2 [default = 1];
 }
 
 message SearchResponse {

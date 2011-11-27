@@ -20,9 +20,7 @@ Server::Server(zmq::socket_t* socket) : socket_(socket) {}
 void Server::Start() {
   while (true) {
     zmq::message_t request;
-    LOG(INFO) << "Waiting...";
     socket_->recv(&request);
-    LOG(INFO) << "Received request";
     HandleRequest(&request);
   }
 }
@@ -115,6 +113,9 @@ void Server::HandleRequest(zmq::message_t* request) {
   if (!context->request->ParseFromString(generic_rpc_request.payload())) {
     // Invalid proto;
     ReplyWithAppError(socket_, GenericRPCResponse::INVALID_MESSAGE);
+    delete context->request;
+    delete context->response;
+    return;
   }
 
   ::google::protobuf::Closure *closure = ::google::protobuf::NewCallback(

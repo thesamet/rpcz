@@ -14,6 +14,7 @@ message GenericRPCResponse {
     APPLICATION_ERROR = 2;
   }
   enum ApplicationError {
+    NO_ERROR = 0;
     INVALID_GENERIC_WRAPPER = -1;
     UNKNOWN_SERVICE = -2;
     UNKNOWN_METHOD = -3;

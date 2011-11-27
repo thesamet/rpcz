@@ -9,6 +9,7 @@
 #include <google/gflags.h>
 #include "proto/search.pb.h"
 #include "proto/search.zrpc.h"
+#include "zrpc/rpc.h"
 #include "zrpc/server.h"
 
 using namespace std;
@@ -17,20 +18,21 @@ namespace zrpc {
 
 class SearchServiceImpl : public SearchService {
   virtual void Search(
-      zrpc::RPC* controller, const SearchRequest* request,
+      zrpc::RPC* rpc, const SearchRequest* request,
       SearchResponse* response, ::google::protobuf::Closure* done) {
-    cerr << "Got message";
-    response->add_results("The search");
-    response->add_results("is great");
+    if (request->query() == "foo") {
+      rpc->SetFailed("I don't like foo.");
+    } else if (request->query() == "bar") {
+      rpc->SetFailed(17, "I don't like bar.");
+    } else {
+      response->add_results("The search for " + request->query());
+      response->add_results("is great");
+    }
     done->Run();
   }
 };
 
 }  // namespace
-
-class ZeroMQServer {
- public:
-};
 
 int main(int argc, char **argv) {
   ::google::InitGoogleLogging(argv[0]);
