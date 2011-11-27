@@ -1,7 +1,5 @@
 package zrpc;
 
-option cc_generic_services = true;
-
 message SearchRequest {
   optional string query = 1;
   optional int32 page_number = 2;

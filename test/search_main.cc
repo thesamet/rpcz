@@ -8,18 +8,16 @@
 #include <glog/logging.h>
 #include <google/gflags.h>
 #include "proto/search.pb.h"
+#include "proto/search.zrpc.h"
 #include "zrpc/server.h"
 
 using namespace std;
-
-class MyRpcController : public ::google::protobuf::RpcController {
-};
 
 namespace zrpc {
 
 class SearchServiceImpl : public SearchService {
   virtual void Search(
-      ::google::protobuf::RpcController* controller, const SearchRequest* request,
+      zrpc::RPC* controller, const SearchRequest* request,
       SearchResponse* response, ::google::protobuf::Closure* done) {
     cerr << "Got message";
     response->add_results("The search");
@@ -45,6 +43,5 @@ int main(int argc, char **argv) {
   zrpc::SearchServiceImpl search_service;
   server.RegisterService(&search_service);
   server.Start();
-  // zrpc::SearchService service;
 }
 

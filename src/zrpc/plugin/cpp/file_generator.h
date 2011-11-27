@@ -6,6 +6,8 @@
 #ifndef ZRPC_FILE_GENERATOR_H
 #define ZRPC_FILE_GENERATOR_H
 
+#include "zrpc/plugin/cpp/zrpc_cpp_service.h"
+
 #include <string>
 #include <vector>
 
@@ -28,6 +30,8 @@ class FileGenerator {
     FileGenerator(const google::protobuf::FileDescriptor* file,
                   const std::string& dllexport_decl);
 
+    ~FileGenerator();
+
     void GenerateHeader(google::protobuf::io::Printer* printer);
 
     void GenerateSource(google::protobuf::io::Printer* printer);
@@ -37,7 +41,10 @@ class FileGenerator {
 
     void GenerateNamespaceClosers(google::protobuf::io::Printer* printer);
 
+    void GenerateBuildDescriptors(google::protobuf::io::Printer* printer);
+
     std::vector<std::string> package_parts_;
+    std::vector<ServiceGenerator*> service_generators_;
     const ::google::protobuf::FileDescriptor* file_;
     std::string dllexport_decl_;
 };

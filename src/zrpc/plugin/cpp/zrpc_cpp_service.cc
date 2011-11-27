@@ -36,7 +36,7 @@ void ServiceGenerator::GenerateDeclarations(io::Printer* printer) {
     "\n");
 
   GenerateInterface(printer);
-  GenerateStubDefinition(printer);
+  // GenerateStubDefinition(printer);
 }
 
 void ServiceGenerator::GenerateInterface(io::Printer* printer) {
@@ -91,8 +91,6 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
 
   printer->Print(vars_,
     "$classname$_Stub(::google::protobuf::RpcChannel* channel);\n"
-    "$classname$_Stub(::google::protobuf::RpcChannel* channel,\n"
-    "                 ::google::protobuf::Service::ChannelOwnership ownership);\n"
     "~$classname$_Stub();\n"
     "\n"
     "inline ::google::protobuf::RpcChannel* channel() { return channel_; }\n"
@@ -166,20 +164,17 @@ void ServiceGenerator::GenerateImplementation(io::Printer* printer) {
   GenerateGetPrototype(RESPONSE, printer);
 
   // Generate stub implementation.
+  /*
   printer->Print(vars_,
     "$classname$_Stub::$classname$_Stub(::google::protobuf::RpcChannel* channel)\n"
     "  : channel_(channel), owns_channel_(false) {}\n"
-    "$classname$_Stub::$classname$_Stub(\n"
-    "    ::google::protobuf::RpcChannel* channel,\n"
-    "    ::google::protobuf::Service::ChannelOwnership ownership)\n"
-    "  : channel_(channel),\n"
-    "    owns_channel_(ownership == ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}\n"
     "$classname$_Stub::~$classname$_Stub() {\n"
     "  if (owns_channel_) delete channel_;\n"
     "}\n"
     "\n");
 
   GenerateStubMethods(printer);
+  */
 }
 
 void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {

@@ -9,5 +9,5 @@ add_subdirectory(plugin)
 
 include_directories(${PROJECT_BINARY_DIR})
 
-add_library(zrpc server.cc)
+add_library(zrpc server.cc rpc.cc)
 target_link_libraries(zrpc zrpc_pb)

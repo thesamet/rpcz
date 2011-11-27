@@ -12,13 +12,13 @@ message GenericRPCResponse {
   enum Status {
     OK = 1;
     APPLICATION_ERROR = 2;
-    NETWORK_ERROR = 3;
   }
   enum ApplicationError {
     INVALID_GENERIC_WRAPPER = -1;
     UNKNOWN_SERVICE = -2;
     UNKNOWN_METHOD = -3;
     INVALID_MESSAGE = -4;
+    UNKNOWN_APPLICATION_ERROR = -5;
   }
   optional Status status = 1 [default = OK];
   optional int32 application_error = 2;

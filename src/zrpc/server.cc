@@ -3,13 +3,15 @@
 //
 // Author: thesamet@gmail.com <Nadav Samet>
 
+#include "zrpc/rpc.h"
+#include "zrpc/server.h"
+#include "zrpc/service.h"
 #include <iostream>
 #include <zmq.hpp>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/service.h>
+#include "google/protobuf/descriptor.h"
+#include "google/protobuf/service.h"
 #include "glog/logging.h"
-#include "proto/zrpc.pb.h"
-#include "server.h"
+#include "zrpc/proto/zrpc.pb.h"
 
 namespace zrpc {
 
@@ -25,13 +27,14 @@ void Server::Start() {
   }
 }
 
-void Server::RegisterService(::google::protobuf::Service *service) {
+void Server::RegisterService(zrpc::Service *service) {
   VLOG(2) << "Registering service '" << service->GetDescriptor()->full_name() << "'";
   service_map_[service->GetDescriptor()->full_name()] = service;
 }
 
 namespace {
 struct RPCRequestContext {
+  RPC* rpc;
   ::google::protobuf::Message* request;
   ::google::protobuf::Message* response;
 };
@@ -48,10 +51,23 @@ void SendGenericResponse(::zmq::socket_t* socket,
 
 void FinalizeResponse(RPCRequestContext *context,
                       ::zmq::socket_t* socket) {
+  CHECK_NOTNULL(context->rpc);
   GenericRPCResponse generic_rpc_response;
-  CHECK(context->response->SerializeToString(
-          generic_rpc_response.mutable_payload()));
+  if (context->rpc->OK()) {
+    CHECK(context->response->SerializeToString(
+            generic_rpc_response.mutable_payload()));
+  } else {
+    generic_rpc_response.set_status(
+        context->rpc->GetStatus());
+    generic_rpc_response.set_application_error(
+        context->rpc->GetApplicationError());
+    std::string error_message(context->rpc->GetErrorMessage());
+    if (!error_message.empty()) {
+      generic_rpc_response.set_error(error_message);
+    }
+  }
   SendGenericResponse(socket, generic_rpc_response); 
+  delete context->rpc;
   delete context->request;
   delete context->response;
   delete context;
@@ -85,7 +101,7 @@ void Server::HandleRequest(zmq::message_t* request) {
     ReplyWithAppError(socket_, GenericRPCResponse::UNKNOWN_SERVICE);
     return;
   }
-  ::google::protobuf::Service* service = service_it->second;
+  zrpc::Service* service = service_it->second;
   const ::google::protobuf::MethodDescriptor* descriptor =
       service->GetDescriptor()->FindMethodByName(generic_rpc_request.method());
   if (descriptor == NULL) {

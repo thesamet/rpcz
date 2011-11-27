@@ -10,13 +10,12 @@
 #include <string>
 
 namespace zmq {
-class zmq::socket_t;
+class socket_t;
+class message_t;
 };
 
-namespace google {
-namespace protobuf {
+namespace zrpc {
 class Service;
-}
 }
 
 namespace zrpc {
@@ -27,13 +26,13 @@ class Server {
 
   void Start();
 
-  void RegisterService(::google::protobuf::Service *service);
+  void RegisterService(zrpc::Service *service);
 
  private:
   void HandleRequest(zmq::message_t* request);
 
   zmq::socket_t* socket_;
-  typedef std::map<std::string, ::google::protobuf::Service*> ServiceMap;
+  typedef std::map<std::string, zrpc::Service*> ServiceMap;
   ServiceMap service_map_;
 };
 
