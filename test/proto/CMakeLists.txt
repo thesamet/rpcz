@@ -9,9 +9,13 @@ function(PROTOBUF_GENERATE_ZRPC SRCS HDRS)
   set(${HDRS} ${_HDRS} PARENT_SCOPE)
 endfunction()
 
+PROTOBUF_GENERATE_PYTHON(SEARCH_PB_PY_SRCS search.proto)
 PROTOBUF_GENERATE_CPP(SEARCH_PB_SRCS SEARCH_PB_HDRS search.proto)
 PROTOBUF_GENERATE_ZRPC(SEARCH_ZRPC_SRCS SEARCH_ZRPC_HDRS search.proto)
 
 add_library(search_pb ${SEARCH_PB_SRCS} ${SEARCH_PB_HDRS} ${SEARCH_ZRPC_SRCS}
                       ${SEARCH_ZRPC_HDRS})
 target_link_libraries(search_pb ${PROTOBUF_LIBRARY} zrpc_pb)
+
+message("hello ${SEARCH_PB_PY_SRCS}")
+add_custom_target(_force_python_protos ALL DEPENDS ${SEARCH_PB_PY_SRCS})

@@ -76,6 +76,14 @@ function(PROTOBUF_GENERATE_CPP SRCS HDRS)
   set(${HDRS} ${_HDRS} PARENT_SCOPE)
 endfunction()
 
+function(PROTOBUF_GENERATE_PYTHON SRCS)
+  PROTOBUF_GENERATE_MULTI(PLUGIN "python"
+                          PLUGIN_NAME "Python"
+                          PROTOS ${ARGN}
+                          OUTPUT_STRUCT "_SRCS:_pb2.py" )
+  set(${SRCS} ${_SRCS} PARENT_SCOPE)
+endfunction()
+
 function(PROTOBUF_GENERATE_MULTI)
   CMAKE_PARSE_ARGUMENTS(OPTIONS "" "PLUGIN;PLUGIN_NAME"
                         "PROTOS;OUTPUT_STRUCT;FLAGS;DEPENDS" ${ARGN})
