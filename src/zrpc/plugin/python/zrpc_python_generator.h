@@ -84,59 +84,12 @@ class FileGenerator {
 
  private:
   void PrintImports() const;
-  void PrintFileDescriptor() const;
-  void PrintTopLevelEnums() const;
-  void PrintAllNestedEnumsInFile() const;
-  void PrintNestedEnums(const google::protobuf::Descriptor& descriptor) const;
-  void PrintEnum(const google::protobuf::EnumDescriptor& enum_descriptor) const;
-
-  void PrintTopLevelExtensions() const;
-
-  void PrintFieldDescriptor(
-      const google::protobuf::FieldDescriptor& field, bool is_extension) const;
-  void PrintFieldDescriptorsInDescriptor(
-      const google::protobuf::Descriptor& message_descriptor,
-      bool is_extension,
-      const std::string& list_variable_name,
-      int (google::protobuf::Descriptor::*CountFn)() const,
-      const google::protobuf::FieldDescriptor* (google::protobuf::Descriptor::*GetterFn)(int) const) const;
-  void PrintFieldsInDescriptor(const google::protobuf::Descriptor& message_descriptor) const;
-  void PrintExtensionsInDescriptor(const google::protobuf::Descriptor& message_descriptor) const;
-  void PrintMessageDescriptors() const;
-  void PrintDescriptor(const google::protobuf::Descriptor& message_descriptor) const;
-  void PrintNestedDescriptors(const google::protobuf::Descriptor& containing_descriptor) const;
-
-  void PrintMessages() const;
-  void PrintMessage(const google::protobuf::Descriptor& message_descriptor) const;
-  void PrintNestedMessages(const google::protobuf::Descriptor& containing_descriptor) const;
-
-  void FixForeignFieldsInDescriptors() const;
-  void FixForeignFieldsInDescriptor(
-      const google::protobuf::Descriptor& descriptor,
-      const google::protobuf::Descriptor* containing_descriptor) const;
-  void FixForeignFieldsInField(const google::protobuf::Descriptor* containing_type,
-                               const google::protobuf::FieldDescriptor& field,
-                               const std::string& python_dict_name) const;
-  void AddMessageToFileDescriptor(const google::protobuf::Descriptor& descriptor) const;
-  std::string FieldReferencingExpression(const google::protobuf::Descriptor* containing_type,
-                                    const google::protobuf::FieldDescriptor& field,
-                                    const std::string& python_dict_name) const;
-  template <typename DescriptorT>
-  void FixContainingTypeInDescriptor(
-      const DescriptorT& descriptor,
-      const google::protobuf::Descriptor* containing_descriptor) const;
-
-  void FixForeignFieldsInExtensions() const;
-  void FixForeignFieldsInExtension(
-      const google::protobuf::FieldDescriptor& extension_field) const;
-  void FixForeignFieldsInNestedExtensions(const google::protobuf::Descriptor& descriptor) const;
 
   void PrintServices() const;
   void PrintServiceDescriptor(const google::protobuf::ServiceDescriptor& descriptor) const;
   void PrintServiceClass(const google::protobuf::ServiceDescriptor& descriptor) const;
   void PrintServiceStub(const google::protobuf::ServiceDescriptor& descriptor) const;
 
-  void PrintEnumValueDescriptor(const google::protobuf::EnumValueDescriptor& descriptor) const;
   std::string OptionsValue(const std::string& class_name,
                       const std::string& serialized_options) const;
   bool GeneratingDescriptorProto() const;
