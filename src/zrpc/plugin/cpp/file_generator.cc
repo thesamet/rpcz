@@ -73,15 +73,6 @@ void FileGenerator::GenerateHeader(io::Printer* printer) {
 
   GenerateNamespaceOpeners(printer);
 
-  // Forward-declare the AddDescriptors, AssignDescriptors, and ShutdownFile
-  // functions, so that we can declare them to be friends of each class.
-  printer->Print(
-    "\n"
-    "// Internal implementation detail -- do not call these.\n"
-    "void $dllexport_decl$ zrpc_$adddescriptorsname$();\n",
-    "adddescriptorsname", GlobalAddDescriptorsName(file_->name()),
-    "dllexport_decl", dllexport_decl_);
-
   printer->Print(
     // Note that we don't put dllexport_decl on these because they are only
     // called by the .pb.cc file in which they are defined.
@@ -90,6 +81,7 @@ void FileGenerator::GenerateHeader(io::Printer* printer) {
     "\n",
     "assigndescriptorsname", GlobalAssignDescriptorsName(file_->name()),
     "shutdownfilename", GlobalShutdownFileName(file_->name()));
+
   for (int i = 0; i < file_->service_count(); i++) {
     service_generators_[i]->GenerateDeclarations(printer);
   }
@@ -151,36 +143,12 @@ void FileGenerator::GenerateNamespaceClosers(io::Printer* printer) {
 }
 
 void FileGenerator::GenerateBuildDescriptors(io::Printer* printer) {
-  // AddDescriptors() is a file-level procedure which adds the encoded
-  // FileDescriptorProto for this .proto file to the global DescriptorPool
-  // for generated files (DescriptorPool::generated_pool()).  It always runs
-  // at static initialization time, so all files will be registered before
-  // main() starts.  This procedure also constructs default instances and
-  // registers extensions.
-  //
-  // Its sibling, AssignDescriptors(), actually pulls the compiled
-  // FileDescriptor from the DescriptorPool and uses it to populate all of
-  // the global variables which store pointers to the descriptor objects.
-  // It also constructs the reflection objects.  It is called the first time
-  // anyone calls descriptor() or GetReflection() on one of the types defined
-  // in the file.
-
-  // In optimize_for = LITE_RUNTIME mode, we don't generate AssignDescriptors()
-  // and we only use AddDescriptors() to allocate default instances.
   if (HasDescriptorMethods(file_)) {
     printer->Print(
       "\n"
       "void zrpc_$assigndescriptorsname$() {\n",
       "assigndescriptorsname", GlobalAssignDescriptorsName(file_->name()));
     printer->Indent();
-
-    // Make sure the file has found its way into the pool.  If a descriptor
-    // is requested *during* static init then AddDescriptors() may not have
-    // been called yet, so we call it manually.  Note that it's fine if
-    // AddDescriptors() is called multiple times.
-    printer->Print(
-      "zrpc_$adddescriptorsname$();\n",
-      "adddescriptorsname", GlobalAddDescriptorsName(file_->name()));
 
     // Get the file's descriptor from the pool.
     printer->Print(
@@ -315,20 +283,8 @@ void FileGenerator::GenerateBuildDescriptors(io::Printer* printer) {
 
   printer->Outdent();
 
-  printer->Print(
-    "}\n"
-    "\n"
-    "// Force AddDescriptors() to be called at static initialization time.\n"
-    "struct zrpc_StaticDescriptorInitializer_$filename$ {\n"
-    "  zrpc_StaticDescriptorInitializer_$filename$() {\n"
-    "    zrpc_$adddescriptorsname$();\n"
-    "  }\n"
-    "} zrpc_static_descriptor_initializer_$filename$_;\n"
-    "\n",
-    "adddescriptorsname", GlobalAddDescriptorsName(file_->name()),
-    "filename", FilenameIdentifier(file_->name()));
+  printer->Print("}\n");
 }
-
 
 }  // namespace cpp
 }  // namespace plugin

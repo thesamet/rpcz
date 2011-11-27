@@ -34,7 +34,7 @@ void Server::RegisterService(zrpc::Service *service) {
 
 namespace {
 struct RPCRequestContext {
-  RPC* rpc;
+  RPC rpc;
   ::google::protobuf::Message* request;
   ::google::protobuf::Message* response;
 };
@@ -51,23 +51,21 @@ void SendGenericResponse(::zmq::socket_t* socket,
 
 void FinalizeResponse(RPCRequestContext *context,
                       ::zmq::socket_t* socket) {
-  CHECK_NOTNULL(context->rpc);
   GenericRPCResponse generic_rpc_response;
-  if (context->rpc->OK()) {
+  if (context->rpc.OK()) {
     CHECK(context->response->SerializeToString(
             generic_rpc_response.mutable_payload()));
   } else {
     generic_rpc_response.set_status(
-        context->rpc->GetStatus());
+        context->rpc.GetStatus());
     generic_rpc_response.set_application_error(
-        context->rpc->GetApplicationError());
-    std::string error_message(context->rpc->GetErrorMessage());
+        context->rpc.GetApplicationError());
+    std::string error_message(context->rpc.GetErrorMessage());
     if (!error_message.empty()) {
       generic_rpc_response.set_error(error_message);
     }
   }
   SendGenericResponse(socket, generic_rpc_response); 
-  delete context->rpc;
   delete context->request;
   delete context->response;
   delete context;
@@ -121,8 +119,9 @@ void Server::HandleRequest(zmq::message_t* request) {
 
   ::google::protobuf::Closure *closure = ::google::protobuf::NewCallback(
       &FinalizeResponse, context, socket_);
-  service->CallMethod(descriptor, NULL, context->request, context->response,
-                      closure);
+  service->CallMethod(descriptor, &context->rpc,
+                      context->request,
+                      context->response, closure);
 }
 
 }  // namespace

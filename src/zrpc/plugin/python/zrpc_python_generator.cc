@@ -213,7 +213,7 @@ void FileGenerator::PrintServiceDescriptor(
   map<string, string> m;
   m["name"] = descriptor.name();
   m["full_name"] = descriptor.full_name();
-  m["file"] = kDescriptorKey;
+  m["file"] = ModuleName(file_->name()) + "." + kDescriptorKey;
   m["index"] = SimpleItoa(descriptor.index());
   m["options_value"] = OptionsValue("ServiceOptions", options_string);
   const char required_function_arguments[] =
@@ -328,9 +328,7 @@ string FileGenerator::ModuleLevelDescriptorName(
   name = "_" + name;
   // We now have the name relative to its own module.  Also qualify with
   // the module name iff this descriptor is from a different .proto file.
-  if (descriptor.file() != file_) {
-    name = ModuleName(descriptor.file()->name()) + "." + name;
-  }
+  name = ModuleName(descriptor.file()->name()) + "." + name;
   return name;
 }
 
