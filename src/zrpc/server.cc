@@ -13,7 +13,7 @@
 #include "zrpc/rpc.h"
 #include "zrpc/server.h"
 #include "zrpc/service.h"
-#include "zrpc/proto/zrpc.pb.h"
+#include "zrpc/zrpc.pb.h"
 
 namespace zrpc {
 
@@ -63,8 +63,8 @@ void Server::Start() {
 }
 
 void Server::RegisterService(zrpc::Service *service) {
-  VLOG(2) << "Registering service '" << service->GetDescriptor()->full_name() << "'";
-  service_map_[service->GetDescriptor()->full_name()] = service;
+  VLOG(2) << "Registering service '" << service->GetDescriptor()->name() << "'";
+  service_map_[service->GetDescriptor()->name()] = service;
 }
 
 namespace {

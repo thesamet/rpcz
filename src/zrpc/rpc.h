@@ -7,7 +7,7 @@
 #define ZRPC_RPC_H
 
 #include <string>
-#include "zrpc/proto/zrpc.pb.h"
+#include "zrpc/zrpc.pb.h"
 
 namespace zrpc {
 

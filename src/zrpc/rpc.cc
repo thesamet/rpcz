@@ -3,7 +3,7 @@
 //
 // Author: thesamet@gmail.com <Nadav Samet>
 
-#include "zrpc/proto/zrpc.pb.h"
+#include "zrpc/zrpc.pb.h"
 #include "zrpc/rpc.h"
 
 namespace zrpc {
