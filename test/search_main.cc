@@ -45,5 +45,6 @@ int main(int argc, char **argv) {
   zrpc::SearchServiceImpl search_service;
   server.RegisterService(&search_service);
   server.Start();
+  ::google::protobuf::ShutdownProtobufLibrary();
+  ::google::ShutdownGoogleLogging();
 }
-

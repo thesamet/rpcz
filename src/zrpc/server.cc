@@ -3,26 +3,63 @@
 //
 // Author: thesamet@gmail.com <Nadav Samet>
 
+#include <google/protobuf/descriptor.h>
+#include <google/protobuf/service.h>
+#include <glog/logging.h>
+#include <zmq.hpp>
+#include <iostream>
+#include <signal.h>
+
 #include "zrpc/rpc.h"
 #include "zrpc/server.h"
 #include "zrpc/service.h"
-#include <iostream>
-#include <zmq.hpp>
-#include "google/protobuf/descriptor.h"
-#include "google/protobuf/service.h"
-#include "glog/logging.h"
 #include "zrpc/proto/zrpc.pb.h"
 
 namespace zrpc {
 
+namespace {
+static int s_interrupted = 0;
+static void s_signal_handler (int signal_value)
+{
+  LOG(INFO) << "Received " << ((signal_value == SIGTERM) ? "SIGTERM" :
+                               (signal_value == SIGINT) ? "SIGINT" : "signal")
+                           << ".";
+  s_interrupted = 1;
+}
+
+static void s_catch_signals (void)
+{
+    struct sigaction action;
+    action.sa_handler = s_signal_handler;
+    action.sa_flags = 0;
+    sigemptyset (&action.sa_mask);
+    sigaction (SIGINT, &action, NULL);
+    sigaction (SIGTERM, &action, NULL);
+}
+}
+
 Server::Server(zmq::socket_t* socket) : socket_(socket) {}
 
 void Server::Start() {
-  while (true) {
+  s_catch_signals();
+  int requests = 0;
+  while (!s_interrupted && requests < 1000) {
+    ++requests;
     zmq::message_t request;
-    socket_->recv(&request);
+    try {
+      socket_->recv(&request);
+    } catch (zmq::error_t &e) {
+      if (e.num() == EINTR) {
+        VLOG(2) << "recv() interrupted.";
+        // Interrupts are ok, if we should stop, s_interrupted will be set for
+        // us.
+        continue;
+      }
+      throw;
+    }
     HandleRequest(&request);
   }
+  LOG(INFO) << "Server shutdown.";
 }
 
 void Server::RegisterService(zrpc::Service *service) {

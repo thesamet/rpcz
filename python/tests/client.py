@@ -15,7 +15,11 @@ def main():
     f = search_zrpc.SearchService_Stub(conn)
     request = search_pb2.SearchRequest()
     request.query = "bar"
-    print f.Search(request)
+    for y in xrange(1000):
+        try:
+            f.Search(request)
+        except:
+            pass
 
 
 if __name__ == "__main__":
