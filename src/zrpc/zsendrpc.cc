@@ -134,6 +134,7 @@ int Run(int argc, char *argv[]) {
     std::string payload(argv[4]);
     RunCall(endpoint, method, payload);
   }
+  return 0;
 }
 }  // namespace zrpc
 
