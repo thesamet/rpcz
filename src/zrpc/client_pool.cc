@@ -113,8 +113,15 @@ void* SimpleClient(void* arg) {
   while (true) {
     // s_dump(client_context->client_id, connection)) {
     // s_send(connection, "hithere");
-    ForwardMessage(connection, connection);
-    LOG(INFO) << "Replying";
+    try {
+      ForwardMessage(connection, connection);
+    } catch (zmq::error_t &e) {
+      if (e.num() == ETERM) {
+        LOG(INFO) << "Client shutdown";
+        return NULL;
+      }
+    }
+    LOG(INFO) << "Replied";
   }
   return NULL;
 }
@@ -133,7 +140,7 @@ int main(int argc, char *argv[]) {
   google::InstallFailureSignalHandler();
   FLAGS_logtostderr = true;
   zmq::context_t context(1);
-  zrpc::EventManager em(&context, 1);
+  zrpc::EventManager em(&context, 10);
   pthread_t thread;
   {
     zrpc::ClientContext *client_context = new zrpc::ClientContext;
@@ -141,11 +148,12 @@ int main(int argc, char *argv[]) {
     client_context->client_id = "moishe";
     pthread_create(&thread, NULL, zrpc::SimpleClient, client_context);
   }
-  usleep(500);
+  usleep(1000);
+
   zrpc::EventManagerController* controller = em.GetController();
   controller->AddRemoteEndpoint("moishe", "inproc://moishe");
   delete controller;
-  usleep(100);
+  usleep(1000);
 
   zrpc::ClientRequest client_request;
   client_request.status = zrpc::ClientRequest::OK;
@@ -153,32 +161,13 @@ int main(int argc, char *argv[]) {
       MyCallback, &client_request);
   
   zmq::socket_t req(context, ZMQ_REQ);
-  req.connect("inproc://clients.router");
+  req.connect("inproc://clients.app");
   s_sendmore(req, "FORWARD");
   s_sendmore(req, "moishe");
   zrpc::SendPointer(&req, &client_request, ZMQ_SNDMORE);
   s_sendmore(req, "lafefon");
   s_send(req, "hamutz");
   
-  // zrpc::ReadMessageToVector(&req, &data, &data);
-  /*
-  {
-    zrpc::ClientContext *client_context = new zrpc::ClientContext;
-    client_context->context = &context;
-    client_context->client_id = "shraga";
-    pthread_create(&thread, NULL, zrpc::SimpleClient, client_context);
-  }
-  usleep(1000);
-
-  zmq::socket_t connection(context, ZMQ_DEALER);
-  connection.setsockopt(ZMQ_IDENTITY, "user", 4);
-  connection.connect("inproc://clients.router");
-  s_sendmore(connection, "moishe");
-  s_sendmore(connection, "");
-  s_send(connection, "hello");
-  s_dump("app", connection);
-
-  */
   sleep(5);
   google::ShutdownGoogleLogging();
   return 0;

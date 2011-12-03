@@ -6,24 +6,18 @@
 #ifndef ZRPC_EVENT_MANAGER_H
 #define ZRPC_EVENT_MANAGER_H
 
-#include "macros.h"
 #include <pthread.h>
 #include <string>
 #include <vector>
+#include "macros.h"
 
 namespace zmq {
 class context_t;
 class message_t;
+class socket_t;
 }  // namespace zmq
 
-namespace google{
-namespace protobuf {
-class Closure;
-}  // namespace protobuf
-}  // namespace google
-
 namespace zrpc {
-
 struct ClientRequest {
   enum Status {
     OK = 0,
@@ -31,7 +25,7 @@ struct ClientRequest {
   };
   Status status;
   std::vector<zmq::message_t*> result;
-  google::protobuf::Closure* closure;
+  Closure* closure;
 };
 
 class EventManagerController;
@@ -49,7 +43,9 @@ class EventManager {
   private:
     zmq::context_t* context_;
     int nthreads_;
-    std::vector<pthread_t> threads;
+    std::vector<pthread_t> threads_;
+    pthread_t worker_device_thread_;
+    pthread_t pubsub_device_thread_;
     DISALLOW_COPY_AND_ASSIGN(EventManager);
 };
 
