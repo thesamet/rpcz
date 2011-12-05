@@ -7,11 +7,18 @@
 #define ZRPC_ZMQ_UTILS_H
 
 #include "zmq_utils.h"
+
+#include <i386/types.h>
+#include <stddef.h>
+#include <string.h>
+#include <zmq.h>
+#include <ostream>
+#include <string>
+#include <vector>
+
 #include "glog/logging.h"
 #include "google/protobuf/stubs/common.h"
 #include "zmq.hpp"
-#include <vector>
-#include <string>
 
 namespace zrpc {
 std::string MessageToString(zmq::message_t* msg) {

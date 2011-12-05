@@ -6,8 +6,15 @@
 #ifndef ZRPC_ZRPC_CPP_GENERATOR_H
 #define ZRPC_ZRPC_CPP_GENERATOR_H
 
-#include <string>
 #include <google/protobuf/compiler/code_generator.h>
+#include <google/protobuf/stubs/common.h>
+#include <string>
+
+namespace google {
+namespace protobuf {
+class FileDescriptor;
+}  // namespace protobuf
+}  // namespace google
 
 namespace zrpc {
 namespace plugin {

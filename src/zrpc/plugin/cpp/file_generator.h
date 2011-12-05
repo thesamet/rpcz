@@ -6,15 +6,24 @@
 #ifndef ZRPC_FILE_GENERATOR_H
 #define ZRPC_FILE_GENERATOR_H
 
-#include "zrpc/plugin/cpp/zrpc_cpp_service.h"
-
 #include <string>
 #include <vector>
+
+#include "zrpc/plugin/cpp/zrpc_cpp_service.h"
+
+namespace zrpc {
+namespace plugin {
+namespace cpp {
+class ServiceGenerator;
+}  // namespace cpp
+}  // namespace plugin
+}  // namespace zrpc
 
 namespace google {
 namespace protobuf {
 class FileDescriptor;
 class ServiceDescriptor;
+
 namespace io {
 class Printer;
 }

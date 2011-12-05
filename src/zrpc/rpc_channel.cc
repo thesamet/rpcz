@@ -3,12 +3,16 @@
 //
 // Author: thesamet@gmail.com <Nadav Samet>
 
-#include <glog/logging.h>
+#include <google/protobuf/message.h>
+#include <string.h>
+#include <string>
+#include <vector>
+
 #include "google/protobuf/descriptor.h"
 #include "rpc_channel.h"
 #include "zmq.hpp"
 #include "zrpc/event_manager.h"
-#include "zrpc/rpc.h"
+#include "zrpc/macros.h"
 #include "zrpc/zrpc.pb.h"
 
 namespace zrpc {

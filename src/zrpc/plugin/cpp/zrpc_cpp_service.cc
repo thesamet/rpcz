@@ -4,9 +4,12 @@
 // Author: thesamet@gmail.com <Nadav Samet>
 
 #include "zrpc/plugin/cpp/zrpc_cpp_service.h"
-#include "zrpc/plugin/cpp/cpp_helpers.h"
-#include "zrpc/plugin/common/strutil.h"
+
+#include <google/protobuf/descriptor.h>
 #include <google/protobuf/io/printer.h>
+
+#include "zrpc/plugin/common/strutil.h"
+#include "zrpc/plugin/cpp/cpp_helpers.h"
 
 namespace zrpc {
 namespace plugin {

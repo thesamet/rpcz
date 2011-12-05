@@ -35,10 +35,9 @@
 #ifndef ZRPC_PLUGIN_PYTHON_ZRPC_PYTHON_GENERATOR_H
 #define ZRPC_PLUGIN_PYTHON_ZRPC_PYTHON_GENERATOR_H
 
-#include <string>
-
 #include <google/protobuf/compiler/code_generator.h>
 #include <google/protobuf/stubs/common.h>
+#include <string>
 
 namespace google {
 namespace protobuf {
@@ -47,7 +46,10 @@ class EnumDescriptor;
 class EnumValueDescriptor;
 class FieldDescriptor;
 class ServiceDescriptor;
-namespace io { class Printer; }
+class FileDescriptor;
+namespace io {
+class Printer;
+}  // namespace io
 }  // namespace protobuf
 }  // namespace google
 

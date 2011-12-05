@@ -4,16 +4,25 @@
 // Author: thesamet@gmail.com <Nadav Samet>
 
 #include "event_manager.h"
+
 #include <pthread.h>
-#include <map>
-#include <string>
-#include <vector>
+#include <stddef.h>
+#include <unistd.h>
+#include <zmq.h>
 #include <zmq.hpp>
-#include "zrpc/event_manager_controller.h"
+#include <algorithm>
+#include <map>
+#include <ostream>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "glog/logging.h"
 #include "google/protobuf/stubs/common.h"
 #include "rpc_channel.h"
 #include "zmq_utils.h"
+#include "zrpc/event_manager_controller.h"
+#include "zrpc/macros.h"
 
 namespace zrpc {
 namespace {

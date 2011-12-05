@@ -6,7 +6,9 @@
 #ifndef ZRPC_RPC_CHANNEL_H
 #define ZRPC_RPC_CHANNEL_H
 
+#include <google/protobuf/stubs/common.h>
 #include <string>
+
 #include "macros.h"
 #include "zrpc/event_manager_controller.h"
 
@@ -18,11 +20,11 @@ class MethodDescriptor;
 }  // namespace google
 
 namespace zrpc {
-struct ClientRequest;
 class Connection;
 class EventManager;
 class EventManagerController;
 class RPC;
+struct ClientRequest;
 struct  RPCResponseContext;
 
 class RpcChannel {

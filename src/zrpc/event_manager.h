@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <string>
 #include <vector>
+
 #include "macros.h"
 
 namespace zmq {

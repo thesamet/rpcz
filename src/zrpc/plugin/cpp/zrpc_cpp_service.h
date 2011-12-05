@@ -6,10 +6,16 @@
 #ifndef ZRPC_CPP_SERVICE_H
 #define ZRPC_CPP_SERVICE_H
 
+#include <google/protobuf/descriptor.h>
+#include <google/protobuf/stubs/common.h>
 #include <map>
 #include <string>
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/descriptor.h>
+
+namespace google {
+namespace protobuf {
+class ServiceDescriptor;
+}  // namespace protobuf
+}  // namespace google
 
 namespace google {
 namespace protobuf {

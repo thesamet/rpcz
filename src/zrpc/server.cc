@@ -3,12 +3,18 @@
 //
 // Author: thesamet@gmail.com <Nadav Samet>
 
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/service.h>
 #include <glog/logging.h>
+#include <google/protobuf/descriptor.h>
+#include <google/protobuf/message.h>
+#include <google/protobuf/stubs/common.h>
+#include <signal.h>
+#include <string.h>
+#include <sys/errno.h>
+#include <sys/signal.h>
+#include <zmq.h>
 #include <zmq.hpp>
 #include <iostream>
-#include <signal.h>
+#include <utility>
 
 #include "zrpc/rpc.h"
 #include "zrpc/server.h"
