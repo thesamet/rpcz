@@ -33,7 +33,8 @@ int main(int argc, char *argv[]) {
   zmq::context_t context(1);
   zrpc::EventManager em(&context, 10);
 
-  zrpc::scoped_ptr<zrpc::Connection> connection(zrpc::Connection::CreateConnection(
+  zrpc::scoped_ptr<zrpc::Connection> connection(
+      zrpc::Connection::CreateConnection(
           &em, "tcp://localhost:5555"));
 
   zrpc::SearchService_Stub stub(connection->MakeChannel());

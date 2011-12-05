@@ -251,10 +251,10 @@ class EventManagerThread {
   }
 
   void AddRemoteEndpoint(
-      const std::string& remote_name,
+      Connection* connection,
       const std::string& remote_endpoint) {
     zmq::socket_t *socket = new zmq::socket_t(*context_, ZMQ_DEALER);
-    connection_map_[remote_name] = socket;
+    connection_map_[connection] = socket;
     sockets_.push_back(socket);
     socket->connect(remote_endpoint.c_str());
     is_dirty_ = true;
@@ -262,11 +262,11 @@ class EventManagerThread {
 
   template<typename ForwardIterator>
   uint64 ForwardRemote(
-    const std::string& remote_name,
+    Connection* connection,
     ClientRequest* client_request,
     ForwardIterator begin,
     ForwardIterator end) {
-    ConnectionMap::const_iterator it = connection_map_.find(remote_name);
+    ConnectionMap::const_iterator it = connection_map_.find(connection);
     CHECK(it != connection_map_.end());
     uint64 event_id = event_id_generator_.GetNext();
     client_request_map_[event_id] = client_request;
@@ -296,7 +296,7 @@ class EventManagerThread {
     Closure* closure(InterpretMessage<Closure*>(*data[1]));
     if (command == kAddRemote) {
       CHECK_EQ(data.size(), 4);
-      AddRemoteEndpoint(MessageToString(data[2]),
+      AddRemoteEndpoint(InterpretMessage<Connection*>(*data[2]),
                         MessageToString(data[3]));
     } else if (command == kQuit) {
       should_quit_ = true;
@@ -317,11 +317,10 @@ class EventManagerThread {
     if (command == kForward) {
       LOG(INFO) << "Inhere";
       CHECK_GE(data.size(), 3);
-      ClientRequest* client_request(
-          InterpretMessage<ClientRequest*>(*data[2]));
-      ForwardRemote(MessageToString(data[1]),
-                    client_request,
-                    data.begin() + 3, data.end());
+      ForwardRemote(
+          InterpretMessage<Connection*>(*data[1]),
+          InterpretMessage<ClientRequest*>(*data[2]),
+          data.begin() + 3, data.end());
       // ForwardRemote handles its own message delete or delegates it.
       return;
     } else if (command == kCall) {
@@ -330,12 +329,6 @@ class EventManagerThread {
       ReplyOK(app_socket, routes);
     } else if (command == kHello) {
       ReplyOK(app_socket, routes);
-    } else if (command == kAddRemote) {
-      CHECK_EQ(data.size(), 3);
-      AddRemoteEndpoint(MessageToString(data[1]),
-                        MessageToString(data[2]));
-      ReplyOK(app_socket, routes);
-      LOG(INFO)<<"Remote added.";
     } else {
       CHECK(false) << "Got unknown command: " << command;
     }
@@ -367,7 +360,7 @@ class EventManagerThread {
   bool is_dirty_;
   zmq::context_t* context_;
   std::vector<zmq::socket_t*> sockets_;
-  typedef std::map<std::string, zmq::socket_t*> ConnectionMap;
+  typedef std::map<Connection*, zmq::socket_t*> ConnectionMap;
   typedef std::map<uint64, ClientRequest*> ClientRequestMap;
   ConnectionMap connection_map_;
   ClientRequestMap client_request_map_;
