@@ -45,10 +45,6 @@ void ZMQRpcChannel::CallMethod(
   response_context->rpc = rpc;
   response_context->user_closure = done;
   response_context->response = response;
-  response_context->client_request.closure = NewCallback(
-      this,
-      &ZMQRpcChannel::HandleClientResponse,
-      response_context);
   controller_->Forward(connection_,
                        &response_context->client_request,
                        vout);
@@ -57,6 +53,7 @@ void ZMQRpcChannel::CallMethod(
 void ZMQRpcChannel::HandleClientResponse(
     RPCResponseContext* response_context) {
   GenericRPCResponse generic_response;
+  /*
   zmq::message_t& msg_in = *response_context->client_request.result[0];
   CHECK(generic_response.ParseFromArray(msg_in.data(), msg_in.size()));
   if (generic_response.status() != GenericRPCResponse::OK) {
@@ -68,6 +65,7 @@ void ZMQRpcChannel::HandleClientResponse(
             generic_response.payload())); 
   }
   response_context->user_closure->Run();
+  */
   delete response_context;
 }
 }  // namespace zrpc

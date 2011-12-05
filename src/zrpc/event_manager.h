@@ -27,8 +27,7 @@ struct ClientRequest {
     FAILED = 1
   };
   Status status;
-  std::vector<zmq::message_t*> result;
-  Closure* closure;
+  std::vector<zmq::message_t*> return_path;
 };
 
 class EventManager {

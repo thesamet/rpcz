@@ -226,7 +226,7 @@ class EventManagerThread {
         } else if (pollitems[i].socket == *sub_socket) {
           HandleSubscribeSocket(sub_socket);
         } else {
-          HandleClientSocket(sockets_[i]);
+          HandleClientSocket(app_socket, sockets_[i]);
         }
       }
     }
@@ -317,9 +317,12 @@ class EventManagerThread {
     if (command == kForward) {
       LOG(INFO) << "Inhere";
       CHECK_GE(data.size(), 3);
+      ClientRequest* client_request = 
+          InterpretMessage<ClientRequest*>(*data[2]);
+      client_request->return_path = routes;
       ForwardRemote(
           InterpretMessage<Connection*>(*data[1]),
-          InterpretMessage<ClientRequest*>(*data[2]),
+          client_request,
           data.begin() + 3, data.end());
       // ForwardRemote handles its own message delete or delegates it.
       return;
@@ -336,7 +339,7 @@ class EventManagerThread {
     DeleteContainerPointers(data.begin(), data.end());
   }
 
-  void HandleClientSocket(zmq::socket_t* socket) {
+  void HandleClientSocket(zmq::socket_t* app_socket, zmq::socket_t* socket) {
     std::vector<zmq::message_t*> messages;
     ReadMessageToVector(socket, &messages);
     CHECK(messages.size() >= 1);
@@ -349,10 +352,12 @@ class EventManagerThread {
       return;
     }
     ClientRequest*& client_request = iter->second;
-    client_request->result.resize(messages.size() - 2);
+    std::vector<zmq::message_t*> result;
+    result.resize(messages.size() - 2);
     std::copy(messages.begin() + 2,
-              messages.end(), client_request->result.begin());
-    client_request->closure->Run();
+              messages.end(), result.begin());
+    WriteVectorsToSocket(app_socket, client_request->return_path,
+                         result);
     DeleteContainerPointers(messages.begin(), messages.begin() + 2);
   }
 

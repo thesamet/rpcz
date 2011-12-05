@@ -1,3 +1,4 @@
+set(CMAKE_CXX_COMPILER_WORKS:INTERNAL 1)
 enable_testing()
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
