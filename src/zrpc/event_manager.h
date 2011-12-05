@@ -18,6 +18,9 @@ class socket_t;
 }  // namespace zmq
 
 namespace zrpc {
+class EventManagerController;
+class RpcChannel;
+
 struct ClientRequest {
   enum Status {
     OK = 0,
@@ -27,8 +30,6 @@ struct ClientRequest {
   std::vector<zmq::message_t*> result;
   Closure* closure;
 };
-
-class EventManagerController;
 
 class EventManager {
   public:
@@ -49,15 +50,19 @@ class EventManager {
     DISALLOW_COPY_AND_ASSIGN(EventManager);
 };
 
-class EventManagerController {
+class Connection {
  public:
-  virtual void AddRemoteEndpoint(const std::string& remote_name,
-                                 const std::string& remote_endpoint) = 0;
+  static Connection* CreateConnection(
+      EventManager* em, const std::string& endpoint);
 
-  virtual void Quit() = 0;
+  // Creates a thread-specific RpcChannel for this connection.
+  virtual RpcChannel* MakeChannel() = 0;
 
-  virtual ~EventManagerController() {};
+ protected:
+  Connection() {};
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(Connection);
 };
-}  // namespace
-
+}  // namespace zrpc
 #endif

@@ -8,4 +8,8 @@ add_executable(search_test search_main.cc)
 target_link_libraries(search_test
     search_pb zrpc glog zmq gflags)
 
+add_executable(client_test client_test.cc)
+target_link_libraries(client_test
+    search_pb zrpc glog zmq gflags)
+
 # add_test(SearchTest search_test --logtostderr)

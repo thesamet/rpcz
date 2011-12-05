@@ -65,9 +65,9 @@ bool ReadMessageToVector(zmq::socket_t* socket,
   }
 }
 
-void WriteVectorsToSocket(zmq::socket_t* socket,
-                          const std::vector<zmq::message_t*>& data,
-                          int flags=0) {
+void WriteVectorToSocket(zmq::socket_t* socket,
+                         const std::vector<zmq::message_t*>& data,
+                         int flags=0) {
   for (int i = 0; i < data.size(); ++i) {
     socket->send(*data[i], 
                  flags |
@@ -79,8 +79,8 @@ void WriteVectorsToSocket(zmq::socket_t* socket,
                           const std::vector<zmq::message_t*>& routes,
                           const std::vector<zmq::message_t*>& data) {
   CHECK_GE(data.size(), 1);
-  WriteVectorsToSocket(socket, routes, ZMQ_SNDMORE);
-  WriteVectorsToSocket(socket, data, 0);
+  WriteVectorToSocket(socket, routes, ZMQ_SNDMORE);
+  WriteVectorToSocket(socket, data, 0);
 }
 
 void SendString(zmq::socket_t* socket,
@@ -104,7 +104,7 @@ bool ForwardMessage(zmq::socket_t &socket_in,
   std::vector<zmq::message_t*> routes;
   std::vector<zmq::message_t*> data;
   CHECK(!ReadMessageToVector(&socket_in, &routes, &data));
-  WriteVectorsToSocket(&socket_out, routes); 
+  WriteVectorToSocket(&socket_out, routes); 
   return true;
 }
 }  // namespace

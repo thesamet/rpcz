@@ -36,7 +36,7 @@ void ServiceGenerator::GenerateDeclarations(io::Printer* printer) {
     "\n");
 
   GenerateInterface(printer);
-  // GenerateStubDefinition(printer);
+  GenerateStubDefinition(printer);
 }
 
 void ServiceGenerator::GenerateInterface(io::Printer* printer) {
@@ -90,10 +90,10 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
   printer->Indent();
 
   printer->Print(vars_,
-    "$classname$_Stub(::google::protobuf::RpcChannel* channel);\n"
+    "$classname$_Stub(::zrpc::RpcChannel* channel);\n"
     "~$classname$_Stub();\n"
     "\n"
-    "inline ::google::protobuf::RpcChannel* channel() { return channel_; }\n"
+    "inline ::zrpc::RpcChannel* channel() { return channel_; }\n"
     "\n"
     "// implements $classname$ ------------------------------------------\n"
     "\n");
@@ -103,7 +103,7 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
   printer->Outdent();
   printer->Print(vars_,
     " private:\n"
-    "  ::google::protobuf::RpcChannel* channel_;\n"
+    "  ::zrpc::RpcChannel* channel_;\n"
     "  bool owns_channel_;\n"
     "  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS($classname$_Stub);\n"
     "};\n"
@@ -164,9 +164,8 @@ void ServiceGenerator::GenerateImplementation(io::Printer* printer) {
   GenerateGetPrototype(RESPONSE, printer);
 
   // Generate stub implementation.
-  /*
   printer->Print(vars_,
-    "$classname$_Stub::$classname$_Stub(::google::protobuf::RpcChannel* channel)\n"
+    "$classname$_Stub::$classname$_Stub(::zrpc::RpcChannel* channel)\n"
     "  : channel_(channel), owns_channel_(false) {}\n"
     "$classname$_Stub::~$classname$_Stub() {\n"
     "  if (owns_channel_) delete channel_;\n"
@@ -174,7 +173,6 @@ void ServiceGenerator::GenerateImplementation(io::Printer* printer) {
     "\n");
 
   GenerateStubMethods(printer);
-  */
 }
 
 void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {

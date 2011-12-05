@@ -23,6 +23,10 @@ bool ReadMessageToVector(zmq::socket_t* socket,
                          std::vector<zmq::message_t*>* routes,
                          std::vector<zmq::message_t*>* data);
 
+void WriteVectorToSocket(zmq::socket_t* socket,
+                         const std::vector<zmq::message_t*>& data,
+                         int flags=0);
+
 void WriteVectorsToSocket(zmq::socket_t* socket,
                           const std::vector<zmq::message_t*>& routes,
                           const std::vector<zmq::message_t*>& data);

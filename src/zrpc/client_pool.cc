@@ -8,93 +8,15 @@
 #include <vector>
 #include <zmq.hpp>
 
+#include <google/protobuf/descriptor.h>
 #include "zrpc/event_manager.h"
+#include "zrpc/rpc.h"
+#include "zrpc/zrpc.pb.h"
+#include "zrpc/service.h"
 #include "glog/logging.h"
 #include "gflags/gflags.h"
 
 #include "zmq_utils.h"
-
-
-namespace {
-bool ReadMessageToVector(zmq::socket_t* socket,
-                         std::vector<zmq::message_t*>* routes,
-                         std::vector<zmq::message_t*>* data) {
-  bool first_part = true;
-  while (1) {
-    zmq::message_t *msg = new zmq::message_t;
-    socket->recv(msg, 0);
-    int64_t more;           //  Multipart detection
-    size_t more_size = sizeof (more);
-    socket->getsockopt(ZMQ_RCVMORE, &more, &more_size);
-    if (first_part) {
-      routes->push_back(msg);
-      if (msg->size() == 0) {
-        first_part = false;
-      }
-    } else {
-      data->push_back(msg);
-    }
-    if (!more) {
-      return !first_part;
-    }
-  }
-  return !first_part;
-}
-//  Convert C string to 0MQ string and send to socket
-static int
-s_send (void *socket, const char *string) {
-    int rc;
-    zmq_msg_t message;
-    zmq_msg_init_size (&message, strlen (string));
-    memcpy (zmq_msg_data (&message), string, strlen (string));
-    rc = zmq_send (socket, &message, 0);
-    zmq_msg_close (&message);
-    return (rc);
-}
-
-//  Sends string as 0MQ string, as multipart non-terminal
-static int
-s_sendmore (void *socket, const char *string) {
-    int rc;
-    zmq_msg_t message;
-    zmq_msg_init_size (&message, strlen (string));
-    memcpy (zmq_msg_data (&message), string, strlen (string));
-    rc = zmq_send (socket, &message, ZMQ_SNDMORE);
-    zmq_msg_close (&message);
-    return (rc);
-}
-
-static bool
-s_dump (const char *client_id, void *socket)
-{
-    LOG(INFO) << client_id << ": ----------------------------------------";
-    while (1) {
-        //  Process all parts of the message
-        zmq_msg_t message;
-        zmq_msg_init (&message);
-        int rc;
-        if ((rc = zmq_recv (socket, &message, 0)) != 0) {
-          LOG(INFO) << client_id << ": error " << zmq_errno();
-          return false;
-        }
-
-        //  Dump the message as text or binary
-        char *data = (char*)zmq_msg_data (&message);
-        int size = zmq_msg_size (&message);
-        LOG(INFO) << client_id << " [" << size << "]:  "
-                  << std::string(data, size);
-
-        int64_t more;           //  Multipart detection
-        size_t more_size = sizeof (more);
-        zmq_getsockopt (socket, ZMQ_RCVMORE, &more, &more_size);
-        zmq_msg_close (&message);
-        if (!more)
-            break;      //  Last message part
-    }
-    return true;
-}
-
-}
 
 namespace zrpc {
 
@@ -162,11 +84,11 @@ int main(int argc, char *argv[]) {
   
   zmq::socket_t req(context, ZMQ_REQ);
   req.connect("inproc://clients.app");
-  s_sendmore(req, "FORWARD");
-  s_sendmore(req, "moishe");
+  zrpc::SendString(&req, "FORWARD", ZMQ_SNDMORE);
+  zrpc::SendString(&req, "moishe", ZMQ_SNDMORE);
   zrpc::SendPointer(&req, &client_request, ZMQ_SNDMORE);
-  s_sendmore(req, "lafefon");
-  s_send(req, "hamutz");
+  zrpc::SendString(&req, "lafefon", ZMQ_SNDMORE);
+  zrpc::SendString(&req, "hamutz");
   
   sleep(5);
   google::ShutdownGoogleLogging();

@@ -29,7 +29,7 @@ class Server {
   void RegisterService(zrpc::Service *service);
 
  private:
-  void HandleRequest(zmq::message_t* request);
+  void HandleRequest(zmq::message_t* request_id, zmq::message_t* request);
 
   zmq::socket_t* socket_;
   typedef std::map<std::string, zrpc::Service*> ServiceMap;

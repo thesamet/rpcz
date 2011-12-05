@@ -45,6 +45,7 @@ void FileGenerator::GenerateHeader(io::Printer* printer) {
     "#define ZRPC_$filename_identifier$__INCLUDED\n"
     "\n"
     "#include <string>\n"
+    "#include <zrpc/rpc_channel.h>\n"
     "#include <zrpc/service.h>\n"
     "\n"
     "namespace google {\n"

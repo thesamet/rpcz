@@ -109,13 +109,6 @@ string NamePrefixedWithNestedTypes(const DescriptorT& descriptor,
 const char kDescriptorKey[] = "DESCRIPTOR";
 
 
-// Should we generate generic services for this file?
-inline bool HasGenericServices(const FileDescriptor *file) {
-  return file->service_count() > 0 &&
-         file->options().py_generic_services();
-}
-
-
 // Prints the common boilerplate needed at the top of every .py
 // file output by this generator.
 void PrintTopBoilerplate(

@@ -9,8 +9,10 @@
 #include <string>
 #include <vector>
 #include <zmq.hpp>
+#include "zrpc/event_manager_controller.h"
 #include "glog/logging.h"
 #include "google/protobuf/stubs/common.h"
+#include "rpc_channel.h"
 #include "zmq_utils.h"
 
 namespace zrpc {
@@ -77,12 +79,21 @@ class EventManagerControllerImpl : public EventManagerController {
     pub_.connect(pub_endpoint.c_str());
   }
 
-  void AddRemoteEndpoint(const std::string& remote_name,
+  void AddRemoteEndpoint(Connection* connection,
                          const std::string& remote_endpoint) {
     SendString(&pub_, kAddRemote, ZMQ_SNDMORE);
-    SendPointer<Closure*>(&pub_, NULL, ZMQ_SNDMORE);
-    SendString(&pub_, remote_name, ZMQ_SNDMORE);
+    SendPointer<Closure>(&pub_, NULL, ZMQ_SNDMORE);
+    SendPointer<Connection>(&pub_, connection, ZMQ_SNDMORE);
     SendString(&pub_, remote_endpoint, 0);
+  }
+
+  void Forward(Connection* connection,
+               ClientRequest* client_request,
+               const std::vector<zmq::message_t*>& messages) {
+    SendString(&dealer_, kForward, ZMQ_SNDMORE);
+    SendPointer(&dealer_, connection, ZMQ_SNDMORE);
+    SendPointer<ClientRequest>(&dealer_, client_request, ZMQ_SNDMORE);
+    WriteVectorToSocket(&dealer_, messages);
   }
 
   void Quit() {
@@ -181,9 +192,9 @@ class EventManagerThread {
       zmq::context_t *context)
       : dealer_endpoint_(dealer_endpoint),
         pubsub_endpoint_(pubsub_endpoint),
-        context_(context),
         should_quit_(false),
-        is_dirty_(true) {
+        is_dirty_(true),
+        context_(context) {
         }
 
   void Start() {
@@ -204,6 +215,7 @@ class EventManagerThread {
         is_dirty_ = false;
       }
       int rc = zmq::poll(&pollitems[0], pollitems.size(), 1000000);
+      CHECK_NE(rc, -1);
       for (int i = 0; i < pollitems.size(); ++i) {
         if (!pollitems[i].revents & ZMQ_POLLIN) {
           continue;
@@ -362,6 +374,28 @@ class EventManagerThread {
   EventIdGenerator event_id_generator_;
   DISALLOW_COPY_AND_ASSIGN(EventManagerThread);
 };
+
+class ConnectionImpl : public Connection {
+ public:
+  ConnectionImpl(EventManager* event_manager)
+      : Connection(), event_manager_(event_manager) {}
+
+  virtual RpcChannel* MakeChannel() {
+    return new ZMQRpcChannel(event_manager_->GetController(), this);
+  }
+
+ private:
+  EventManager* event_manager_;
+  DISALLOW_COPY_AND_ASSIGN(ConnectionImpl);
+};
+
+Connection* Connection::CreateConnection(
+    EventManager* em, const std::string& endpoint) {
+  zrpc::scoped_ptr<EventManagerController> controller(em->GetController());
+  Connection* connection = new ConnectionImpl(em);
+  controller->AddRemoteEndpoint(connection, endpoint);
+  return connection;
+}
 
 namespace {
 void EventManagerThreadEntryPoint(const

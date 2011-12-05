@@ -45,9 +45,10 @@ void Server::Start() {
   int requests = 0;
   while (!s_interrupted && requests < 1000) {
     ++requests;
+    zmq::message_t request_id;
     zmq::message_t request;
     try {
-      socket_->recv(&request);
+      socket_->recv(&request_id);
     } catch (zmq::error_t &e) {
       if (e.num() == EINTR) {
         VLOG(2) << "recv() interrupted.";
@@ -57,7 +58,8 @@ void Server::Start() {
       }
       throw;
     }
-    HandleRequest(&request);
+    socket_->recv(&request);
+    HandleRequest(&request_id, &request);
   }
   LOG(INFO) << "Server shutdown.";
 }
@@ -72,15 +74,18 @@ struct RPCRequestContext {
   RPC rpc;
   ::google::protobuf::Message* request;
   ::google::protobuf::Message* response;
+  zmq::message_t* request_id;
 };
 
 void SendGenericResponse(::zmq::socket_t* socket,
+                         zmq::message_t* request_id,
                          const GenericRPCResponse& generic_rpc_response) {
   std::string serialized_generic_response;
   CHECK(generic_rpc_response.SerializeToString(&serialized_generic_response));
   zmq::message_t zmq_response_message(serialized_generic_response.length());
   memcpy(zmq_response_message.data(), serialized_generic_response.c_str(),
          serialized_generic_response.length());
+  socket->send(*request_id, ZMQ_SNDMORE);
   socket->send(zmq_response_message);
 }
 
@@ -100,13 +105,15 @@ void FinalizeResponse(RPCRequestContext *context,
       generic_rpc_response.set_error(error_message);
     }
   }
-  SendGenericResponse(socket, generic_rpc_response); 
+  SendGenericResponse(socket, context->request_id, generic_rpc_response); 
   delete context->request;
   delete context->response;
   delete context;
 }
 
-void ReplyWithAppError(zmq::socket_t* socket, int application_error,
+void ReplyWithAppError(zmq::socket_t* socket,
+                       zmq::message_t *request_id,
+                       int application_error,
                        const std::string& error="") {
   GenericRPCResponse response;
   response.set_status(GenericRPCResponse::APPLICATION_ERROR);
@@ -114,24 +121,24 @@ void ReplyWithAppError(zmq::socket_t* socket, int application_error,
   if (!error.empty()) {
     response.set_error(error);
   }
-  SendGenericResponse(socket, response);
+  SendGenericResponse(socket, request_id, response);
 }
 }
 
-void Server::HandleRequest(zmq::message_t* request) {
+void Server::HandleRequest(zmq::message_t* request_id, zmq::message_t* request) {
   GenericRPCRequest generic_rpc_request;
   VLOG(2) << "Received request of size " << request->size();
   if (!generic_rpc_request.ParseFromArray(request->data(), request->size())) {
     // Handle bad RPC.
     VLOG(2) << "Received corrupt message.";
-    ReplyWithAppError(socket_, GenericRPCResponse::INVALID_GENERIC_WRAPPER);
+    ReplyWithAppError(socket_, request_id, GenericRPCResponse::INVALID_GENERIC_WRAPPER);
     return;
   };
   ServiceMap::const_iterator service_it = service_map_.find(
       generic_rpc_request.service());
   if (service_it == service_map_.end()) {
     // Handle invalid service.
-    ReplyWithAppError(socket_, GenericRPCResponse::UNKNOWN_SERVICE);
+    ReplyWithAppError(socket_, request_id, GenericRPCResponse::UNKNOWN_SERVICE);
     return;
   }
   zrpc::Service* service = service_it->second;
@@ -139,17 +146,18 @@ void Server::HandleRequest(zmq::message_t* request) {
       service->GetDescriptor()->FindMethodByName(generic_rpc_request.method());
   if (descriptor == NULL) {
     // Invalid method name
-    ReplyWithAppError(socket_, GenericRPCResponse::UNKNOWN_METHOD);
+    ReplyWithAppError(socket_, request_id, GenericRPCResponse::UNKNOWN_METHOD);
     return;
   }
   RPCRequestContext* context = CHECK_NOTNULL(new RPCRequestContext);
+  context->request_id = request_id;
   context->request = CHECK_NOTNULL(
       service->GetRequestPrototype(descriptor).New());
   context->response = CHECK_NOTNULL(
       service->GetResponsePrototype(descriptor).New());
   if (!context->request->ParseFromString(generic_rpc_request.payload())) {
     // Invalid proto;
-    ReplyWithAppError(socket_, GenericRPCResponse::INVALID_MESSAGE);
+    ReplyWithAppError(socket_, request_id, GenericRPCResponse::INVALID_MESSAGE);
     delete context->request;
     delete context->response;
     return;
