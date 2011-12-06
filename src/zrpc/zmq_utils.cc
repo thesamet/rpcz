@@ -78,7 +78,7 @@ void WriteVectorToSocket(zmq::socket_t* socket,
   for (int i = 0; i < data.size(); ++i) {
     socket->send(*data[i], 
                  flags |
-                 ((i < data.size() - 1) ? ZMQ_SNDMORE : 0) | flags);
+                 ((i < data.size() - 1) ? ZMQ_SNDMORE : 0));
   }
 }
 

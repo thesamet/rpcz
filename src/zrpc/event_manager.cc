@@ -14,6 +14,7 @@
 #include <map>
 #include <ostream>
 #include <string>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -23,6 +24,7 @@
 #include "zmq_utils.h"
 #include "zrpc/event_manager_controller.h"
 #include "zrpc/macros.h"
+#include "zrpc/reactor.h"
 
 namespace zrpc {
 namespace {
@@ -59,6 +61,7 @@ class EventManagerThreadParams {
   zmq::context_t* context;
   const char* dealer_endpoint;
   const char* pubsub_endpoint;
+  const char* ready_sync_endpoint;
 };
 
 struct DeviceThreadParams {
@@ -73,52 +76,81 @@ struct DeviceThreadParams {
 
 const static char *kHello = "HELLO";
 const static char *kAddRemote = "ADD_REMOTE";
-const static char *kCall = "CALL";
 const static char *kForward = "FORWARD";
 const static char *kQuit = "QUIT";
 
 class EventManagerControllerImpl : public EventManagerController {
+ private:
+  void HandleDealerSocket() {
+    std::vector<zmq::message_t*> messages;
+    ReadMessageToVector(dealer_, &messages);
+    CHECK_EQ(messages.size(), 2);
+    CHECK_EQ(messages[0]->size(), 0);
+    ClientRequest* client_request(
+        InterpretMessage<ClientRequest*>(*messages[1]));
+    CHECK_NOTNULL(client_request);
+    client_request->closure->Run();
+  }
+
  public:
   EventManagerControllerImpl(zmq::context_t* context,
                              const std::string& dealer_endpoint,
-                             const std::string& pub_endpoint)
-      : dealer_(*context, ZMQ_REQ),
-        pub_(*context, ZMQ_PUB) {
-    dealer_.connect(dealer_endpoint.c_str());
+                             const std::string& pub_endpoint,
+                             int thread_count)
+      : dealer_(new zmq::socket_t(*context, ZMQ_DEALER)),
+        pub_(*context, ZMQ_PUB),
+        sync_(*context, ZMQ_PULL),
+        thread_count_(thread_count) {
+    dealer_->connect(dealer_endpoint.c_str());
     pub_.connect(pub_endpoint.c_str());
+    std::stringstream stream(std::ios_base::out);
+    stream << "inproc://sync-" << this;
+    sync_endpoint_name_ = stream.str();
+    sync_.bind(sync_endpoint_name_.c_str());
+    reactor_.AddSocket(dealer_,
+                       NewPermanentCallback(
+                           this,
+                           &EventManagerControllerImpl::HandleDealerSocket));
   }
 
   void AddRemoteEndpoint(Connection* connection,
                          const std::string& remote_endpoint) {
     SendString(&pub_, kAddRemote, ZMQ_SNDMORE);
-    SendPointer<Closure>(&pub_, NULL, ZMQ_SNDMORE);
+    SendString(&pub_, sync_endpoint_name_, ZMQ_SNDMORE);
     SendPointer<Connection>(&pub_, connection, ZMQ_SNDMORE);
     SendString(&pub_, remote_endpoint, 0);
+    for (int dummy = 0; dummy < thread_count_; ++dummy) {
+      std::vector<zmq::message_t*> v;
+      ReadMessageToVector(&sync_, &v);
+    }
   }
 
   void Forward(Connection* connection,
                ClientRequest* client_request,
                const std::vector<zmq::message_t*>& messages) {
-    SendString(&dealer_, kForward, ZMQ_SNDMORE);
-    SendPointer(&dealer_, connection, ZMQ_SNDMORE);
-    SendPointer<ClientRequest>(&dealer_, client_request, ZMQ_SNDMORE);
-    WriteVectorToSocket(&dealer_, messages);
+    SendString(dealer_, "", ZMQ_SNDMORE);
+    SendString(dealer_, kForward, ZMQ_SNDMORE);
+    SendPointer(dealer_, connection, ZMQ_SNDMORE);
+    SendPointer<ClientRequest>(dealer_, client_request, ZMQ_SNDMORE);
+    WriteVectorToSocket(dealer_, messages);
+  }
+
+  void WaitFor(StoppingCondition *stopping_condition) {
+    reactor_.LoopUntil(stopping_condition);
   }
 
   void Quit() {
     SendString(&pub_, kQuit, ZMQ_SNDMORE);
-    SendPointer<Closure*>(&pub_, NULL, 0);
+    SendString(&pub_, "", 0);
   }
 
  private:
-  void CheckReply() {
-    zmq::message_t msg;
-    dealer_.recv(&msg);
-    CHECK_EQ(MessageToString(&msg), "OK");
-  }
-
-  zmq::socket_t dealer_;
+  Reactor reactor_;
+  zmq::socket_t *dealer_;
   zmq::socket_t pub_;
+  zmq::socket_t sync_;
+  std::string sync_endpoint_name_;
+  int thread_count_;
 };
 
 void EventManagerThreadEntryPoint(
@@ -126,14 +158,20 @@ void EventManagerThreadEntryPoint(
 
 void DeviceThreadEntryPoint(
     const DeviceThreadParams params);
-}  // unnamed namespace
 
+void DestroyController(void* controller) {
+  LOG(INFO)<<"Destructing";
+ // delete static_cast<EventManagerController*>(controller);
+}
+
+}  // unnamed namespace
 
 EventManager::EventManager(zmq::context_t* context,
                            int nthreads) : context_(context),
                                            nthreads_(nthreads),
                                            threads_(nthreads) {
   zmq::socket_t ready_sync(*context, ZMQ_PULL);
+  CHECK(pthread_key_create(&controller_key_, &DestroyController) == 0);
   ready_sync.bind("inproc://clients.ready_sync");
   {
     DeviceThreadParams params;
@@ -164,28 +202,38 @@ EventManager::EventManager(zmq::context_t* context,
   ready_sync.recv(&msg);
 
   for (int i = 0; i < nthreads; ++i) {
-    EventManagerThreadParams params;
-    params.context = context;
-    params.dealer_endpoint = "inproc://clients.dealer";
-    params.pubsub_endpoint = "inproc://clients.all";
+    EventManagerThreadParams* params = new EventManagerThreadParams;
+    params->context = context;
+    params->dealer_endpoint = "inproc://clients.dealer";
+    params->pubsub_endpoint = "inproc://clients.all";
+    params->ready_sync_endpoint = "inproc://clients.ready_sync";
     Closure *cl = NewCallback(&EventManagerThreadEntryPoint,
-                              params);
+                              *params);
     CreateThread(cl, &threads_[i]);
+  }
+  for (int i = 0; i < nthreads; ++i) {
+    ready_sync.recv(&msg);
   }
   VLOG(2) << "EventManager is up.";
 }
 
 EventManagerController* EventManager::GetController() const {
-  return new EventManagerControllerImpl(
+  EventManagerController* controller = static_cast<EventManagerController*>(
+      pthread_getspecific(controller_key_));
+  if (controller == NULL) {
+    controller = new EventManagerControllerImpl(
       context_,
       "inproc://clients.app",
-      "inproc://clients.allapp");
+      "inproc://clients.allapp",
+      GetThreadCount());
+    pthread_setspecific(controller_key_, controller);
+  }
+  return controller;
 }
 
 EventManager::~EventManager() {
   EventManagerController *controller = GetController();
   controller->Quit();
-  delete controller;
   VLOG(2) << "Waiting for EventManagerThreads to quit.";
   for (int i = 0; i < GetThreadCount(); ++i) {
     CHECK_EQ(pthread_join(threads_[i], NULL), 0);
@@ -195,78 +243,42 @@ EventManager::~EventManager() {
 
 class EventManagerThread {
  public:
-  explicit EventManagerThread(
-      const std::string& dealer_endpoint,
-      const std::string& pubsub_endpoint,
-      zmq::context_t *context)
-      : dealer_endpoint_(dealer_endpoint),
-        pubsub_endpoint_(pubsub_endpoint),
-        should_quit_(false),
-        is_dirty_(true),
-        context_(context) {
-        }
+  explicit EventManagerThread(const EventManagerThreadParams& params)
+      : reactor_(), params_(params) {}
 
   void Start() {
-    zmq::socket_t* app_socket = new zmq::socket_t(*context_, ZMQ_ROUTER);
-    app_socket->connect(dealer_endpoint_.c_str());
+    sleep(1);
+    app_socket_ = new zmq::socket_t(*params_.context, ZMQ_DEALER);
+    app_socket_->connect(params_.dealer_endpoint);
 
-    zmq::socket_t* sub_socket = new zmq::socket_t(*context_, ZMQ_SUB);
-    sub_socket->connect(pubsub_endpoint_.c_str());
+    zmq::socket_t* sub_socket = new zmq::socket_t(*params_.context, ZMQ_SUB);
+    sub_socket->connect(params_.pubsub_endpoint);
     sub_socket->setsockopt(ZMQ_SUBSCRIBE, NULL, 0);
-    // app_socket_->setsockopt(ZMQ_IDENTITY, "appsocket", 9);
 
-    sockets_.push_back(app_socket);
-    sockets_.push_back(sub_socket);
-    std::vector<zmq::pollitem_t> pollitems;
-    while (!should_quit_) {
-      if (is_dirty_) {
-        RebuildPollItems(&pollitems);
-        is_dirty_ = false;
-      }
-      int rc = zmq::poll(&pollitems[0], pollitems.size(), 1000000);
-      CHECK_NE(rc, -1);
-      for (int i = 0; i < pollitems.size(); ++i) {
-        if (!pollitems[i].revents & ZMQ_POLLIN) {
-          continue;
-        }
-        pollitems[i].revents = 0;
-        if (pollitems[i].socket == *app_socket) {
-          HandleAppSocket(app_socket);
-        } else if (pollitems[i].socket == *sub_socket) {
-          HandleSubscribeSocket(sub_socket);
-        } else {
-          HandleClientSocket(app_socket, sockets_[i]);
-        }
-      }
-    }
+    reactor_.AddSocket(app_socket_, NewPermanentCallback(
+            this, &EventManagerThread::HandleAppSocket));
+
+    reactor_.AddSocket(sub_socket, NewPermanentCallback(
+            this, &EventManagerThread::HandleSubscribeSocket, sub_socket));
+
+    zmq::socket_t sync_socket(*params_.context, ZMQ_PUSH);
+    sync_socket.connect(params_.ready_sync_endpoint);
+    SendString(&sync_socket, "");
+    reactor_.LoopUntil(NULL);
   }
 
   ~EventManagerThread() {
-    DeleteContainerPointers(sockets_.begin(),
-                            sockets_.end());
   }
-
-  std::string dealer_endpoint_;
-  std::string pubsub_endpoint_;
 
  private:
-  void RebuildPollItems(std::vector<zmq::pollitem_t>* pollitems) {
-    pollitems->resize(sockets_.size());
-    for (int i = 0; i < sockets_.size(); ++i) {
-      zmq::socket_t& socket = *sockets_[i];
-      zmq::pollitem_t pollitem = {socket, 0, ZMQ_POLLIN, 0};
-      (*pollitems)[i] = pollitem;
-    }
-  }
-
   void AddRemoteEndpoint(
       Connection* connection,
       const std::string& remote_endpoint) {
-    zmq::socket_t *socket = new zmq::socket_t(*context_, ZMQ_DEALER);
+    zmq::socket_t *socket = new zmq::socket_t(*params_.context, ZMQ_DEALER);
     connection_map_[connection] = socket;
-    sockets_.push_back(socket);
     socket->connect(remote_endpoint.c_str());
-    is_dirty_ = true;
+    reactor_.AddSocket(socket, NewPermanentCallback(
+            this, &EventManagerThread::HandleClientSocket, socket));
   }
 
   template<typename ForwardIterator>
@@ -302,29 +314,30 @@ class EventManagerThread {
     CHECK(ReadMessageToVector(sub_socket, &data));
     std::string command(MessageToString(data[0]));
     VLOG(2)<<"  Got PUBSUB command: " << command;
-    Closure* closure(InterpretMessage<Closure*>(*data[1]));
+    std::string sync_endpoint(MessageToString(data[1]));
     if (command == kAddRemote) {
       CHECK_EQ(data.size(), 4);
       AddRemoteEndpoint(InterpretMessage<Connection*>(*data[2]),
                         MessageToString(data[3]));
     } else if (command == kQuit) {
-      should_quit_ = true;
+      reactor_.SetShouldQuit();
     } else {
       CHECK(false) << "Got unknown command: " << command;
     }
-    if (closure != NULL) {
-      closure->Run();
-    }
     DeleteContainerPointers(data.begin(), data.end());
+    if (!sync_endpoint.empty()) {
+      zmq::socket_t sync_socket(*params_.context, ZMQ_PUSH);
+      sync_socket.connect(sync_endpoint.c_str());
+      SendString(&sync_socket, "ACK", 0);
+    }
   }
 
-  void HandleAppSocket(zmq::socket_t* app_socket) {
+  void HandleAppSocket() {
     std::vector<zmq::message_t*> routes;
     std::vector<zmq::message_t*> data;
-    CHECK(ReadMessageToVector(app_socket, &routes, &data));
+    CHECK(ReadMessageToVector(app_socket_, &routes, &data));
     std::string command(MessageToString(data[0]));
     if (command == kForward) {
-      LOG(INFO) << "Inhere";
       CHECK_GE(data.size(), 3);
       ClientRequest* client_request = 
           InterpretMessage<ClientRequest*>(*data[2]);
@@ -335,12 +348,6 @@ class EventManagerThread {
           data.begin() + 3, data.end());
       // ForwardRemote handles its own message delete or delegates it.
       return;
-    } else if (command == kCall) {
-      CHECK_EQ(data[1]->size(), sizeof(Closure*));
-      static_cast<Closure*>(data[1]->data())->Run();
-      ReplyOK(app_socket, routes);
-    } else if (command == kHello) {
-      ReplyOK(app_socket, routes);
     } else {
       CHECK(false) << "Got unknown command: " << command;
     }
@@ -348,7 +355,7 @@ class EventManagerThread {
     DeleteContainerPointers(data.begin(), data.end());
   }
 
-  void HandleClientSocket(zmq::socket_t* app_socket, zmq::socket_t* socket) {
+  void HandleClientSocket(zmq::socket_t* socket) {
     std::vector<zmq::message_t*> messages;
     ReadMessageToVector(socket, &messages);
     CHECK(messages.size() >= 1);
@@ -361,19 +368,18 @@ class EventManagerThread {
       return;
     }
     ClientRequest*& client_request = iter->second;
-    std::vector<zmq::message_t*> result;
-    result.resize(messages.size() - 2);
+    client_request->result.resize(messages.size() - 2);
     std::copy(messages.begin() + 2,
-              messages.end(), result.begin());
-    WriteVectorsToSocket(app_socket, client_request->return_path,
-                         result);
+              messages.end(), client_request->result.begin());
+    WriteVectorToSocket(app_socket_, client_request->return_path,
+                        ZMQ_SNDMORE);
+    SendPointer(app_socket_, client_request, 0);
     DeleteContainerPointers(messages.begin(), messages.begin() + 2);
   }
 
-  bool should_quit_;
-  bool is_dirty_;
-  zmq::context_t* context_;
-  std::vector<zmq::socket_t*> sockets_;
+  Reactor reactor_;
+  const EventManagerThreadParams params_;
+  zmq::socket_t* app_socket_;
   typedef std::map<Connection*, zmq::socket_t*> ConnectionMap;
   typedef std::map<uint64, ClientRequest*> ClientRequestMap;
   ConnectionMap connection_map_;
@@ -398,18 +404,14 @@ class ConnectionImpl : public Connection {
 
 Connection* Connection::CreateConnection(
     EventManager* em, const std::string& endpoint) {
-  zrpc::scoped_ptr<EventManagerController> controller(em->GetController());
   Connection* connection = new ConnectionImpl(em);
-  controller->AddRemoteEndpoint(connection, endpoint);
+  em->GetController()->AddRemoteEndpoint(connection, endpoint);
   return connection;
 }
 
 namespace {
-void EventManagerThreadEntryPoint(const
-                                  EventManagerThreadParams params) {
-  EventManagerThread emt(params.dealer_endpoint,
-                         params.pubsub_endpoint,
-                         params.context);
+void EventManagerThreadEntryPoint(const EventManagerThreadParams params) {
+  EventManagerThread emt(params);
   emt.Start();
   VLOG(2) << "EventManagerThread terminated.";
 }

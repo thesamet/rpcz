@@ -22,9 +22,19 @@ void DeleteContainerPointers(const IteratorType& begin,
   }
 }
 
+template<typename IteratorType>
+void DeleteContainerPairPointers(const IteratorType& begin,
+                                 const IteratorType& end) {
+  for (IteratorType i = begin; i != end; ++i) {
+    delete i->first;
+    delete i->second;
+  }
+}
+
 namespace zrpc {
 using google::protobuf::scoped_ptr; 
 using google::protobuf::NewCallback;
+using google::protobuf::NewPermanentCallback;
 using google::protobuf::Closure;
 using google::protobuf::uint64;
 }  // namespace zrpc

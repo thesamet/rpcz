@@ -10,8 +10,12 @@ message GenericRPCRequest {
 
 message GenericRPCResponse {
   enum Status {
-    OK = 1;
-    APPLICATION_ERROR = 2;
+    INACTIVE = 0;
+    INFLIGHT = 1;
+    OK = 2;  // Done
+    CANCELLED = 3;
+    APPLICATION_ERROR = 4;
+    DEADLINE_EXCEEDED = 5;
   }
   enum ApplicationError {
     NO_ERROR = 0;

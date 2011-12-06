@@ -21,7 +21,6 @@
 #include "proto/search.zrpc.h"
 
 void MyCallback(zrpc::RPC* rpc, zrpc::SearchResponse* response) {
-  LOG(INFO) << rpc->GetErrorMessage();
   LOG(INFO) << response->DebugString();
 }
 
@@ -30,21 +29,26 @@ int main(int argc, char *argv[]) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   google::InstallFailureSignalHandler();
   FLAGS_logtostderr = true;
+  {
   zmq::context_t context(1);
-  zrpc::EventManager em(&context, 10);
+  zrpc::EventManager em(&context, 5);
 
-  zrpc::scoped_ptr<zrpc::Connection> connection(
-      zrpc::Connection::CreateConnection(
-          &em, "tcp://localhost:5555"));
+  // zrpc::scoped_ptr<zrpc::Connection> connection(
+  //     zrpc::Connection::CreateConnection(
+  //         &em, "tcp://localhost:5555"));
 
-  zrpc::SearchService_Stub stub(connection->MakeChannel());
+  // zrpc::SearchService_Stub stub(connection->MakeChannel());
   zrpc::SearchRequest request;
   request.set_query("Hello");
   zrpc::SearchResponse response;
   zrpc::RPC rpc;
-  stub.Search(&rpc, &request, &response,
-              zrpc::NewCallback(&MyCallback, &rpc, &response));
-  sleep(5);
+  // stub.Search(&rpc, &request, &response,
+  //             zrpc::NewCallback(&MyCallback, &rpc, &response));
+  // rpc.Wait();
+  LOG(INFO) << "Looping done";
+  sleep(1);
   google::ShutdownGoogleLogging();
+  }
+  LOG(INFO) <<"Here";
   return 0;
 }

@@ -10,6 +10,8 @@
 #include "zrpc/zrpc.pb.h"
 
 namespace zrpc {
+class ZMQRpcChannel;
+struct RpcResponseContext;
 
 class RPC {
  public:
@@ -35,11 +37,16 @@ class RPC {
 
   void SetFailed(int application_error, const std::string& message);
 
+  GenericRPCResponse::Status Wait();
+
  private:
   GenericRPCResponse::Status status_;
+  ZMQRpcChannel* rpc_channel_;
+  RpcResponseContext* rpc_response_context_;
   std::string error_message_;
   int application_error_;
-};
 
+  friend class ZMQRpcChannel;
+};
 }  // namespace
 #endif

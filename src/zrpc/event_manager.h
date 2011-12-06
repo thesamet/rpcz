@@ -29,6 +29,8 @@ struct ClientRequest {
   };
   Status status;
   std::vector<zmq::message_t*> return_path;
+  std::vector<zmq::message_t*> result;
+  Closure* closure;
 };
 
 class EventManager {
@@ -38,7 +40,7 @@ class EventManager {
 
     EventManagerController* GetController() const;
 
-    inline int GetThreadCount() { return nthreads_; }
+    inline int GetThreadCount() const { return nthreads_; }
 
     ~EventManager();
   private:
@@ -47,6 +49,7 @@ class EventManager {
     std::vector<pthread_t> threads_;
     pthread_t worker_device_thread_;
     pthread_t pubsub_device_thread_;
+    pthread_key_t controller_key_;
     DISALLOW_COPY_AND_ASSIGN(EventManager);
 };
 

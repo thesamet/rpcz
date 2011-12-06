@@ -17,6 +17,7 @@ namespace zrpc {
 
 struct ClientRequest;
 class Connection;
+class StoppingCondition;
 
 // Controls an event manager.
 class EventManagerController {
@@ -27,6 +28,8 @@ class EventManagerController {
   virtual void Forward(Connection* connection,
                        ClientRequest* client_request,
                        const std::vector<zmq::message_t*>& messages) = 0;
+
+  virtual void WaitFor(StoppingCondition* client_request) = 0;
 
   virtual void Quit() = 0;
 

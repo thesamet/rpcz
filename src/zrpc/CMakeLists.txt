@@ -11,7 +11,7 @@ protobuf_generate_cpp(ZRPC_PB_SRCS ZRPC_PB_HDRS proto/zrpc.proto)
 set(PROTO_SOURCES ${ZRPC_PB_SRCS} ${ZRPC_PB_HDRS})
 
 include_directories(${PROJECT_BINARY_DIR})
-add_library(zrpc server.cc event_manager.cc
+add_library(zrpc server.cc event_manager.cc reactor.cc
   zmq_utils.cc rpc_channel.cc rpc.cc ${PROTO_SOURCES})
 
 add_executable(zsendrpc zsendrpc.cc)

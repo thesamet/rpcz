@@ -6,9 +6,10 @@
 #ifndef ZRPC_RPC_CHANNEL_H
 #define ZRPC_RPC_CHANNEL_H
 
-#include <google/protobuf/stubs/common.h>
 #include <string>
+#include <set>
 
+#include "google/protobuf/stubs/common.h"
 #include "macros.h"
 #include "zrpc/event_manager_controller.h"
 
@@ -25,7 +26,7 @@ class EventManager;
 class EventManagerController;
 class RPC;
 struct ClientRequest;
-struct  RPCResponseContext;
+struct RpcResponseContext;
 
 class RpcChannel {
  public:
@@ -47,13 +48,17 @@ class ZMQRpcChannel : public RpcChannel {
                           google::protobuf::Message* response,
                           google::protobuf::Closure* done);
 
-  virtual ~ZMQRpcChannel() {};
+  virtual void WaitFor(RpcResponseContext* response_context);
+
+  virtual ~ZMQRpcChannel() {}
 
  private:
-  virtual void HandleClientResponse(RPCResponseContext *response_context);
+  virtual void HandleClientResponse(RpcResponseContext *response_context);
 
   scoped_ptr<EventManagerController> controller_;
+  std::set<RpcResponseContext*> waiting_on_;  // set of requests we WaitFor.
   Connection* connection_;
+  friend class RequestStoppingCondition;
 };
 }  // namespace
 #endif
