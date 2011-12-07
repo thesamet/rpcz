@@ -9,8 +9,10 @@
 #include <google/protobuf/compiler/importer.h>
 #include <google/protobuf/dynamic_message.h>
 #include <google/protobuf/text_format.h>
+#include "zrpc/event_manager.h"
+#include "zrpc/rpc_channel.h"
+#include "zrpc/service.h"
 #include "zrpc/rpc.h"
-#include "zrpc/zrpc.pb.h"
 #include <zmq.hpp>
 
 
@@ -82,34 +84,25 @@ void RunCall(const std::string& endpoint,
     return;
   }
 
-  GenericRPCRequest generic_request;
-  generic_request.set_service(service_name);
-  generic_request.set_method(method_name);
-  generic_request.set_payload(request->SerializeAsString());
-
   zmq::context_t context(1);
-  zmq::socket_t socket(context, ZMQ_REQ);
-  socket.connect(endpoint.c_str());
-  std::string msg_request = generic_request.SerializeAsString();
-  zmq::message_t msg_out(msg_request.size());
-  memcpy(msg_out.data(), msg_request.c_str(), msg_request.size());
-  socket.send(msg_out);
-  zmq::message_t msg_in;
-  socket.recv(&msg_in);
-
+  zrpc::EventManager em(&context, 1);
+  scoped_ptr<Connection> connection(Connection::CreateConnection(&em,
+          endpoint));
+  scoped_ptr<RpcChannel> channel(connection->MakeChannel());
+  RPC rpc;
   ::google::protobuf::Message *reply = factory.GetPrototype(
       method_desc->output_type())->New();
-  GenericRPCResponse generic_response;
-  CHECK(generic_response.ParseFromArray(msg_in.data(), msg_in.size()));
-  std::string out;
+  channel->CallMethod(method_desc, &rpc, request, reply, NULL);
+  rpc.Wait();
 
-  if (generic_response.status() != GenericRPCResponse::OK) {
-    ::google::protobuf::TextFormat::PrintToString(generic_response, &out);
-    std::cerr << out << std :: endl;
+  if (rpc.GetStatus() != GenericRPCResponse::OK) {
+    std::cerr << "Status: " << rpc.GetStatus() << std::endl;
+    std::cerr << "Error " << rpc.GetApplicationError() << ": "
+        << rpc.GetErrorMessage() << std::endl;
   } else {
-    CHECK(reply->ParseFromString(generic_response.payload())); 
+    std::string out;
     ::google::protobuf::TextFormat::PrintToString(*reply, &out);
-    std::cerr << out << std :: endl;
+    std::cerr << out << std::endl;
   }
   delete request;
   delete reply;

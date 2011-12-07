@@ -61,7 +61,7 @@ void ZMQRpcChannel::CallMethod(
   response_context->rpc = rpc;
   response_context->user_closure = done;
   response_context->response = response;
-  rpc->status_ = GenericRPCResponse::INFLIGHT;
+  rpc->SetStatus(GenericRPCResponse::INFLIGHT);
   rpc->rpc_channel_ = this;
   rpc->rpc_response_context_ = response_context;
 
@@ -76,15 +76,16 @@ void ZMQRpcChannel::HandleClientResponse(
   zmq::message_t& msg_in = *response_context->client_request.result[0];
   CHECK(generic_response.ParseFromArray(msg_in.data(), msg_in.size()));
   if (generic_response.status() != GenericRPCResponse::OK) {
-    LOG(INFO) << generic_response.application_error();
-    LOG(INFO) << generic_response.error();
     response_context->rpc->SetFailed(generic_response.application_error(),
                                      generic_response.error());
   } else {
+    response_context->rpc->SetStatus(GenericRPCResponse::OK);
     CHECK(response_context->response->ParseFromString(
             generic_response.payload())); 
   }
-  response_context->user_closure->Run();
+  if (response_context->user_closure) {
+    response_context->user_closure->Run();
+  }
   waiting_on_.erase(response_context);
   DeleteContainerPointers(response_context->client_request.result.begin(),
                           response_context->client_request.result.end());
