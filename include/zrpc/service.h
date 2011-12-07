@@ -16,7 +16,6 @@ class ServiceDescriptor;
 }  // namespace google
 
 namespace zrpc {
-
 class RPC;
 
 class Service {
@@ -36,6 +35,5 @@ class Service {
                           google::protobuf::Message* response,
                           google::protobuf::Closure* done) = 0;
 };
-
 }  // namespace
 #endif
