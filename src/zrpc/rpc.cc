@@ -21,15 +21,19 @@ void RPC::SetFailed(const std::string& error_message) {
   SetFailed(GenericRPCResponse::UNKNOWN_APPLICATION_ERROR, error_message);
 }
 
+void RPC::SetStatus(GenericRPCResponse::Status status) {
+  status_ = status;
+}
+
 void RPC::SetFailed(int application_error, const std::string& error_message) {
+  SetStatus(GenericRPCResponse::APPLICATION_ERROR);
   error_message_ = error_message;
-  status_ = GenericRPCResponse::APPLICATION_ERROR;
   application_error_ = application_error;
 }
 
 GenericRPCResponse::Status RPC::Wait() {
   GenericRPCResponse::Status status = GetStatus();
-  CHECK(status != GenericRPCResponse::INACTIVE)
+  CHECK_NE(status, GenericRPCResponse::INACTIVE)
       << "Request must be sent before calling Wait()";
   if (status != GenericRPCResponse::INFLIGHT) {
     return GetStatus();

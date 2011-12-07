@@ -171,6 +171,7 @@ void Server::HandleRequest(zmq::message_t* request_id, zmq::message_t* request) 
 
   ::google::protobuf::Closure *closure = ::google::protobuf::NewCallback(
       &FinalizeResponse, context, socket_);
+  context->rpc.SetStatus(GenericRPCResponse::OK);
   service->CallMethod(descriptor, &context->rpc,
                       context->request,
                       context->response, closure);

@@ -17,19 +17,19 @@ class RPC {
  public:
   RPC();
 
-  inline bool OK() {
+  inline bool OK() const {
     return GetStatus() == GenericRPCResponse::OK;
   }
 
-  GenericRPCResponse::Status GetStatus() {
+  GenericRPCResponse::Status GetStatus() const {
     return status_;
   }
 
-  inline std::string GetErrorMessage() {
+  inline std::string GetErrorMessage() const {
     return error_message_;
   }
 
-  inline int GetApplicationError() {
+  inline int GetApplicationError() const {
     return application_error_;
   }
 
@@ -40,6 +40,8 @@ class RPC {
   GenericRPCResponse::Status Wait();
 
  private:
+  void SetStatus(GenericRPCResponse::Status status);
+
   GenericRPCResponse::Status status_;
   ZMQRpcChannel* rpc_channel_;
   RpcResponseContext* rpc_response_context_;
@@ -47,6 +49,7 @@ class RPC {
   int application_error_;
 
   friend class ZMQRpcChannel;
+  friend class Server;
 };
 }  // namespace
 #endif

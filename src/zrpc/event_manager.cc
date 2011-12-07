@@ -161,7 +161,7 @@ void DeviceThreadEntryPoint(
 
 void DestroyController(void* controller) {
   LOG(INFO)<<"Destructing";
- // delete static_cast<EventManagerController*>(controller);
+  delete static_cast<EventManagerController*>(controller);
 }
 
 }  // unnamed namespace
@@ -234,6 +234,8 @@ EventManagerController* EventManager::GetController() const {
 EventManager::~EventManager() {
   EventManagerController *controller = GetController();
   controller->Quit();
+  delete controller;
+  pthread_setspecific(controller_key_, NULL);
   VLOG(2) << "Waiting for EventManagerThreads to quit.";
   for (int i = 0; i < GetThreadCount(); ++i) {
     CHECK_EQ(pthread_join(threads_[i], NULL), 0);
@@ -247,7 +249,6 @@ class EventManagerThread {
       : reactor_(), params_(params) {}
 
   void Start() {
-    sleep(1);
     app_socket_ = new zmq::socket_t(*params_.context, ZMQ_DEALER);
     app_socket_->connect(params_.dealer_endpoint);
 

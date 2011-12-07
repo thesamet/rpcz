@@ -72,6 +72,7 @@ void ZMQRpcChannel::HandleClientResponse(
   CHECK(generic_response.ParseFromArray(msg_in.data(), msg_in.size()));
   if (generic_response.status() != GenericRPCResponse::OK) {
     LOG(INFO) << generic_response.application_error();
+    LOG(INFO) << generic_response.error();
     response_context->rpc->SetFailed(generic_response.application_error(),
                                      generic_response.error());
   } else {

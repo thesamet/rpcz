@@ -33,22 +33,20 @@ int main(int argc, char *argv[]) {
   zmq::context_t context(1);
   zrpc::EventManager em(&context, 5);
 
-  // zrpc::scoped_ptr<zrpc::Connection> connection(
-  //     zrpc::Connection::CreateConnection(
-  //         &em, "tcp://localhost:5555"));
+  zrpc::scoped_ptr<zrpc::Connection> connection(
+      zrpc::Connection::CreateConnection(
+          &em, "tcp://localhost:5555"));
 
-  // zrpc::SearchService_Stub stub(connection->MakeChannel());
+  zrpc::SearchService_Stub stub(connection->MakeChannel());
   zrpc::SearchRequest request;
   request.set_query("Hello");
   zrpc::SearchResponse response;
   zrpc::RPC rpc;
-  // stub.Search(&rpc, &request, &response,
-  //             zrpc::NewCallback(&MyCallback, &rpc, &response));
-  // rpc.Wait();
-  LOG(INFO) << "Looping done";
-  sleep(1);
-  google::ShutdownGoogleLogging();
+  stub.Search(&rpc, &request, &response,
+              zrpc::NewCallback(&MyCallback, &rpc, &response));
+  rpc.Wait();
   }
-  LOG(INFO) <<"Here";
+  LOG(INFO) <<"Shutting down";
+  google::ShutdownGoogleLogging();
   return 0;
 }
