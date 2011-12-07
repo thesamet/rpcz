@@ -1,7 +1,7 @@
 set(CMAKE_CXX_COMPILER_WORKS:INTERNAL 1)
 enable_testing()
 
-include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_BINARY_DIR}/src)
 
 cmake_minimum_required (VERSION 2.8.6)

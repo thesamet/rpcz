@@ -10,9 +10,10 @@
 
 #include "glog/logging.h"
 #include "google/protobuf/descriptor.h"
-#include "rpc_channel.h"
+#include "zrpc/rpc_channel.h"
 #include "zmq.hpp"
 #include "zrpc/event_manager.h"
+#include "zrpc/event_manager_controller.h"
 #include "zrpc/macros.h"
 #include "zrpc/reactor.h"
 #include "zrpc/rpc.h"
@@ -25,6 +26,8 @@ ZMQRpcChannel::ZMQRpcChannel(
     Connection* connection)
     : controller_(controller),
       connection_(connection) {};
+
+ZMQRpcChannel::~ZMQRpcChannel() {};
 
 struct RpcResponseContext {
   RPC* rpc;

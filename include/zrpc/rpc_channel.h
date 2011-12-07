@@ -10,8 +10,7 @@
 #include <set>
 
 #include "google/protobuf/stubs/common.h"
-#include "macros.h"
-#include "zrpc/event_manager_controller.h"
+#include "zrpc/macros.h"
 
 namespace google {
 namespace protobuf {
@@ -50,7 +49,7 @@ class ZMQRpcChannel : public RpcChannel {
 
   virtual void WaitFor(RpcResponseContext* response_context);
 
-  virtual ~ZMQRpcChannel() {}
+  virtual ~ZMQRpcChannel();
 
  private:
   virtual void HandleClientResponse(RpcResponseContext *response_context);

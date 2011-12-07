@@ -8,7 +8,7 @@
 
 #include <utility>
 #include <vector>
-#include "macros.h"
+#include "zrpc/macros.h"
 
 namespace zmq {
 class socket_t; 
