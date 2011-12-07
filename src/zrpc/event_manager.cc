@@ -22,9 +22,11 @@
 #include "google/protobuf/stubs/common.h"
 #include "zrpc/rpc_channel.h"
 #include "zmq_utils.h"
+#include "zrpc/client_request.h"
 #include "zrpc/event_manager_controller.h"
 #include "zrpc/macros.h"
 #include "zrpc/reactor.h"
+#include "zrpc/zmq_rpc_channel.h"
 
 namespace zrpc {
 namespace {

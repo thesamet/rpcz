@@ -11,6 +11,7 @@
 #include "glog/logging.h"
 #include "google/protobuf/descriptor.h"
 #include "zmq.hpp"
+#include "zrpc/client_request.h"
 #include "zrpc/event_manager.h"
 #include "zrpc/event_manager_controller.h"
 #include "zrpc/macros.h"

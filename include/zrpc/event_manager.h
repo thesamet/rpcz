@@ -22,17 +22,6 @@ namespace zrpc {
 class EventManagerController;
 class RpcChannel;
 
-struct ClientRequest {
-  enum Status {
-    OK = 0,
-    FAILED = 1
-  };
-  Status status;
-  std::vector<zmq::message_t*> return_path;
-  std::vector<zmq::message_t*> result;
-  Closure* closure;
-};
-
 class EventManager {
   public:
     explicit EventManager(zmq::context_t* context,
@@ -43,6 +32,7 @@ class EventManager {
     inline int GetThreadCount() const { return nthreads_; }
 
     ~EventManager();
+
   private:
     zmq::context_t* context_;
     int nthreads_;

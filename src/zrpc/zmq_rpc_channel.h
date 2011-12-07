@@ -11,7 +11,10 @@
 #include "zrpc/rpc_channel.h"
 
 namespace zrpc {
+class Connection;
 class EventManagerController;
+class RPC;
+struct RpcResponseContext;
 
 class ZMQRpcChannel : public RpcChannel {
  public:

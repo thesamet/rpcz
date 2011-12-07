@@ -20,12 +20,7 @@ class MethodDescriptor;
 }  // namespace google
 
 namespace zrpc {
-class Connection;
-class EventManager;
-class EventManagerController;
 class RPC;
-struct ClientRequest;
-struct RpcResponseContext;
 
 class RpcChannel {
  public:
