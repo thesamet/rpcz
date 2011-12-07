@@ -36,28 +36,5 @@ class RpcChannel {
                           Closure* done) = 0;
   virtual ~RpcChannel() {};
 };
-
-class ZMQRpcChannel : public RpcChannel {
- public:
-  ZMQRpcChannel(EventManagerController* controller, Connection* connection);
-
-  virtual void CallMethod(const google::protobuf::MethodDescriptor* method,
-                          RPC* rpc,
-                          const google::protobuf::Message* request,
-                          google::protobuf::Message* response,
-                          google::protobuf::Closure* done);
-
-  virtual void WaitFor(RpcResponseContext* response_context);
-
-  virtual ~ZMQRpcChannel();
-
- private:
-  virtual void HandleClientResponse(RpcResponseContext *response_context);
-
-  scoped_ptr<EventManagerController> controller_;
-  std::set<RpcResponseContext*> waiting_on_;  // set of requests we WaitFor.
-  Connection* connection_;
-  friend class RequestStoppingCondition;
-};
 }  // namespace
 #endif

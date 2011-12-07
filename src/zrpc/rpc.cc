@@ -6,7 +6,7 @@
 #include "glog/logging.h"
 #include "zrpc/zrpc.pb.h"
 #include "zrpc/rpc.h"
-#include "zrpc/rpc_channel.h"
+#include "zrpc/zmq_rpc_channel.h"
 
 namespace zrpc {
 

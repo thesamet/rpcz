@@ -10,13 +10,14 @@
 
 #include "glog/logging.h"
 #include "google/protobuf/descriptor.h"
-#include "zrpc/rpc_channel.h"
 #include "zmq.hpp"
 #include "zrpc/event_manager.h"
 #include "zrpc/event_manager_controller.h"
 #include "zrpc/macros.h"
 #include "zrpc/reactor.h"
 #include "zrpc/rpc.h"
+#include "zrpc/rpc_channel.h"
+#include "zrpc/zmq_rpc_channel.h"
 #include "zrpc/zrpc.pb.h"
 
 namespace zrpc {
