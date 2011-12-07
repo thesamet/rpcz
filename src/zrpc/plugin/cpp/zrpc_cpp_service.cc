@@ -93,7 +93,7 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
   printer->Indent();
 
   printer->Print(vars_,
-    "$classname$_Stub(::zrpc::RpcChannel* channel);\n"
+    "$classname$_Stub(::zrpc::RpcChannel* channel, bool owns_channels=false);\n"
     "~$classname$_Stub();\n"
     "\n"
     "inline ::zrpc::RpcChannel* channel() { return channel_; }\n"
@@ -168,8 +168,8 @@ void ServiceGenerator::GenerateImplementation(io::Printer* printer) {
 
   // Generate stub implementation.
   printer->Print(vars_,
-    "$classname$_Stub::$classname$_Stub(::zrpc::RpcChannel* channel)\n"
-    "  : channel_(channel), owns_channel_(false) {}\n"
+    "$classname$_Stub::$classname$_Stub(::zrpc::RpcChannel* channel, bool owns_channel)\n"
+    "  : channel_(channel), owns_channel_(owns_channel) {}\n"
     "$classname$_Stub::~$classname$_Stub() {\n"
     "  if (owns_channel_) delete channel_;\n"
     "}\n"

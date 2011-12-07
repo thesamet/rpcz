@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
       zrpc::Connection::CreateConnection(
           &em, "tcp://localhost:5555"));
 
-  zrpc::SearchService_Stub stub(connection->MakeChannel());
+  zrpc::SearchService_Stub stub(connection->MakeChannel(), true);
   zrpc::SearchRequest request;
   request.set_query("Hello");
   zrpc::SearchResponse response;
@@ -48,5 +48,6 @@ int main(int argc, char *argv[]) {
   }
   LOG(INFO) <<"Shutting down";
   google::ShutdownGoogleLogging();
+  google::protobuf::ShutdownProtobufLibrary();
   return 0;
 }

@@ -92,6 +92,7 @@ class EventManagerControllerImpl : public EventManagerController {
         InterpretMessage<ClientRequest*>(*messages[1]));
     CHECK_NOTNULL(client_request);
     client_request->closure->Run();
+    DeleteContainerPointers(messages.begin(), messages.end());
   }
 
  public:
@@ -124,6 +125,7 @@ class EventManagerControllerImpl : public EventManagerController {
     for (int dummy = 0; dummy < thread_count_; ++dummy) {
       std::vector<zmq::message_t*> v;
       ReadMessageToVector(&sync_, &v);
+      DeleteContainerPointers(v.begin(), v.end());
     }
   }
 
@@ -204,13 +206,13 @@ EventManager::EventManager(zmq::context_t* context,
   ready_sync.recv(&msg);
 
   for (int i = 0; i < nthreads; ++i) {
-    EventManagerThreadParams* params = new EventManagerThreadParams;
-    params->context = context;
-    params->dealer_endpoint = "inproc://clients.dealer";
-    params->pubsub_endpoint = "inproc://clients.all";
-    params->ready_sync_endpoint = "inproc://clients.ready_sync";
+    EventManagerThreadParams params;
+    params.context = context;
+    params.dealer_endpoint = "inproc://clients.dealer";
+    params.pubsub_endpoint = "inproc://clients.all";
+    params.ready_sync_endpoint = "inproc://clients.ready_sync";
     Closure *cl = NewCallback(&EventManagerThreadEntryPoint,
-                              *params);
+                              params);
     CreateThread(cl, &threads_[i]);
   }
   for (int i = 0; i < nthreads; ++i) {
@@ -300,6 +302,7 @@ class EventManagerThread {
     SendUint64(socket, event_id, ZMQ_SNDMORE);
     for (ForwardIterator i = begin; i != end; ++i) {
       socket->send(**i, (i + 1) != end ? ZMQ_SNDMORE : 0);
+      delete *i;
     }
     return event_id;
   }
@@ -350,6 +353,9 @@ class EventManagerThread {
           client_request,
           data.begin() + 3, data.end());
       // ForwardRemote handles its own message delete or delegates it.
+      delete data[0];
+      delete data[1];
+      delete data[2];
       return;
     } else {
       CHECK(false) << "Got unknown command: " << command;

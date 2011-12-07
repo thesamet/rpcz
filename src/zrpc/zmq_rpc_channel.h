@@ -33,7 +33,7 @@ class ZMQRpcChannel : public RpcChannel {
  private:
   virtual void HandleClientResponse(RpcResponseContext *response_context);
 
-  scoped_ptr<EventManagerController> controller_;
+  EventManagerController* controller_;
   std::set<RpcResponseContext*> waiting_on_;  // set of requests we WaitFor.
   Connection* connection_;
   friend class RequestStoppingCondition;

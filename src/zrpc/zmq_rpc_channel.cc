@@ -86,6 +86,10 @@ void ZMQRpcChannel::HandleClientResponse(
   }
   response_context->user_closure->Run();
   waiting_on_.erase(response_context);
+  DeleteContainerPointers(response_context->client_request.result.begin(),
+                          response_context->client_request.result.end());
+  DeleteContainerPointers(response_context->client_request.return_path.begin(),
+                          response_context->client_request.return_path.end());
   delete response_context;
 }
 
