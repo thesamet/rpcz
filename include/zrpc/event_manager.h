@@ -14,8 +14,6 @@
 
 namespace zmq {
 class context_t;
-class message_t;
-class socket_t;
 }  // namespace zmq
 
 namespace zrpc {
@@ -27,19 +25,21 @@ class EventManager {
     explicit EventManager(zmq::context_t* context,
                           int nthreads = 1);
 
-    EventManagerController* GetController() const;
-
     inline int GetThreadCount() const { return nthreads_; }
 
     ~EventManager();
 
   private:
+    EventManagerController* GetController() const;
+
     zmq::context_t* context_;
     int nthreads_;
     std::vector<pthread_t> threads_;
     pthread_t worker_device_thread_;
     pthread_t pubsub_device_thread_;
     pthread_key_t controller_key_;
+    friend class Connection;
+    friend class ConnectionImpl;
     DISALLOW_COPY_AND_ASSIGN(EventManager);
 };
 
