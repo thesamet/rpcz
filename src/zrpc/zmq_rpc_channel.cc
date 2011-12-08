@@ -51,9 +51,10 @@ void ZMQRpcChannel::CallMethod(
   generic_request.set_payload(request->SerializeAsString());
 
   std::string msg_request = generic_request.SerializeAsString();
-  zmq::message_t msg_out(msg_request.size());
-  memcpy(msg_out.data(), msg_request.c_str(), msg_request.size());
-  std::vector<zmq::message_t*> vout(1, &msg_out);
+  zmq::message_t* msg_out = new zmq::message_t(msg_request.size());
+  memcpy(msg_out->data(), msg_request.c_str(), msg_request.size());
+  MessageVector vout;
+  vout.push_back(msg_out);
   RpcResponseContext *response_context = new RpcResponseContext;
   response_context->client_request.closure = NewCallback(
       this, &ZMQRpcChannel::HandleClientResponse,
@@ -87,10 +88,6 @@ void ZMQRpcChannel::HandleClientResponse(
     response_context->user_closure->Run();
   }
   waiting_on_.erase(response_context);
-  DeleteContainerPointers(response_context->client_request.result.begin(),
-                          response_context->client_request.result.end());
-  DeleteContainerPointers(response_context->client_request.return_path.begin(),
-                          response_context->client_request.return_path.end());
   delete response_context;
 }
 

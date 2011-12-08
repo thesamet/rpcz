@@ -3,11 +3,7 @@
 //
 // Author: thesamet@gmail.com <Nadav Samet>
 
-#ifndef ZRPC_ZMQ_UTILS_H
-#define ZRPC_ZMQ_UTILS_H
-
-#include "zmq_utils.h"
-
+#include "zrpc/zmq_utils.h"
 #include <i386/types.h>
 #include <stddef.h>
 #include <string.h>
@@ -32,7 +28,7 @@ zmq::message_t* StringToMessage(const std::string& str) {
 }
 
 bool ReadMessageToVector(zmq::socket_t* socket,
-                         std::vector<zmq::message_t*>* data) {
+                         MessageVector* data) {
   while (1) {
     zmq::message_t *msg = new zmq::message_t;
     socket->recv(msg, 0);
@@ -48,8 +44,8 @@ bool ReadMessageToVector(zmq::socket_t* socket,
 }
 
 bool ReadMessageToVector(zmq::socket_t* socket,
-                         std::vector<zmq::message_t*>* routes,
-                         std::vector<zmq::message_t*>* data) {
+                         MessageVector* routes,
+                         MessageVector* data) {
   bool first_part = true;
   while (1) {
     zmq::message_t *msg = new zmq::message_t;
@@ -73,8 +69,8 @@ bool ReadMessageToVector(zmq::socket_t* socket,
 }
 
 void WriteVectorToSocket(zmq::socket_t* socket,
-                         const std::vector<zmq::message_t*>& data,
-                         int flags=0) {
+                         const MessageVector& data,
+                         int flags) {
   for (int i = 0; i < data.size(); ++i) {
     socket->send(*data[i], 
                  flags |
@@ -83,8 +79,8 @@ void WriteVectorToSocket(zmq::socket_t* socket,
 }
 
 void WriteVectorsToSocket(zmq::socket_t* socket,
-                          const std::vector<zmq::message_t*>& routes,
-                          const std::vector<zmq::message_t*>& data) {
+                          const MessageVector& routes,
+                          const MessageVector& data) {
   CHECK_GE(data.size(), 1);
   WriteVectorToSocket(socket, routes, ZMQ_SNDMORE);
   WriteVectorToSocket(socket, data, 0);
@@ -92,15 +88,14 @@ void WriteVectorsToSocket(zmq::socket_t* socket,
 
 void SendString(zmq::socket_t* socket,
                 const std::string& str,
-                int flags=0) {
-  zmq::message_t *msg = StringToMessage(str);
+                int flags) {
+  scoped_ptr<zmq::message_t> msg(StringToMessage(str));
   socket->send(*msg, flags);
-  delete msg;
 }
 
 void SendUint64(zmq::socket_t* socket,
                 google::protobuf::uint64 value,
-                int flags=0) {
+                int flags) {
   zmq::message_t msg(8);
   memcpy(msg.data(), &value, 8);
   socket->send(msg, flags);
@@ -108,11 +103,10 @@ void SendUint64(zmq::socket_t* socket,
 
 bool ForwardMessage(zmq::socket_t &socket_in,
                     zmq::socket_t &socket_out) {
-  std::vector<zmq::message_t*> routes;
-  std::vector<zmq::message_t*> data;
+  MessageVector routes;
+  MessageVector data;
   CHECK(!ReadMessageToVector(&socket_in, &routes, &data));
   WriteVectorToSocket(&socket_out, routes); 
   return true;
 }
 }  // namespace
-#endif

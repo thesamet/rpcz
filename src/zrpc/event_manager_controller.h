@@ -8,10 +8,7 @@
 
 #include <string>
 #include <vector>
-
-namespace zmq {
-class message_t;
-}  // namespace zmq
+#include "zrpc/zmq_utils.h"
 
 namespace zrpc {
 
@@ -27,7 +24,7 @@ class EventManagerController {
 
   virtual void Forward(Connection* connection,
                        ClientRequest* client_request,
-                       const std::vector<zmq::message_t*>& messages) = 0;
+                       const MessageVector& messages) = 0;
 
   virtual void WaitFor(StoppingCondition* client_request) = 0;
 

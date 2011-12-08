@@ -43,6 +43,8 @@ class EventManager {
     DISALLOW_COPY_AND_ASSIGN(EventManager);
 };
 
+void InstallSignalHandler();
+
 class Connection {
  public:
   static Connection* CreateConnection(

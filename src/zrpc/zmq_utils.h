@@ -7,8 +7,10 @@
 #define ZRPC_ZMQ_UTILS_H
 
 #include <string>
+#include "glog/logging.h"
 #include "google/protobuf/stubs/common.h"
 #include <zmq.hpp>
+#include "zrpc/pointer_vector.h"
 
 namespace zmq {
 class socket_t;
@@ -16,20 +18,22 @@ class message_t;
 }
 
 namespace zrpc {
-bool ReadMessageToVector(zmq::socket_t* socket,
-                         std::vector<zmq::message_t*>* data);
+typedef PointerVector<zmq::message_t> MessageVector;
 
 bool ReadMessageToVector(zmq::socket_t* socket,
-                         std::vector<zmq::message_t*>* routes,
-                         std::vector<zmq::message_t*>* data);
+                         MessageVector* data);
+
+bool ReadMessageToVector(zmq::socket_t* socket,
+                         MessageVector* routes,
+                         MessageVector* data);
 
 void WriteVectorToSocket(zmq::socket_t* socket,
-                         const std::vector<zmq::message_t*>& data,
+                         const MessageVector& data,
                          int flags=0);
 
 void WriteVectorsToSocket(zmq::socket_t* socket,
-                          const std::vector<zmq::message_t*>& routes,
-                          const std::vector<zmq::message_t*>& data);
+                          const MessageVector& routes,
+                          const MessageVector& data);
 
 std::string MessageToString(zmq::message_t* msg);
 

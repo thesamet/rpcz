@@ -16,57 +16,25 @@
 #include <iostream>
 #include <utility>
 
+#include "zrpc/event_manager.h"
+#include "zrpc/macros.h"
 #include "zrpc/rpc.h"
+#include "zrpc/reactor.h"
 #include "zrpc/server.h"
 #include "zrpc/service.h"
+#include "zrpc/zmq_utils.h"
 #include "zrpc/zrpc.pb.h"
 
 namespace zrpc {
 
-namespace {
-static int s_interrupted = 0;
-static void s_signal_handler (int signal_value)
-{
-  LOG(INFO) << "Received " << ((signal_value == SIGTERM) ? "SIGTERM" :
-                               (signal_value == SIGINT) ? "SIGINT" : "signal")
-                           << ".";
-  s_interrupted = 1;
-}
-
-static void s_catch_signals (void)
-{
-    struct sigaction action;
-    action.sa_handler = s_signal_handler;
-    action.sa_flags = 0;
-    sigemptyset (&action.sa_mask);
-    sigaction (SIGINT, &action, NULL);
-    sigaction (SIGTERM, &action, NULL);
-}
-}
-
 Server::Server(zmq::socket_t* socket) : socket_(socket) {}
 
 void Server::Start() {
-  s_catch_signals();
-  int requests = 0;
-  while (!s_interrupted && requests < 1000) {
-    ++requests;
-    zmq::message_t request_id;
-    zmq::message_t request;
-    try {
-      socket_->recv(&request_id);
-    } catch (zmq::error_t &e) {
-      if (e.num() == EINTR) {
-        VLOG(2) << "recv() interrupted.";
-        // Interrupts are ok, if we should stop, s_interrupted will be set for
-        // us.
-        continue;
-      }
-      throw;
-    }
-    socket_->recv(&request);
-    HandleRequest(&request_id, &request);
-  }
+  InstallSignalHandler();
+  Reactor reactor;
+  reactor.AddSocket(socket_, NewPermanentCallback(
+          this, &Server::HandleRequest));
+  reactor.LoopUntil(NULL);
   LOG(INFO) << "Server shutdown.";
 }
 
@@ -131,7 +99,13 @@ void ReplyWithAppError(zmq::socket_t* socket,
 }
 }
 
-void Server::HandleRequest(zmq::message_t* request_id, zmq::message_t* request) {
+void Server::HandleRequest() {
+  MessageVector data;
+  ReadMessageToVector(socket_, &data);
+  CHECK(data.size() == 2);
+  zmq::message_t* const& request_id = data[0];
+  zmq::message_t* const& request = data[1];
+
   GenericRPCRequest generic_rpc_request;
   VLOG(2) << "Received request of size " << request->size();
   if (!generic_rpc_request.ParseFromArray(request->data(), request->size())) {
@@ -176,5 +150,4 @@ void Server::HandleRequest(zmq::message_t* request_id, zmq::message_t* request) 
                       context->request,
                       context->response, closure);
 }
-
 }  // namespace

@@ -8,10 +8,7 @@
 
 #include <vector>
 #include "zrpc/macros.h"
-
-namespace zmq {
-class message_t; 
-}  // namespace zmq
+#include "zrpc/zmq_utils.h"
 
 namespace zrpc {
 struct ClientRequest {
@@ -20,8 +17,8 @@ struct ClientRequest {
     FAILED = 1
   };
   Status status;
-  std::vector<zmq::message_t*> return_path;
-  std::vector<zmq::message_t*> result;
+  MessageVector return_path;
+  MessageVector result;
   Closure* closure;
 };
 }  // namespace zrpc

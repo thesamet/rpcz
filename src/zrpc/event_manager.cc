@@ -84,7 +84,7 @@ const static char *kQuit = "QUIT";
 class EventManagerControllerImpl : public EventManagerController {
  private:
   void HandleDealerSocket() {
-    std::vector<zmq::message_t*> messages;
+    MessageVector messages;
     ReadMessageToVector(dealer_, &messages);
     CHECK_EQ(messages.size(), 2);
     CHECK_EQ(messages[0]->size(), 0);
@@ -92,7 +92,6 @@ class EventManagerControllerImpl : public EventManagerController {
         InterpretMessage<ClientRequest*>(*messages[1]));
     CHECK_NOTNULL(client_request);
     client_request->closure->Run();
-    DeleteContainerPointers(messages.begin(), messages.end());
   }
 
  public:
@@ -123,15 +122,14 @@ class EventManagerControllerImpl : public EventManagerController {
     SendPointer<Connection>(&pub_, connection, ZMQ_SNDMORE);
     SendString(&pub_, remote_endpoint, 0);
     for (int dummy = 0; dummy < thread_count_; ++dummy) {
-      std::vector<zmq::message_t*> v;
+      MessageVector v;
       ReadMessageToVector(&sync_, &v);
-      DeleteContainerPointers(v.begin(), v.end());
     }
   }
 
   void Forward(Connection* connection,
                ClientRequest* client_request,
-               const std::vector<zmq::message_t*>& messages) {
+               const MessageVector& messages) {
     SendString(dealer_, "", ZMQ_SNDMORE);
     SendString(dealer_, kForward, ZMQ_SNDMORE);
     SendPointer(dealer_, connection, ZMQ_SNDMORE);
@@ -302,21 +300,19 @@ class EventManagerThread {
     SendUint64(socket, event_id, ZMQ_SNDMORE);
     for (ForwardIterator i = begin; i != end; ++i) {
       socket->send(**i, (i + 1) != end ? ZMQ_SNDMORE : 0);
-      delete *i;
     }
     return event_id;
   }
 
   void ReplyOK(zmq::socket_t *socket,
-               const std::vector<zmq::message_t*>& routes) {
-    zmq::message_t* msg = StringToMessage("OK");
-    WriteVectorsToSocket(socket, routes, std::vector<zmq::message_t*>(
-            1, msg));
-    delete msg;
+               const MessageVector& routes) {
+    MessageVector v;
+    v.push_back(StringToMessage("OK"));
+    WriteVectorsToSocket(socket, routes, v);
   }
 
   void HandleSubscribeSocket(zmq::socket_t* sub_socket) {
-    std::vector<zmq::message_t*> data;
+    MessageVector data;
     CHECK(ReadMessageToVector(sub_socket, &data));
     std::string command(MessageToString(data[0]));
     VLOG(2)<<"  Got PUBSUB command: " << command;
@@ -330,7 +326,6 @@ class EventManagerThread {
     } else {
       CHECK(false) << "Got unknown command: " << command;
     }
-    DeleteContainerPointers(data.begin(), data.end());
     if (!sync_endpoint.empty()) {
       zmq::socket_t sync_socket(*params_.context, ZMQ_PUSH);
       sync_socket.connect(sync_endpoint.c_str());
@@ -339,33 +334,27 @@ class EventManagerThread {
   }
 
   void HandleAppSocket() {
-    std::vector<zmq::message_t*> routes;
-    std::vector<zmq::message_t*> data;
+    MessageVector routes;
+    MessageVector data;
     CHECK(ReadMessageToVector(app_socket_, &routes, &data));
     std::string command(MessageToString(data[0]));
     if (command == kForward) {
       CHECK_GE(data.size(), 3);
       ClientRequest* client_request = 
           InterpretMessage<ClientRequest*>(*data[2]);
-      client_request->return_path = routes;
+      routes.swap(client_request->return_path);
       ForwardRemote(
           InterpretMessage<Connection*>(*data[1]),
           client_request,
           data.begin() + 3, data.end());
-      // ForwardRemote handles its own message delete or delegates it.
-      delete data[0];
-      delete data[1];
-      delete data[2];
       return;
     } else {
       CHECK(false) << "Got unknown command: " << command;
     }
-    DeleteContainerPointers(routes.begin(), routes.end());
-    DeleteContainerPointers(data.begin(), data.end());
   }
 
   void HandleClientSocket(zmq::socket_t* socket) {
-    std::vector<zmq::message_t*> messages;
+    MessageVector messages;
     ReadMessageToVector(socket, &messages);
     CHECK(messages.size() >= 1);
     CHECK_EQ(messages[0]->size(), 0);
@@ -373,17 +362,15 @@ class EventManagerThread {
     ClientRequestMap::iterator iter = client_request_map_.find(event_id);
     if (iter == client_request_map_.end()) {
       LOG(INFO) << "Ignoring unknown incoming message.";
-      DeleteContainerPointers(messages.begin(), messages.end());
       return;
     }
     ClientRequest*& client_request = iter->second;
-    client_request->result.resize(messages.size() - 2);
-    std::copy(messages.begin() + 2,
-              messages.end(), client_request->result.begin());
+    messages.erase(0);
+    messages.erase(0);
+    client_request->result.swap(messages);
     WriteVectorToSocket(app_socket_, client_request->return_path,
                         ZMQ_SNDMORE);
     SendPointer(app_socket_, client_request, 0);
-    DeleteContainerPointers(messages.begin(), messages.begin() + 2);
   }
 
   Reactor reactor_;

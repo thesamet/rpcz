@@ -3,6 +3,7 @@
 //
 // Author: thesamet@gmail.com <Nadav Samet>
 
+#include <signal.h>
 #include <vector>
 #include "glog/logging.h"
 #include "zrpc/macros.h"
@@ -10,6 +11,16 @@
 #include "zmq.hpp"
 
 namespace zrpc {
+namespace {
+static bool g_interrupted = false;
+void SignalHandler(int signal_value) {
+  LOG(INFO) << "Caught "
+      << ((signal_value == SIGTERM) ? "SIGTERM" :
+          (signal_value == SIGINT) ? "SIGINT" : "signal") << ".";
+  g_interrupted = true;
+}
+}  // unnamed namespace
+
 
 Reactor::Reactor() : should_quit_(false) {
 };
@@ -38,8 +49,8 @@ void RebuildPollItems(
 
 void Reactor::LoopUntil(StoppingCondition* stop_condition) {
   std::vector<zmq::pollitem_t> pollitems;
-  while (!should_quit_ && (stop_condition == NULL ||
-                           !stop_condition->ShouldStop())) {
+  while (!should_quit_ && !g_interrupted && (stop_condition == NULL ||
+                                             !stop_condition->ShouldStop())) {
     if (is_dirty_) {
       RebuildPollItems(sockets_, &pollitems);
       is_dirty_ = false;
@@ -58,5 +69,14 @@ void Reactor::LoopUntil(StoppingCondition* stop_condition) {
 
 void Reactor::SetShouldQuit() {
   should_quit_ = true;
+}
+
+void InstallSignalHandler() {
+  struct sigaction action;
+  action.sa_handler = SignalHandler;
+  action.sa_flags = 0;
+  sigemptyset(&action.sa_mask);
+  sigaction(SIGINT, &action, NULL);
+  sigaction(SIGTERM, &action, NULL);
 }
 }  // namespace zrpc
