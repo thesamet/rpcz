@@ -14,8 +14,11 @@ RPC::RPC()
     : status_(GenericRPCResponse::INACTIVE),
       rpc_channel_(NULL),
       rpc_response_context_(NULL),
-      application_error_(0) {
+      application_error_(0),
+      deadline_ms_(-1) {
 };
+
+RPC::~RPC() {}
 
 void RPC::SetFailed(const std::string& error_message) {
   SetFailed(GenericRPCResponse::UNKNOWN_APPLICATION_ERROR, error_message);

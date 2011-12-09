@@ -12,6 +12,7 @@
 #include "google/protobuf/descriptor.h"
 #include "zmq.hpp"
 #include "zrpc/client_request.h"
+#include "zrpc/clock.h"
 #include "zrpc/event_manager.h"
 #include "zrpc/event_manager_controller.h"
 #include "zrpc/macros.h"
@@ -60,6 +61,8 @@ void ZMQRpcChannel::CallMethod(
       this, &ZMQRpcChannel::HandleClientResponse,
       response_context);
   response_context->rpc = rpc;
+  response_context->client_request.deadline_ms = rpc->GetDeadlineMs();
+  response_context->client_request.start_time = zclock_time();
   response_context->user_closure = done;
   response_context->response = response;
   rpc->SetStatus(GenericRPCResponse::INFLIGHT);
@@ -73,16 +76,32 @@ void ZMQRpcChannel::CallMethod(
 
 void ZMQRpcChannel::HandleClientResponse(
     RpcResponseContext* response_context) {
-  GenericRPCResponse generic_response;
-  zmq::message_t& msg_in = *response_context->client_request.result[0];
-  CHECK(generic_response.ParseFromArray(msg_in.data(), msg_in.size()));
-  if (generic_response.status() != GenericRPCResponse::OK) {
-    response_context->rpc->SetFailed(generic_response.application_error(),
-                                     generic_response.error());
-  } else {
-    response_context->rpc->SetStatus(GenericRPCResponse::OK);
-    CHECK(response_context->response->ParseFromString(
-            generic_response.payload())); 
+  ClientRequest& client_request = response_context->client_request;
+
+  switch (client_request.status) {
+    case ClientRequest::DEADLINE_EXCEEDED:
+      response_context->rpc->SetStatus(
+          GenericRPCResponse::DEADLINE_EXCEEDED);
+      break;
+    case ClientRequest::DONE: {
+        GenericRPCResponse generic_response;
+        zmq::message_t& msg_in = *response_context->client_request.result[0];
+        CHECK(generic_response.ParseFromArray(msg_in.data(), msg_in.size()));
+        if (generic_response.status() != GenericRPCResponse::OK) {
+          response_context->rpc->SetFailed(generic_response.application_error(),
+                                           generic_response.error());
+        } else {
+          response_context->rpc->SetStatus(GenericRPCResponse::OK);
+          CHECK(response_context->response->ParseFromString(
+                  generic_response.payload())); 
+        }
+      }
+      break;
+    case ClientRequest::ACTIVE:
+    case ClientRequest::INACTIVE:
+    default:
+      CHECK(false) << "Unexpected ClientRequest state: "
+          << client_request.status;
   }
   if (response_context->user_closure) {
     response_context->user_closure->Run();

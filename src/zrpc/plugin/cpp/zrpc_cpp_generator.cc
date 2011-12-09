@@ -62,7 +62,7 @@ bool ZRpcCppGenerator::Generate(
   // __declspec(dllimport) depending on what is being compiled.
   string dllexport_decl;
 
-  for (int i = 0; i < options.size(); i++) {
+  for (size_t i = 0; i < options.size(); i++) {
     if (options[i].first == "dllexport_decl") {
       dllexport_decl = options[i].second;
     } else {

@@ -13,13 +13,17 @@
 namespace zrpc {
 struct ClientRequest {
   enum Status {
-    OK = 0,
-    FAILED = 1
+    INACTIVE = 0,
+    ACTIVE = 1,
+    DONE = 2,
+    DEADLINE_EXCEEDED = 3,
   };
   Status status;
   MessageVector return_path;
   MessageVector result;
   Closure* closure;
+  int64 deadline_ms;
+  uint64 start_time;
 };
 }  // namespace zrpc
 #endif

@@ -7,6 +7,7 @@
 #define ZRPC_RPC_H
 
 #include <string>
+#include <zrpc/macros.h>
 #include "zrpc/zrpc.pb.h"
 
 namespace zrpc {
@@ -16,6 +17,8 @@ struct RpcResponseContext;
 class RPC {
  public:
   RPC();
+
+  ~RPC();
 
   inline bool OK() const {
     return GetStatus() == GenericRPCResponse::OK;
@@ -33,6 +36,14 @@ class RPC {
     return application_error_;
   }
 
+  inline int64 GetDeadlineMs() const {
+    return deadline_ms_;
+  }
+
+  inline void SetDeadlineMs(int deadline_ms) {
+    deadline_ms_ = deadline_ms;
+  }
+
   void SetFailed(const std::string& message);
 
   void SetFailed(int application_error, const std::string& message);
@@ -47,6 +58,7 @@ class RPC {
   RpcResponseContext* rpc_response_context_;
   std::string error_message_;
   int application_error_;
+  int64 deadline_ms_;
 
   friend class ZMQRpcChannel;
   friend class Server;

@@ -23,6 +23,7 @@
 #include "zrpc/rpc_channel.h"
 #include "zmq_utils.h"
 #include "zrpc/client_request.h"
+#include "zrpc/clock.h"
 #include "zrpc/event_manager_controller.h"
 #include "zrpc/macros.h"
 #include "zrpc/reactor.h"
@@ -33,13 +34,15 @@ namespace {
 static const uint64 kLargestPrime64 = 18446744073709551557ULL;
 static const uint64 kGenerator = 2;
 
+typedef uint64 EventId;
+
 class EventIdGenerator {
  public:
   EventIdGenerator() {
     state_ = (reinterpret_cast<uint64>(this) << 32) + getpid();
   }
 
-  uint64 GetNext() {
+  EventId GetNext() {
     state_ = (state_ * kGenerator) % kLargestPrime64;
     return state_;
   }
@@ -80,6 +83,7 @@ const static char *kHello = "HELLO";
 const static char *kAddRemote = "ADD_REMOTE";
 const static char *kForward = "FORWARD";
 const static char *kQuit = "QUIT";
+
 
 class EventManagerControllerImpl : public EventManagerController {
  private:
@@ -284,6 +288,20 @@ class EventManagerThread {
             this, &EventManagerThread::HandleClientSocket, socket));
   }
 
+  void HandleTimeout(EventId event_id) {
+    ClientRequestMap::iterator iter = client_request_map_.find(event_id);
+    if (iter == client_request_map_.end()) {
+      LOG(INFO) << "Ignoring unknown incoming message.";
+      return;
+    }
+    ClientRequest*& client_request = iter->second;
+    client_request->status = ClientRequest::DEADLINE_EXCEEDED;
+    WriteVectorToSocket(app_socket_, client_request->return_path,
+                        ZMQ_SNDMORE);
+    SendPointer(app_socket_, client_request, 0);
+    client_request_map_.erase(iter);
+  }
+
   template<typename ForwardIterator>
   uint64 ForwardRemote(
     Connection* connection,
@@ -292,8 +310,13 @@ class EventManagerThread {
     ForwardIterator end) {
     ConnectionMap::const_iterator it = connection_map_.find(connection);
     CHECK(it != connection_map_.end());
-    uint64 event_id = event_id_generator_.GetNext();
+    EventId event_id = event_id_generator_.GetNext();
     client_request_map_[event_id] = client_request;
+    if (client_request->deadline_ms != -1) {
+      reactor_.RunClosureAt(
+          client_request->start_time + client_request->deadline_ms,
+          NewCallback(this, &EventManagerThread::HandleTimeout, event_id));
+    }
 
     zmq::socket_t* const& socket = it->second;
     SendString(socket, "", ZMQ_SNDMORE);
@@ -358,7 +381,7 @@ class EventManagerThread {
     ReadMessageToVector(socket, &messages);
     CHECK(messages.size() >= 1);
     CHECK_EQ(messages[0]->size(), 0);
-    uint64 event_id(InterpretMessage<uint64>(*messages[1]));
+    EventId event_id(InterpretMessage<EventId>(*messages[1]));
     ClientRequestMap::iterator iter = client_request_map_.find(event_id);
     if (iter == client_request_map_.end()) {
       LOG(INFO) << "Ignoring unknown incoming message.";
@@ -368,18 +391,22 @@ class EventManagerThread {
     messages.erase(0);
     messages.erase(0);
     client_request->result.swap(messages);
+    client_request->status = ClientRequest::DONE;
     WriteVectorToSocket(app_socket_, client_request->return_path,
                         ZMQ_SNDMORE);
     SendPointer(app_socket_, client_request, 0);
+    client_request_map_.erase(iter);
   }
 
   Reactor reactor_;
   const EventManagerThreadParams params_;
   zmq::socket_t* app_socket_;
   typedef std::map<Connection*, zmq::socket_t*> ConnectionMap;
-  typedef std::map<uint64, ClientRequest*> ClientRequestMap;
+  typedef std::map<EventId, ClientRequest*> ClientRequestMap;
+  typedef std::map<uint64, EventId> DeadlineMap;
   ConnectionMap connection_map_;
   ClientRequestMap client_request_map_;
+  DeadlineMap deadline_map_;
   EventIdGenerator event_id_generator_;
   DISALLOW_COPY_AND_ASSIGN(EventManagerThread);
 };

@@ -31,7 +31,7 @@ FileGenerator::FileGenerator(const FileDescriptor* file,
 }
 
 FileGenerator::~FileGenerator() {
-  for (int i = 0; i < service_generators_.size(); i++) {
+  for (size_t i = 0; i < service_generators_.size(); i++) {
     delete service_generators_[i];
   }
 }
@@ -130,7 +130,7 @@ void FileGenerator::GenerateSource(io::Printer* printer) {
 void FileGenerator::GenerateNamespaceOpeners(io::Printer* printer) {
   if (package_parts_.size() > 0) printer->Print("\n");
 
-  for (int i = 0; i < package_parts_.size(); i++) {
+  for (size_t i = 0; i < package_parts_.size(); i++) {
     printer->Print("namespace $part$ {\n",
                    "part", package_parts_[i]);
   }
@@ -139,7 +139,7 @@ void FileGenerator::GenerateNamespaceOpeners(io::Printer* printer) {
 void FileGenerator::GenerateNamespaceClosers(io::Printer* printer) {
   if (package_parts_.size() > 0) printer->Print("\n");
 
-  for (int i = package_parts_.size() - 1; i >= 0; i--) {
+  for (int64 i = static_cast<int64>(package_parts_.size()) - 1; i >= 0; i--) {
     printer->Print("}  // namespace $part$\n",
                    "part", package_parts_[i]);
   }
@@ -241,7 +241,7 @@ void FileGenerator::GenerateBuildDescriptors(io::Printer* printer) {
     vector<string> dependency_package_parts;
     SplitStringUsing(dependency->package(), ".", &dependency_package_parts);
     printer->Print("::");
-    for (int i = 0; i < dependency_package_parts.size(); i++) {
+    for (size_t i = 0; i < dependency_package_parts.size(); i++) {
       printer->Print("$name$::",
                      "name", dependency_package_parts[i]);
     }
@@ -265,7 +265,7 @@ void FileGenerator::GenerateBuildDescriptors(io::Printer* printer) {
 
     // Only write 40 bytes per line.
     static const int kBytesPerLine = 40;
-    for (int i = 0; i < file_data.size(); i += kBytesPerLine) {
+    for (size_t i = 0; i < file_data.size(); i += kBytesPerLine) {
       printer->Print("\n  \"$data$\"",
         "data", EscapeTrigraphs(CEscape(file_data.substr(i, kBytesPerLine))));
     }

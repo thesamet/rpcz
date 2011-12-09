@@ -21,6 +21,7 @@
 #include "proto/search.zrpc.h"
 
 void MyCallback(zrpc::RPC* rpc, zrpc::SearchResponse* response) {
+  LOG(INFO) << rpc->GetStatus();
   LOG(INFO) << response->DebugString();
 }
 
@@ -42,9 +43,11 @@ int main(int argc, char *argv[]) {
   request.set_query("Hello");
   zrpc::SearchResponse response;
   zrpc::RPC rpc;
+  rpc.SetDeadlineMs(2000);
   stub.Search(&rpc, &request, &response,
               zrpc::NewCallback(&MyCallback, &rpc, &response));
   rpc.Wait();
+  LOG(INFO)<<"Wait exited.";
   }
   LOG(INFO) <<"Shutting down";
   google::ShutdownGoogleLogging();

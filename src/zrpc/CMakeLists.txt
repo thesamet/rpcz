@@ -1,8 +1,8 @@
 project (ZRPC)
 
 # The version number.
-set (YOSH_STORE_VERSION_MAJOR 0)
-set (YOSH_STORE_VERSION_MINOR 9)
+set (ZRPC_VERSION_MAJOR 0)
+set (ZRPC_VERSION_MINOR 9)
 
 add_subdirectory(plugin)
 
@@ -11,7 +11,7 @@ protobuf_generate_cpp(ZRPC_PB_SRCS ZRPC_PB_HDRS proto/zrpc.proto)
 set(PROTO_SOURCES ${ZRPC_PB_SRCS} ${ZRPC_PB_HDRS})
 
 include_directories(${PROJECT_BINARY_DIR})
-add_library(zrpc server.cc event_manager.cc reactor.cc
+add_library(zrpc clock.cc server.cc event_manager.cc reactor.cc
   zmq_utils.cc zmq_rpc_channel.cc rpc.cc ${PROTO_SOURCES})
 
 add_executable(zsendrpc zsendrpc.cc)

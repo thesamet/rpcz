@@ -53,7 +53,7 @@ void RunCall(const std::string& endpoint,
   if (file_desc == NULL) {
     return;
   }
-  if (method.find('.') == -1) {
+  if (method.find('.') == method.npos) {
     std::cerr << "<service.method> must contain a dot: '" << method << "'"
               << std::endl;
     return;

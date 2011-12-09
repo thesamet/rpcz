@@ -71,7 +71,7 @@ bool ReadMessageToVector(zmq::socket_t* socket,
 void WriteVectorToSocket(zmq::socket_t* socket,
                          const MessageVector& data,
                          int flags) {
-  for (int i = 0; i < data.size(); ++i) {
+  for (size_t i = 0; i < data.size(); ++i) {
     socket->send(*data[i], 
                  flags |
                  ((i < data.size() - 1) ? ZMQ_SNDMORE : 0));

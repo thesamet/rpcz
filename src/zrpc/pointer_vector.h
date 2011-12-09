@@ -29,7 +29,7 @@ class PointerVector {
   void push_back(T* value) { data_.push_back(value); }
 
   void resize(size_t sz) {
-    for (int i = sz; i < size(); ++i) {
+    for (size_t i = sz; i < size(); ++i) {
       delete data_[i];
     }
     data_.resize(sz);
