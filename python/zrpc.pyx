@@ -1,8 +1,8 @@
 cdef extern from "zrpc/rpc.h" namespace "zrpc":
     cdef cppclass RPC:
-        bool OK()
+        bint OK()
         int GetStatus()
-        std::string GetErrorMessage()
+        char* GetErrorMessage()
         int GetApplicationError()
         int GetDeadlineMs()
         void SetDeadlineMs(int)
