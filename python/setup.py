@@ -3,9 +3,9 @@ import sys
 
 from distutils.core import Command
 from distutils.command import build as build_module
-from setuptools.command import develop as develop_module
+from distutils.core import Extension, setup
 from distutils import spawn
-from setuptools import setup
+from Cython.Distutils import build_ext
 
 
 def _generate_proto(source, output_dir,
@@ -61,13 +61,6 @@ class build(build_module.build):
         build_module.build.run(self)
 
 
-class develop(develop_module.develop):
-    def run(self):
-        _build_zrpc_proto()
-        _build_test_protos()
-        develop_module.develop.run(self)
-
-    
 setup(
     name = "zrpc",
     version = "0.9",
@@ -86,6 +79,9 @@ setup(
     ],
     cmdclass = {
         'build': build,
-        'develop': develop,
-    }
+        'build_ext': build_ext,
+    },
+    ext_modules=[
+        Extension("zrpc", ["zrpc.pyx"], libraries=["zrpc"], language="c++")
+        ],
 )
