@@ -5,7 +5,6 @@ message GenericRPCRequest {
   optional int32 deadline = 2;
   optional string service = 3;
   optional string method = 4;
-  optional bytes payload = 5;
 }
 
 message GenericRPCResponse {
@@ -28,5 +27,4 @@ message GenericRPCResponse {
   optional Status status = 1 [default = OK];
   optional int32 application_error = 2;
   optional string error = 3;
-  optional bytes payload = 4;
 }

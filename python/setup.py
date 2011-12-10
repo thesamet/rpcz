@@ -58,6 +58,7 @@ def _build_test_protos():
 class build(build_module.build):
     def run(self):
         _build_zrpc_proto()
+        _build_test_protos()
         build_module.build.run(self)
 
 

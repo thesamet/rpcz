@@ -5,21 +5,16 @@ class GeneratedServiceType(type):
         return super(GeneratedServiceType, cls).__new__(cls, name, bases,
                                                         attrs)
 
-
-def CallMethod(stub, rpc, request, response, callback, method, **kwargs):
-    print stub, method, rpc, request, response, callback, kwargs
-
-
 def _BuildStubMethod(method_descriptor):
-    def call(stub, request, rpc=None):
-        return stub._connection.CallMethod(stub.DESCRIPTOR.full_name,
-                                           method_descriptor,
-                                           request, rpc=rpc)
+    def call(stub, rpc, request, response, callback):
+        return stub._channel.CallMethod(stub.DESCRIPTOR.name,
+                                        method_descriptor.name,
+                                        rpc, request, response, callback)
     return call
 
 
-def _StubInitMethod(stub, connection):
-    stub._connection = connection
+def _StubInitMethod(stub, channel):
+    stub._channel = channel
 
 
 class GeneratedServiceStubType(GeneratedServiceType):

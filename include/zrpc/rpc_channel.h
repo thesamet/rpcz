@@ -29,6 +29,16 @@ class RpcChannel {
                           const google::protobuf::Message* request,
                           google::protobuf::Message* response,
                           Closure* done) = 0;
+
+  // DO NOT USE: this method exists only for language bindings and may be
+  // removed.
+  virtual void CallMethod0(const std::string& service_name,
+                           const std::string& method_name,
+                           RPC* rpc,
+                           const std::string& request,
+                           std::string* response,
+                           google::protobuf::Closure* done) = 0;
+
   virtual ~RpcChannel() {};
 };
 }  // namespace

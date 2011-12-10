@@ -34,28 +34,36 @@ ZMQRpcChannel::~ZMQRpcChannel() {};
 
 struct RpcResponseContext {
   RPC* rpc;
-  ::google::protobuf::Message* response;
+  ::google::protobuf::Message* response_msg;
+  std::string* response_str;
   Closure* user_closure;
   ClientRequest client_request;
 };
 
-void ZMQRpcChannel::CallMethod(
-    const google::protobuf::MethodDescriptor* method,
+void ZMQRpcChannel::CallMethodFull(
+    const std::string& service_name,
+    const std::string& method_name,
     RPC* rpc,
-    const google::protobuf::Message* request,
-    google::protobuf::Message* response,
+    const std::string& request,
+    std::string* response_str,
+    ::google::protobuf::Message* response_msg,
     google::protobuf::Closure* done) {
   CHECK(rpc->GetStatus() == GenericRPCResponse::INACTIVE);
   GenericRPCRequest generic_request;
-  generic_request.set_service(method->service()->name());
-  generic_request.set_method(method->name());
-  generic_request.set_payload(request->SerializeAsString());
+  generic_request.set_service(service_name);
+  generic_request.set_method(method_name);
 
   std::string msg_request = generic_request.SerializeAsString();
   zmq::message_t* msg_out = new zmq::message_t(msg_request.size());
   memcpy(msg_out->data(), msg_request.c_str(), msg_request.size());
+
+  zmq::message_t* payload_out = new zmq::message_t(request.size());
+  memcpy(payload_out->data(), request.c_str(), request.size());
+
   MessageVector vout;
   vout.push_back(msg_out);
+  vout.push_back(payload_out);
+
   RpcResponseContext *response_context = new RpcResponseContext;
   response_context->client_request.closure = NewCallback(
       this, &ZMQRpcChannel::HandleClientResponse,
@@ -64,7 +72,8 @@ void ZMQRpcChannel::CallMethod(
   response_context->client_request.deadline_ms = rpc->GetDeadlineMs();
   response_context->client_request.start_time = zclock_time();
   response_context->user_closure = done;
-  response_context->response = response;
+  response_context->response_str = response_str;
+  response_context->response_msg = response_msg;
   rpc->SetStatus(GenericRPCResponse::INFLIGHT);
   rpc->rpc_channel_ = this;
   rpc->rpc_response_context_ = response_context;
@@ -72,6 +81,36 @@ void ZMQRpcChannel::CallMethod(
   controller_->Forward(connection_,
                        &response_context->client_request,
                        vout);
+}
+
+void ZMQRpcChannel::CallMethod0(const std::string& service_name,
+                                const std::string& method_name,
+                                RPC* rpc,
+                                const std::string& request,
+                                std::string* response,
+                                google::protobuf::Closure* done) {
+  CallMethodFull(service_name,
+                 method_name,
+                 rpc,
+                 request,
+                 response,
+                 NULL,
+                 done);
+}
+
+void ZMQRpcChannel::CallMethod(
+    const google::protobuf::MethodDescriptor* method,
+    RPC* rpc,
+    const google::protobuf::Message* request,
+    google::protobuf::Message* response,
+    google::protobuf::Closure* done) {
+  CallMethodFull(method->service()->name(),
+                 method->name(),
+                 rpc,
+                 request->SerializeAsString(),
+                 NULL,
+                 response,
+                 done);
 }
 
 void ZMQRpcChannel::HandleClientResponse(
@@ -92,8 +131,16 @@ void ZMQRpcChannel::HandleClientResponse(
                                            generic_response.error());
         } else {
           response_context->rpc->SetStatus(GenericRPCResponse::OK);
-          CHECK(response_context->response->ParseFromString(
-                  generic_response.payload())); 
+          if (response_context->response_msg) {
+            CHECK(response_context->response_msg->ParseFromArray(
+                    response_context->client_request.result[1]->data(),
+                    response_context->client_request.result[1]->size()));
+          } else if (response_context->response_str) {
+            response_context->response_str->assign(
+                static_cast<char*>(
+                    response_context->client_request.result[1]->data()),
+                response_context->client_request.result[1]->size());
+          }
         }
       }
       break;

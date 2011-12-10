@@ -20,11 +20,27 @@ class ZMQRpcChannel : public RpcChannel {
  public:
   ZMQRpcChannel(EventManagerController* controller, Connection* connection);
 
+  void CallMethodFull(
+    const std::string& service_name,
+    const std::string& method_name,
+    RPC* rpc,
+    const std::string& request,
+    std::string* response_str,
+    ::google::protobuf::Message* response_msg,
+    google::protobuf::Closure* done);
+
   virtual void CallMethod(const google::protobuf::MethodDescriptor* method,
                           RPC* rpc,
                           const google::protobuf::Message* request,
                           google::protobuf::Message* response,
                           google::protobuf::Closure* done);
+
+  virtual void CallMethod0(const std::string& service_name,
+                           const std::string& method_name,
+                           RPC* rpc,
+                           const std::string& request,
+                           std::string* response,
+                           google::protobuf::Closure* done);
 
   virtual void WaitFor(RpcResponseContext* response_context);
 

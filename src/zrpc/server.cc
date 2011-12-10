@@ -22,6 +22,7 @@
 #include "zrpc/reactor.h"
 #include "zrpc/server.h"
 #include "zrpc/service.h"
+#include "zrpc/string_piece.h"
 #include "zrpc/zmq_utils.h"
 #include "zrpc/zrpc.pb.h"
 
@@ -53,22 +54,29 @@ struct RPCRequestContext {
 
 void SendGenericResponse(::zmq::socket_t* socket,
                          zmq::message_t* request_id,
-                         const GenericRPCResponse& generic_rpc_response) {
+                         const GenericRPCResponse& generic_rpc_response,
+                         const StringPiece& payload) {
   std::string serialized_generic_response;
   CHECK(generic_rpc_response.SerializeToString(&serialized_generic_response));
   zmq::message_t zmq_response_message(serialized_generic_response.length());
   memcpy(zmq_response_message.data(), serialized_generic_response.c_str(),
          serialized_generic_response.length());
+
+  zmq::message_t zmq_payload_message(payload.size());
+  memcpy(zmq_payload_message.data(), payload.data(), payload.size());
+
   socket->send(*request_id, ZMQ_SNDMORE);
-  socket->send(zmq_response_message);
+  socket->send(zmq_response_message, ZMQ_SNDMORE);
+  socket->send(zmq_payload_message, 0);
 }
 
 void FinalizeResponse(RPCRequestContext *context,
                       ::zmq::socket_t* socket) {
   GenericRPCResponse generic_rpc_response;
+  std::string payload;
   if (context->rpc.OK()) {
     CHECK(context->response->SerializeToString(
-            generic_rpc_response.mutable_payload()));
+          &payload));
   } else {
     generic_rpc_response.set_status(
         context->rpc.GetStatus());
@@ -79,14 +87,15 @@ void FinalizeResponse(RPCRequestContext *context,
       generic_rpc_response.set_error(error_message);
     }
   }
-  SendGenericResponse(socket, context->request_id, generic_rpc_response); 
+  SendGenericResponse(socket, context->request_id, generic_rpc_response,
+                      StringPiece(payload)); 
   delete context->request;
   delete context->response;
   delete context;
 }
 
 void ReplyWithAppError(zmq::socket_t* socket,
-                       zmq::message_t *request_id,
+                       zmq::message_t* request_id,
                        int application_error,
                        const std::string& error="") {
   GenericRPCResponse response;
@@ -95,16 +104,17 @@ void ReplyWithAppError(zmq::socket_t* socket,
   if (!error.empty()) {
     response.set_error(error);
   }
-  SendGenericResponse(socket, request_id, response);
+  SendGenericResponse(socket, request_id, response, StringPiece());
 }
 }
 
 void Server::HandleRequest() {
   MessageVector data;
   ReadMessageToVector(socket_, &data);
-  CHECK(data.size() == 2);
+  CHECK(data.size() == 3);
   zmq::message_t* const& request_id = data[0];
   zmq::message_t* const& request = data[1];
+  zmq::message_t* const& payload = data[2];
 
   GenericRPCRequest generic_rpc_request;
   VLOG(2) << "Received request of size " << request->size();
@@ -135,7 +145,7 @@ void Server::HandleRequest() {
       service->GetRequestPrototype(descriptor).New());
   context->response = CHECK_NOTNULL(
       service->GetResponsePrototype(descriptor).New());
-  if (!context->request->ParseFromString(generic_rpc_request.payload())) {
+  if (!context->request->ParseFromArray(payload->data(), payload->size())) {
     // Invalid proto;
     ReplyWithAppError(socket_, request_id, GenericRPCResponse::INVALID_MESSAGE);
     delete context->request;
