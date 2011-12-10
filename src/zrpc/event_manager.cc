@@ -175,13 +175,25 @@ void DestroyController(void* controller) {
 EventManager::EventManager(zmq::context_t* context,
                            int nthreads) : context_(context),
                                            nthreads_(nthreads),
-                                           threads_(nthreads) {
-  zmq::socket_t ready_sync(*context, ZMQ_PULL);
+                                           threads_(nthreads),
+                                           owns_context_(false) {
+  Init();
+}
+
+EventManager::EventManager(int nthreads) : context_(new zmq::context_t(1)),
+                                           nthreads_(nthreads),
+                                           threads_(nthreads),
+                                           owns_context_(true) {
+  Init();
+}
+
+void EventManager::Init() {
+  zmq::socket_t ready_sync(*context_, ZMQ_PULL);
   CHECK(pthread_key_create(&controller_key_, &DestroyController) == 0);
   ready_sync.bind("inproc://clients.ready_sync");
   {
     DeviceThreadParams params;
-    params.context = context;
+    params.context = context_;
     params.frontend = "inproc://clients.app";
     params.frontend_type = ZMQ_ROUTER;
     params.backend = "inproc://clients.dealer";
@@ -193,7 +205,7 @@ EventManager::EventManager(zmq::context_t* context,
   }
   {
     DeviceThreadParams params;
-    params.context = context;
+    params.context = context_;
     params.frontend = "inproc://clients.allapp";
     params.frontend_type = ZMQ_SUB;
     params.backend = "inproc://clients.all";
@@ -207,9 +219,9 @@ EventManager::EventManager(zmq::context_t* context,
   ready_sync.recv(&msg);
   ready_sync.recv(&msg);
 
-  for (int i = 0; i < nthreads; ++i) {
+  for (int i = 0; i < nthreads_; ++i) {
     EventManagerThreadParams params;
-    params.context = context;
+    params.context = context_;
     params.dealer_endpoint = "inproc://clients.dealer";
     params.pubsub_endpoint = "inproc://clients.all";
     params.ready_sync_endpoint = "inproc://clients.ready_sync";
@@ -217,7 +229,7 @@ EventManager::EventManager(zmq::context_t* context,
                               params);
     CreateThread(cl, &threads_[i]);
   }
-  for (int i = 0; i < nthreads; ++i) {
+  for (int i = 0; i < nthreads_; ++i) {
     ready_sync.recv(&msg);
   }
   VLOG(2) << "EventManager is up.";
@@ -247,6 +259,9 @@ EventManager::~EventManager() {
     CHECK_EQ(pthread_join(threads_[i], NULL), 0);
   }
   VLOG(2) << "EventManagerThreads finished.";
+  if (owns_context_) {
+    delete context_;
+  }
 }
 
 class EventManagerThread {

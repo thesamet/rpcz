@@ -22,8 +22,9 @@ class RpcChannel;
 
 class EventManager {
   public:
-    explicit EventManager(zmq::context_t* context,
-                          int nthreads = 1);
+    EventManager(zmq::context_t* context, int nthreads = 1);
+
+    explicit EventManager(int nthreads = 1);
 
     inline int GetThreadCount() const { return nthreads_; }
 
@@ -32,12 +33,15 @@ class EventManager {
   private:
     EventManagerController* GetController() const;
 
+    void Init();
+
     zmq::context_t* context_;
     int nthreads_;
     std::vector<pthread_t> threads_;
     pthread_t worker_device_thread_;
     pthread_t pubsub_device_thread_;
     pthread_key_t controller_key_;
+    bool owns_context_;
     friend class Connection;
     friend class ConnectionImpl;
     DISALLOW_COPY_AND_ASSIGN(EventManager);
