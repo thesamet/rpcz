@@ -62,6 +62,16 @@ class build(build_module.build):
         build_module.build.run(self)
 
 
+class gen_pyext(Command):
+    user_options = []
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+    def run(self):
+        os.system('cython --cplus cython/pywrapzrpc.pyx')
+
+
 setup(
     name = "zrpc",
     version = "0.9",
@@ -80,11 +90,10 @@ setup(
     ],
     cmdclass = {
         'build': build,
+        'gen_pyext': gen_pyext,
     },
     ext_modules=[
-        Extension("pywrapzrpc", ["pywrapzrpc.cpp"], libraries=["zrpc",
-                                                               "protobuf",
-                                                               "glog",
-                                                               "zmq"])
+        Extension("zrpc.pywrapzrpc", ["cython/pywrapzrpc.cpp"],
+                  libraries=["zrpc", "protobuf", "glog", "zmq"])
     ],
 )

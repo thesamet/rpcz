@@ -45,8 +45,16 @@ cdef string make_string(pystring) except *:
 
 cdef ptr_string_to_pystring(string* s):
     return s.c_str()[:s.size()]
+
+
 cdef string_to_pystring(string s):
     return s.c_str()[:s.size()]
+
+
+# cdef extern from "zrpc/rpc.h" namespace "zrpc":
+#     cdef enum Status "zrpc::GeneratedRPCResponse::Status":
+#         APPLICATION_ERROR, OK, DEADLINE_EXCEEDED
+
 
 
 cdef extern from "zrpc/rpc.h" namespace "zrpc":
@@ -60,7 +68,7 @@ cdef extern from "zrpc/rpc.h" namespace "zrpc":
         int Wait() nogil
 
 
-cdef class RPC:
+cdef class WrappedRPC:
     cdef _RPC *thisptr
     def __cinit__(self):
         self.thisptr = new _RPC()
@@ -127,7 +135,7 @@ cdef class RpcChannel:
         raise TypeError("Use a connection's MakeChannel to create a "
                         "RpcChannel.")
     def CallMethod(self, service_name, method_name,
-                   RPC rpc, request, response, callback):
+                   WrappedRPC rpc, request, response, callback):
         cdef ClosureWrapper* closure_wrapper = <ClosureWrapper*>malloc(
                 sizeof(ClosureWrapper))
         closure_wrapper.response_str = new string()
