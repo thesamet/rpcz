@@ -3,9 +3,9 @@ import sys
 
 from distutils.core import Command
 from distutils.command import build as build_module
-from distutils.core import Extension, setup
+from distutils.extension import Extension
+from distutils.core import setup
 from distutils import spawn
-from Cython.Distutils import build_ext
 
 
 def _generate_proto(source, output_dir,
@@ -79,9 +79,11 @@ setup(
     ],
     cmdclass = {
         'build': build,
-        'build_ext': build_ext,
     },
     ext_modules=[
-        Extension("zrpc", ["zrpc.pyx"], libraries=["zrpc"], language="c++")
-        ],
+        Extension("pywrapzrpc", ["pywrapzrpc.cpp"], libraries=["zrpc",
+                                                               "protobuf",
+                                                               "glog",
+                                                               "zmq"])
+    ],
 )
