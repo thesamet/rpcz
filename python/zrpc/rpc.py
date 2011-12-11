@@ -33,5 +33,7 @@ def RaiseRpcException(rpc):
 class RPC(pywrapzrpc.WrappedRPC):
   def wait(self):
     value = super(RPC, self).wait()
+    if value == zrpc_pb2.GenericRPCResponse.TERMINATED:
+      raise KeyboardInterrupt()
     if not self.ok():
       RaiseRpcException(self)

@@ -31,7 +31,7 @@
 
 namespace zrpc {
 namespace {
-static const uint64 kLargestPrime64 = 18446744073709551557ULL;
+static const uint64 kLargePrime = (1ULL << 63) - 165;
 static const uint64 kGenerator = 2;
 
 typedef uint64 EventId;
@@ -43,7 +43,7 @@ class EventIdGenerator {
   }
 
   EventId GetNext() {
-    state_ = (state_ * kGenerator) % kLargestPrime64;
+    state_ = (state_ * kGenerator) % kLargePrime;
     return state_;
   }
 
@@ -141,8 +141,8 @@ class EventManagerControllerImpl : public EventManagerController {
     WriteVectorToSocket(dealer_, messages);
   }
 
-  void WaitFor(StoppingCondition *stopping_condition) {
-    reactor_.LoopUntil(stopping_condition);
+  int WaitFor(StoppingCondition *stopping_condition) {
+    return reactor_.LoopUntil(stopping_condition);
   }
 
   void Quit() {
@@ -306,7 +306,6 @@ class EventManagerThread {
   void HandleTimeout(EventId event_id) {
     ClientRequestMap::iterator iter = client_request_map_.find(event_id);
     if (iter == client_request_map_.end()) {
-      LOG(INFO) << "Ignoring unknown incoming message.";
       return;
     }
     ClientRequest*& client_request = iter->second;
@@ -399,7 +398,6 @@ class EventManagerThread {
     EventId event_id(InterpretMessage<EventId>(*messages[1]));
     ClientRequestMap::iterator iter = client_request_map_.find(event_id);
     if (iter == client_request_map_.end()) {
-      LOG(INFO) << "Ignoring unknown incoming message.";
       return;
     }
     ClientRequest*& client_request = iter->second;

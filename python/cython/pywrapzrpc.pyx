@@ -7,10 +7,15 @@ cdef extern from "glog/logging.h" namespace "google":
     cdef void InitGoogleLogging(char*)
 
 
+cdef extern from "zrpc/event_manager.h" namespace "zrpc":
+    cdef void InstallSignalHandler()
+
+
 def Init():
     import sys
     InstallFailureSignalHandler()
     InitGoogleLogging(sys.argv[0])
+    InstallSignalHandler()
 
 
 cdef extern from "zrpc/event_manager.h" namespace "zrpc":

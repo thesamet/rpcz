@@ -170,9 +170,9 @@ class RequestStoppingCondition : public StoppingCondition {
   std::set<RpcResponseContext*>* wait_set_;
 };
 
-void ZMQRpcChannel::WaitFor(RpcResponseContext* response_context) {
+int ZMQRpcChannel::WaitFor(RpcResponseContext* response_context) {
   waiting_on_.insert(response_context);
   RequestStoppingCondition condition(&waiting_on_);
-  controller_->WaitFor(&condition);
+  return controller_->WaitFor(&condition);
 }
 }  // namespace zrpc

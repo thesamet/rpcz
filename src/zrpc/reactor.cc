@@ -55,7 +55,7 @@ void Reactor::RunClosureAt(uint64 timestamp, Closure* closure) {
   closure_run_map_[timestamp].push_back(closure);
 }
 
-void Reactor::LoopUntil(StoppingCondition* stop_condition) {
+int Reactor::LoopUntil(StoppingCondition* stop_condition) {
   while (!should_quit_ && !g_interrupted && (stop_condition == NULL ||
                                              !stop_condition->ShouldStop())) {
     if (is_dirty_) {
@@ -64,8 +64,10 @@ void Reactor::LoopUntil(StoppingCondition* stop_condition) {
     }
 
     long poll_timeout = ProcessClosureRunMap();
-    int rc = zmq::poll(&pollitems_[0], pollitems_.size(), poll_timeout);
-    CHECK_NE(rc, -1);
+    int rc = zmq_poll(&pollitems_[0], pollitems_.size(), poll_timeout);
+    if (rc == -1) {
+      CHECK_NE(zmq_errno(), EFAULT);
+    }
     for (size_t i = 0; i < pollitems_.size(); ++i) {
       if (!pollitems_[i].revents & ZMQ_POLLIN) {
         continue;
@@ -73,6 +75,11 @@ void Reactor::LoopUntil(StoppingCondition* stop_condition) {
       pollitems_[i].revents = 0;
       sockets_[i].second->Run();
     }
+  }
+  if (g_interrupted) {
+    return -1;
+  } else {
+    return 0;
   }
 }
 

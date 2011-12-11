@@ -41,7 +41,10 @@ GenericRPCResponse::Status RPC::Wait() {
   if (status != GenericRPCResponse::INFLIGHT) {
     return GetStatus();
   }
-  rpc_channel_->WaitFor(this->rpc_response_context_);
-  return GetStatus();
+  if (rpc_channel_->WaitFor(this->rpc_response_context_) != -1) {
+    return GetStatus();
+  } else {
+    return GenericRPCResponse::TERMINATED;
+  }
 }
 }  // namespace zrpc

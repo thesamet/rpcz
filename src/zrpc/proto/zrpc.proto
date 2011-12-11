@@ -15,6 +15,7 @@ message GenericRPCResponse {
     CANCELLED = 3;
     APPLICATION_ERROR = 4;
     DEADLINE_EXCEEDED = 5;
+    TERMINATED = 6;
   }
   enum ApplicationError {
     NO_ERROR = 0;

@@ -30,7 +30,7 @@ class Reactor {
 
     void RunClosureAt(uint64 timestamp, Closure *callback);
 
-    void LoopUntil(StoppingCondition* stopping_condition);
+    int LoopUntil(StoppingCondition* stopping_condition);
 
     void SetShouldQuit();
     

@@ -26,7 +26,7 @@ class EventManagerController {
                        ClientRequest* client_request,
                        const MessageVector& messages) = 0;
 
-  virtual void WaitFor(StoppingCondition* client_request) = 0;
+  virtual int WaitFor(StoppingCondition* client_request) = 0;
 
   virtual void Quit() = 0;
 

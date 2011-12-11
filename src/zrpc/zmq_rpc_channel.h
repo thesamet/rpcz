@@ -42,7 +42,7 @@ class ZMQRpcChannel : public RpcChannel {
                            std::string* response,
                            google::protobuf::Closure* done);
 
-  virtual void WaitFor(RpcResponseContext* response_context);
+  virtual int WaitFor(RpcResponseContext* response_context);
 
   virtual ~ZMQRpcChannel();
 
