@@ -34,17 +34,13 @@ void RPC::SetFailed(int application_error, const std::string& error_message) {
   application_error_ = application_error;
 }
 
-GenericRPCResponse::Status RPC::Wait() {
+int RPC::Wait() {
   GenericRPCResponse::Status status = GetStatus();
   CHECK_NE(status, GenericRPCResponse::INACTIVE)
       << "Request must be sent before calling Wait()";
   if (status != GenericRPCResponse::INFLIGHT) {
     return GetStatus();
   }
-  if (rpc_channel_->WaitFor(this->rpc_response_context_) != -1) {
-    return GetStatus();
-  } else {
-    return GenericRPCResponse::TERMINATED;
-  }
+  return rpc_channel_->WaitFor(this->rpc_response_context_);
 }
 }  // namespace zrpc

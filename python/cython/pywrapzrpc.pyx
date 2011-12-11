@@ -84,7 +84,8 @@ cdef class WrappedRPC:
     def wait(self):
         with nogil:
             value = self.thisptr.Wait()
-        return value
+        if value == -1:
+          raise KeyboardInterrupt()
 
     property status:
         def __get__(self):

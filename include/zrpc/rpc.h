@@ -48,7 +48,7 @@ class RPC {
 
   void SetFailed(int application_error, const std::string& message);
 
-  GenericRPCResponse::Status Wait();
+  int Wait();
 
  private:
   void SetStatus(GenericRPCResponse::Status status);
