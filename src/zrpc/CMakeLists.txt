@@ -6,7 +6,6 @@ set (ZRPC_VERSION_MINOR 9)
 
 add_subdirectory(plugin)
 
-find_package(ProtobufPlugin REQUIRED)
 protobuf_generate_cpp(ZRPC_PB_SRCS ZRPC_PB_HDRS proto/zrpc.proto)
 set(PROTO_SOURCES ${ZRPC_PB_SRCS} ${ZRPC_PB_HDRS})
 
