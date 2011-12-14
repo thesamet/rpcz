@@ -11,7 +11,8 @@
 #include "zrpc/zrpc.pb.h"
 
 namespace zrpc {
-class ZMQRpcChannel;
+class Connection;
+class SimpleRpcChannel;
 struct RpcResponseContext;
 
 class RPC {
@@ -54,13 +55,13 @@ class RPC {
   void SetStatus(GenericRPCResponse::Status status);
 
   GenericRPCResponse::Status status_;
-  ZMQRpcChannel* rpc_channel_;
+  Connection* connection_;
   RpcResponseContext* rpc_response_context_;
   std::string error_message_;
   int application_error_;
   int64 deadline_ms_;
 
-  friend class ZMQRpcChannel;
+  friend class SimpleRpcChannel;
   friend class Server;
 };
 }  // namespace

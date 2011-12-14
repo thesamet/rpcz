@@ -1,36 +1,18 @@
-// Copyright 2011, Nadav Samet.
-// All rights reserved.
-//
-// Author: thesamet@gmail.com <Nadav Samet>
-
-#include <google/protobuf/message.h>
-#include <string.h>
-#include <string>
-#include <vector>
-
-#include "glog/logging.h"
 #include "google/protobuf/descriptor.h"
-#include "zmq.hpp"
 #include "zrpc/client_request.h"
 #include "zrpc/clock.h"
-#include "zrpc/event_manager.h"
-#include "zrpc/event_manager_controller.h"
-#include "zrpc/macros.h"
-#include "zrpc/reactor.h"
 #include "zrpc/rpc.h"
-#include "zrpc/rpc_channel.h"
-#include "zrpc/zmq_rpc_channel.h"
-#include "zrpc/zrpc.pb.h"
+#include "zrpc/simple_rpc_channel.h"
+#include "zrpc/event_manager.h"
 
 namespace zrpc {
 
-ZMQRpcChannel::ZMQRpcChannel(
-    EventManagerController* controller,
-    Connection* connection)
-    : controller_(controller),
-      connection_(connection) {};
+SimpleRpcChannel::SimpleRpcChannel(Connection* connection)
+    : connection_(connection) {
+}
 
-ZMQRpcChannel::~ZMQRpcChannel() {};
+SimpleRpcChannel::~SimpleRpcChannel() {
+}
 
 struct RpcResponseContext {
   RPC* rpc;
@@ -40,7 +22,7 @@ struct RpcResponseContext {
   ClientRequest client_request;
 };
 
-void ZMQRpcChannel::CallMethodFull(
+void SimpleRpcChannel::CallMethodFull(
     const std::string& service_name,
     const std::string& method_name,
     RPC* rpc,
@@ -66,7 +48,7 @@ void ZMQRpcChannel::CallMethodFull(
 
   RpcResponseContext *response_context = new RpcResponseContext;
   response_context->client_request.closure = NewCallback(
-      this, &ZMQRpcChannel::HandleClientResponse,
+      this, &SimpleRpcChannel::HandleClientResponse,
       response_context);
   response_context->rpc = rpc;
   response_context->client_request.deadline_ms = rpc->GetDeadlineMs();
@@ -75,15 +57,14 @@ void ZMQRpcChannel::CallMethodFull(
   response_context->response_str = response_str;
   response_context->response_msg = response_msg;
   rpc->SetStatus(GenericRPCResponse::INFLIGHT);
-  rpc->rpc_channel_ = this;
+  rpc->connection_ = connection_;
   rpc->rpc_response_context_ = response_context;
 
-  controller_->Forward(connection_,
-                       &response_context->client_request,
-                       vout);
+  connection_->SendClientRequest(&response_context->client_request,
+                                 vout);
 }
 
-void ZMQRpcChannel::CallMethod0(const std::string& service_name,
+void SimpleRpcChannel::CallMethod0(const std::string& service_name,
                                 const std::string& method_name,
                                 RPC* rpc,
                                 const std::string& request,
@@ -98,7 +79,7 @@ void ZMQRpcChannel::CallMethod0(const std::string& service_name,
                  done);
 }
 
-void ZMQRpcChannel::CallMethod(
+void SimpleRpcChannel::CallMethod(
     const google::protobuf::MethodDescriptor* method,
     RPC* rpc,
     const google::protobuf::Message* request,
@@ -113,7 +94,7 @@ void ZMQRpcChannel::CallMethod(
                  done);
 }
 
-void ZMQRpcChannel::HandleClientResponse(
+void SimpleRpcChannel::HandleClientResponse(
     RpcResponseContext* response_context) {
   ClientRequest& client_request = response_context->client_request;
 
@@ -153,26 +134,6 @@ void ZMQRpcChannel::HandleClientResponse(
   if (response_context->user_closure) {
     response_context->user_closure->Run();
   }
-  waiting_on_.erase(response_context);
   delete response_context;
-}
-
-class RequestStoppingCondition : public StoppingCondition {
- public:
-  RequestStoppingCondition(std::set<RpcResponseContext*>* wait_set) :
-      wait_set_(wait_set) {}
-
-  bool ShouldStop() {
-    return wait_set_->empty();
-  }
-
- private:
-  std::set<RpcResponseContext*>* wait_set_;
-};
-
-int ZMQRpcChannel::WaitFor(RpcResponseContext* response_context) {
-  waiting_on_.insert(response_context);
-  RequestStoppingCondition condition(&waiting_on_);
-  return controller_->WaitFor(&condition);
 }
 }  // namespace zrpc

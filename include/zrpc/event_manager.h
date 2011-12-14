@@ -10,15 +10,21 @@
 #include <string>
 #include <vector>
 
-#include "macros.h"
+#include "zrpc/macros.h"
 
 namespace zmq {
 class context_t;
+class message_t;
 }  // namespace zmq
 
 namespace zrpc {
+struct ClientRequest;
 class EventManagerController;
 class RpcChannel;
+template<class T>
+class PointerVector;
+typedef PointerVector<zmq::message_t> MessageVector;
+class StoppingCondition;
 
 class EventManager {
   public:
@@ -53,6 +59,11 @@ class Connection {
  public:
   static Connection* CreateConnection(
       EventManager* em, const std::string& endpoint);
+
+  virtual void SendClientRequest(ClientRequest* client_request,
+                                 const MessageVector& messages) = 0;
+
+  virtual int WaitUntil(StoppingCondition* stopping_condition) = 0;
 
   // Creates a thread-specific RpcChannel for this connection.
   virtual RpcChannel* MakeChannel() = 0;

@@ -27,7 +27,7 @@
 #include "zrpc/event_manager_controller.h"
 #include "zrpc/macros.h"
 #include "zrpc/reactor.h"
-#include "zrpc/zmq_rpc_channel.h"
+#include "zrpc/simple_rpc_channel.h"
 
 namespace zrpc {
 namespace {
@@ -141,7 +141,7 @@ class EventManagerControllerImpl : public EventManagerController {
     WriteVectorToSocket(dealer_, messages);
   }
 
-  int WaitFor(StoppingCondition *stopping_condition) {
+  int WaitUntil(StoppingCondition *stopping_condition) {
     return reactor_.LoopUntil(stopping_condition);
   }
 
@@ -318,10 +318,10 @@ class EventManagerThread {
 
   template<typename ForwardIterator>
   uint64 ForwardRemote(
-    Connection* connection,
-    ClientRequest* client_request,
-    ForwardIterator begin,
-    ForwardIterator end) {
+      Connection* connection,
+      ClientRequest* client_request,
+      ForwardIterator begin,
+      ForwardIterator end) {
     ConnectionMap::const_iterator it = connection_map_.find(connection);
     CHECK(it != connection_map_.end());
     EventId event_id = event_id_generator_.GetNext();
@@ -430,7 +430,17 @@ class ConnectionImpl : public Connection {
       : Connection(), event_manager_(event_manager) {}
 
   virtual RpcChannel* MakeChannel() {
-    return new ZMQRpcChannel(event_manager_->GetController(), this);
+    return new SimpleRpcChannel(this);
+  }
+
+  virtual void SendClientRequest(ClientRequest* client_request,
+                                 const MessageVector& messages) {
+    event_manager_->GetController()->Forward(
+        this, client_request, messages);
+  }
+
+  virtual int WaitUntil(StoppingCondition* condition) {
+    return event_manager_->GetController()->WaitUntil(condition);
   }
 
  private:

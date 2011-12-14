@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
   zrpc::scoped_ptr<zrpc::Connection> connection(
       zrpc::Connection::CreateConnection(
-          &em, "tcp://localhost:5555"));
+          &em, "tcp://localhost:5556"));
 
   zrpc::SearchService_Stub stub(connection->MakeChannel(), true);
   zrpc::SearchRequest request;

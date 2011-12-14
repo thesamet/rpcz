@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
   ::google::InstallFailureSignalHandler();
   zmq::context_t context(1);
   zmq::socket_t socket(context, ZMQ_REP);
-  socket.bind("tcp://*:5555");
+  socket.bind("tcp://*:5556");
   zrpc::Server server(&socket);
   zrpc::SearchServiceImpl search_service;
   server.RegisterService(&search_service);
