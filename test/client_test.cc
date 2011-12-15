@@ -9,7 +9,8 @@
 #include <zmq.hpp>
 
 #include <google/protobuf/descriptor.h>
-#include "zrpc/event_manager.h"
+#include "zrpc/callback.h"
+#include "zrpc/connection_manager.h"
 #include "zrpc/rpc.h"
 #include "zrpc/zrpc.pb.h"
 #include "zrpc/service.h"
@@ -32,7 +33,7 @@ int main(int argc, char *argv[]) {
   FLAGS_logtostderr = true;
   {
   zmq::context_t context(1);
-  zrpc::EventManager em(&context, 5);
+  zrpc::ConnectionManager em(&context, 5);
 
   zrpc::scoped_ptr<zrpc::Connection> connection(
       zrpc::Connection::CreateConnection(

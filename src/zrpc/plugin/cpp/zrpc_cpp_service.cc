@@ -70,7 +70,7 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
     "                ::zrpc::RPC* rpc,\n"
     "                const ::google::protobuf::Message* request,\n"
     "                ::google::protobuf::Message* response,\n"
-    "                ::google::protobuf::Closure* done);\n"
+    "                Closure* done);\n"
     "const ::google::protobuf::Message& GetRequestPrototype(\n"
     "  const ::google::protobuf::MethodDescriptor* method) const;\n"
     "const ::google::protobuf::Message& GetResponsePrototype(\n"
@@ -127,7 +127,7 @@ void ServiceGenerator::GenerateMethodSignatures(
       "$virtual$void $name$(::zrpc::RPC* rpc,\n"
       "                     const $input_type$* request,\n"
       "                     $output_type$* response,\n"
-      "                     ::google::protobuf::Closure* done);\n");
+      "                     Closure* done);\n");
   }
 }
 
@@ -192,7 +192,7 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
       "void $classname$::$name$(::zrpc::RPC* rpc,\n"
       "                         const $input_type$*,\n"
       "                         $output_type$*,\n"
-      "                         ::google::protobuf::Closure* done) {\n"
+      "                         Closure* done) {\n"
       "  rpc->SetFailed(\"Method $name$() not implemented.\");\n"
       "  done->Run();\n"
       "}\n"
@@ -206,7 +206,7 @@ void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
     "                             ::zrpc::RPC* rpc,\n"
     "                             const ::google::protobuf::Message* request,\n"
     "                             ::google::protobuf::Message* response,\n"
-    "                             ::google::protobuf::Closure* done) {\n"
+    "                             Closure* done) {\n"
     "  GOOGLE_DCHECK_EQ(method->service(), $classname$_descriptor_);\n"
     "  switch(method->index()) {\n");
 
@@ -290,7 +290,7 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
       "void $classname$_Stub::$name$(::zrpc::RPC* rpc,\n"
       "                              const $input_type$* request,\n"
       "                              $output_type$* response,\n"
-      "                              ::google::protobuf::Closure* done) {\n"
+      "                              Closure* done) {\n"
       "  channel_->CallMethod(descriptor()->method($index$),\n"
       "                       rpc, request, response, done);\n"
       "}\n");

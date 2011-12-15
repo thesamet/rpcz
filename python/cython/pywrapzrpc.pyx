@@ -7,9 +7,11 @@ cdef extern from "glog/logging.h" namespace "google":
     cdef void InitGoogleLogging(char*)
 
 
-cdef extern from "zrpc/event_manager.h" namespace "zrpc":
+cdef extern from "zrpc/connection_manager.h" namespace "zrpc":
     cdef void InstallSignalHandler()
 
+cdef extern from "zrpc/callback.h" namespace "zrpc":
+  pass
 
 def Init():
     import sys
@@ -18,16 +20,16 @@ def Init():
     InstallSignalHandler()
 
 
-cdef extern from "zrpc/event_manager.h" namespace "zrpc":
-    cdef cppclass _EventManager "zrpc::EventManager":
-        _EventManager(int)
+cdef extern from "zrpc/connection_manager.h" namespace "zrpc":
+    cdef cppclass _ConnectionManager "zrpc::ConnectionManager":
+        _ConnectionManager(int)
         int GetThreadCount()
 
 
-cdef class EventManager:
-    cdef _EventManager *thisptr
+cdef class ConnectionManager:
+    cdef _ConnectionManager *thisptr
     def __cinit__(self):
-        self.thisptr = new _EventManager(1)
+        self.thisptr = new _ConnectionManager(1)
     def __dealloc__(self):
         del self.thisptr
     property thread_count:
@@ -119,7 +121,9 @@ cdef extern from "zrpc/macros.h" namespace "zrpc":
 cdef void PythonCallbackBridge(ClosureWrapper *closure_wrapper) with gil:
     (<object>closure_wrapper.response_obj).ParseFromString(
             ptr_string_to_pystring(closure_wrapper.response_str))
-    (<object>closure_wrapper.callback)()
+    callback = <object>closure_wrapper.callback
+    if callback is not None:
+      callback()
     Py_DECREF(<object>closure_wrapper.response_obj)
     Py_DECREF(<object>closure_wrapper.callback)
     del closure_wrapper.response_str
@@ -159,12 +163,12 @@ cdef class RpcChannel:
                     PythonCallbackBridge, closure_wrapper))
 
 
-cdef extern from "zrpc/event_manager.h" namespace "zrpc":
+cdef extern from "zrpc/connection_manager.h" namespace "zrpc":
     cdef cppclass _Connection "zrpc::Connection":
         _RpcChannel* MakeChannel()
 
     _Connection* _CreateConnection "zrpc::Connection::CreateConnection" (
-            _EventManager*, string)
+            _ConnectionManager*, string)
 
 
 cdef class Connection:
@@ -180,7 +184,7 @@ cdef class Connection:
         return channel
 
 
-def CreateConnection(EventManager em, endpoint):
+def CreateConnection(ConnectionManager cm, endpoint):
     cdef Connection c = Connection.__new__(Connection)
-    c.thisptr = _CreateConnection(em.thisptr, string(endpoint))
+    c.thisptr = _CreateConnection(cm.thisptr, string(endpoint))
     return c

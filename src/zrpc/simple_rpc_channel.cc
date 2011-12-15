@@ -1,9 +1,10 @@
 #include "google/protobuf/descriptor.h"
+#include "zrpc/callback.h"
 #include "zrpc/client_request.h"
 #include "zrpc/clock.h"
 #include "zrpc/rpc.h"
 #include "zrpc/simple_rpc_channel.h"
-#include "zrpc/event_manager.h"
+#include "zrpc/connection_manager.h"
 
 namespace zrpc {
 
@@ -29,7 +30,7 @@ void SimpleRpcChannel::CallMethodFull(
     const std::string& request,
     std::string* response_str,
     ::google::protobuf::Message* response_msg,
-    google::protobuf::Closure* done) {
+    Closure* done) {
   CHECK(rpc->GetStatus() == GenericRPCResponse::INACTIVE);
   GenericRPCRequest generic_request;
   generic_request.set_service(service_name);
@@ -69,7 +70,7 @@ void SimpleRpcChannel::CallMethod0(const std::string& service_name,
                                 RPC* rpc,
                                 const std::string& request,
                                 std::string* response,
-                                google::protobuf::Closure* done) {
+                                Closure* done) {
   CallMethodFull(service_name,
                  method_name,
                  rpc,
@@ -84,7 +85,7 @@ void SimpleRpcChannel::CallMethod(
     RPC* rpc,
     const google::protobuf::Message* request,
     google::protobuf::Message* response,
-    google::protobuf::Closure* done) {
+    Closure* done) {
   CallMethodFull(method->service()->name(),
                  method->name(),
                  rpc,

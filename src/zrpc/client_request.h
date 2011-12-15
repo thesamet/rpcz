@@ -11,6 +11,7 @@
 #include "zrpc/zmq_utils.h"
 
 namespace zrpc {
+class Closure;
 struct ClientRequest {
   enum Status {
     INACTIVE = 0,

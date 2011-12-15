@@ -3,8 +3,8 @@
 //
 // Author: thesamet@gmail.com <Nadav Samet>
 
-#ifndef ZRPC_EVENT_MANAGER_H
-#define ZRPC_EVENT_MANAGER_H
+#ifndef ZRPC_CONNECTION_MANAGER_H
+#define ZRPC_CONNECTION_MANAGER_H
 
 #include <pthread.h>
 #include <string>
@@ -19,25 +19,25 @@ class message_t;
 
 namespace zrpc {
 struct ClientRequest;
-class EventManagerController;
+class ConnectionManagerController;
 class RpcChannel;
 template<class T>
 class PointerVector;
 typedef PointerVector<zmq::message_t> MessageVector;
 class StoppingCondition;
 
-class EventManager {
+class ConnectionManager {
   public:
-    EventManager(zmq::context_t* context, int nthreads = 1);
+    ConnectionManager(zmq::context_t* context, int nthreads = 1);
 
-    explicit EventManager(int nthreads = 1);
+    explicit ConnectionManager(int nthreads = 1);
 
     inline int GetThreadCount() const { return nthreads_; }
 
-    ~EventManager();
+    ~ConnectionManager();
 
   private:
-    EventManagerController* GetController() const;
+    ConnectionManagerController* GetController() const;
 
     void Init();
 
@@ -50,7 +50,7 @@ class EventManager {
     bool owns_context_;
     friend class Connection;
     friend class ConnectionImpl;
-    DISALLOW_COPY_AND_ASSIGN(EventManager);
+    DISALLOW_COPY_AND_ASSIGN(ConnectionManager);
 };
 
 void InstallSignalHandler();
@@ -58,7 +58,7 @@ void InstallSignalHandler();
 class Connection {
  public:
   static Connection* CreateConnection(
-      EventManager* em, const std::string& endpoint);
+      ConnectionManager* em, const std::string& endpoint);
 
   virtual void SendClientRequest(ClientRequest* client_request,
                                  const MessageVector& messages) = 0;

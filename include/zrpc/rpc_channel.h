@@ -20,6 +20,7 @@ class MethodDescriptor;
 }  // namespace google
 
 namespace zrpc {
+class Closure;
 class RPC;
 
 class RpcChannel {
@@ -37,7 +38,7 @@ class RpcChannel {
                            RPC* rpc,
                            const std::string& request,
                            std::string* response,
-                           google::protobuf::Closure* done) = 0;
+                           Closure* done) = 0;
 
   virtual ~RpcChannel() {};
 };

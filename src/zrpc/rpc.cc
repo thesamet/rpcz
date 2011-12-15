@@ -4,7 +4,7 @@
 // Author: thesamet@gmail.com <Nadav Samet>
 
 #include "glog/logging.h"
-#include "zrpc/event_manager.h"
+#include "zrpc/connection_manager.h"
 #include "zrpc/reactor.h"
 #include "zrpc/rpc.h"
 #include "zrpc/thread_rpc_channel.h"

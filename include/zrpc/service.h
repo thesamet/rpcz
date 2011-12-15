@@ -8,7 +8,6 @@
 
 namespace google {
 namespace protobuf {
-class Closure;
 class Message;
 class MethodDescriptor;
 class ServiceDescriptor;
@@ -16,6 +15,7 @@ class ServiceDescriptor;
 }  // namespace google
 
 namespace zrpc {
+class Closure;
 class RPC;
 
 class Service {
@@ -33,7 +33,7 @@ class Service {
                           RPC* rpc,
                           const google::protobuf::Message* request,
                           google::protobuf::Message* response,
-                          google::protobuf::Closure* done) = 0;
+                          Closure* done) = 0;
 };
 }  // namespace
 #endif

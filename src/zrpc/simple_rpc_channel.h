@@ -7,7 +7,8 @@ namespace zrpc {
 
 class Connection;
 class ClientRequest;
-class EventManager;
+class Closure;
+class ConnectionManager;
 struct RpcResponseContext;
 
 class SimpleRpcChannel: public RpcChannel {
@@ -24,7 +25,7 @@ class SimpleRpcChannel: public RpcChannel {
       const std::string& service_name,
       const std::string& method_name, RPC* rpc,
       const std::string& request,
-      std::string* response, google::protobuf::Closure* done);
+      std::string* response, Closure* done);
 
  private:
   virtual void HandleClientResponse(RpcResponseContext *response_context);
@@ -36,10 +37,9 @@ class SimpleRpcChannel: public RpcChannel {
     const std::string& request,
     std::string* response_str,
     ::google::protobuf::Message* response_msg,
-    google::protobuf::Closure* done);
+    Closure* done);
 
   Connection* connection_;
 };
-
 } // namespace zrpc
 #endif /* ZRPC_SIMPLE_RPC_CHANNEL_H_ */

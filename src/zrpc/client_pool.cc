@@ -9,7 +9,7 @@
 #include <zmq.hpp>
 
 #include <google/protobuf/descriptor.h>
-#include "zrpc/event_manager.h"
+#include "zrpc/connection_manager.h"
 #include "zrpc/rpc.h"
 #include "zrpc/zrpc.pb.h"
 #include "zrpc/service.h"
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   google::InstallFailureSignalHandler();
   FLAGS_logtostderr = true;
   zmq::context_t context(1);
-  zrpc::EventManager em(&context, 10);
+  zrpc::ConnectionManager em(&context, 10);
   pthread_t thread;
   {
     zrpc::ClientContext *client_context = new zrpc::ClientContext;
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
   }
   usleep(1000);
 
-  zrpc::EventManagerController* controller = em.GetController();
+  zrpc::ConnectionManagerController* controller = em.GetController();
   controller->AddRemoteEndpoint("moishe", "inproc://moishe");
   delete controller;
   usleep(1000);

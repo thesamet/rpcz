@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <vector>
 #include "glog/logging.h"
+#include "zrpc/callback.h"
 #include "zrpc/clock.h"
 #include "zrpc/macros.h"
 #include "zrpc/reactor.h"

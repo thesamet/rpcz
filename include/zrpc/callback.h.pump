@@ -1,0 +1,128 @@
+$var max_args = 7
+
+#ifndef ZRPC_CALLBACK_H
+#define ZRPC_CALLBACK_H
+
+#include "zrpc/macros.h"
+
+namespace zrpc {
+
+class Closure {
+ public:
+  Closure() {}
+  virtual ~Closure() {}
+
+  virtual void Run() = 0;
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(Closure);
+};
+
+
+$range args 0..max_args
+$for args [[
+// For args = $args
+namespace internal {
+
+$range arg 1..args
+$if args > 0 [[
+template <$for arg , [[typename Arg$arg]]>
+
+]]
+class FunctionClosure$args : public Closure {
+ public:
+  typedef void (*FunctionType)($for arg , [[Arg$arg arg$arg]]);
+
+  FunctionClosure$args(FunctionType function, bool self_deleting$for arg [[, Arg$arg arg$arg]])
+    : function_(function), self_deleting_(self_deleting)$for arg [[
+, arg$(arg)_(arg$arg)]] {}
+  virtual ~FunctionClosure$args() {}
+
+  void Run() {
+    bool needs_delete = self_deleting_;  // read in case callback deletes
+    function_($for arg , [[arg$(arg)_]]);
+    if (needs_delete) delete this;
+  }
+
+ private:
+  FunctionType function_;
+  bool self_deleting_;
+
+$for arg [[
+  Arg$arg arg$(arg)_;
+
+]]
+};
+
+template <typename Class$for arg [[, typename Arg$arg]]>
+class MethodClosure$args : public Closure {
+ public:
+  typedef void (Class::*MethodType)($for arg , [[Arg$arg arg$arg]]);
+
+  MethodClosure$args(Class* object, MethodType method, bool self_deleting$for arg [[, Arg$arg arg$arg]])    : object_(object), method_(method), self_deleting_(self_deleting)$for arg [[
+, arg$(arg)_(arg$arg)]] {}
+  virtual ~MethodClosure$args() {}
+
+  void Run() {
+    bool needs_delete = self_deleting_;  // read in case callback deletes
+    (object_->*method_)($for arg , [[arg$(arg)_]]);
+    if (needs_delete) delete this;
+  }
+
+ private:
+  Class* object_;
+  MethodType method_;
+  bool self_deleting_;
+$for arg [[
+  Arg$arg arg$(arg)_;
+
+]]
+
+};
+}  // namespace internal
+
+
+$if args > 0[[
+template <$for arg , [[typename Arg$arg]]>
+
+]]
+inline Closure* NewCallback(void (*function)($for arg , [[Arg$arg]])
+$for arg [[, Arg$arg arg$arg]]) {
+  return new internal::FunctionClosure$args$if args > 0 [[
+<$for arg , [[Arg$arg]]>]](function, true[[]]
+$for arg [[, arg$arg]]);
+}
+
+$if args > 0[[
+template <$for arg , [[typename Arg$arg]]>
+
+]]
+inline Closure* NewPermanentCallback(void (*function)($for arg , [[Arg$arg]])
+$for arg [[, Arg$arg arg$arg]]) {
+  return new internal::FunctionClosure$args$if args > 0 [[
+<$for arg , [[Arg$arg]]>]](function, false[[]]
+$for arg [[, arg$arg]]);
+}
+
+template <typename Class$for arg [[, typename Arg$arg]]>
+inline Closure* NewCallback(Class* object, void (Class::*method)(
+$for arg , [[Arg$arg]])
+$for arg [[, Arg$arg arg$arg]]) {
+  return new internal::MethodClosure$args<Class$for arg [[, Arg$arg]]
+>(object, method, true[[]]
+$for arg [[, arg$arg]]);
+}
+
+template <typename Class$for arg [[, typename Arg$arg]]>
+inline Closure* NewPermanentCallback(Class* object, void (Class::*method)(
+$for arg , [[Arg$arg]])
+$for arg [[, Arg$arg arg$arg]]) {
+  return new internal::MethodClosure$args<Class$for arg [[, Arg$arg]]
+>(object, method, false[[]]
+$for arg [[, arg$arg]]);
+}
+
+
+]]
+} //namespace zrpc
+#endif

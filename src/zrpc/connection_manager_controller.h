@@ -3,8 +3,8 @@
 //
 // Author: thesamet@gmail.com <Nadav Samet>
 
-#ifndef ZRPC_EVENT_MANAGER_CONTROLLER_H
-#define ZRPC_EVENT_MANAGER_CONTROLLER_H
+#ifndef ZRPC_CONNECTION_MANAGER_CONTROLLER_H
+#define ZRPC_CONNECTION_MANAGER_CONTROLLER_H
 
 #include <string>
 #include <vector>
@@ -17,7 +17,7 @@ class Connection;
 class StoppingCondition;
 
 // Controls an event manager.
-class EventManagerController {
+class ConnectionManagerController {
  public:
   virtual void AddRemoteEndpoint(Connection* connection,
                                  const std::string& remote_endpoint) = 0;
@@ -30,7 +30,7 @@ class EventManagerController {
 
   virtual void Quit() = 0;
 
-  virtual ~EventManagerController() {};
+  virtual ~ConnectionManagerController() {};
 };
 }  // namespace zrpc
 #endif

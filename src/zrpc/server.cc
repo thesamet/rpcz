@@ -16,7 +16,8 @@
 #include <iostream>
 #include <utility>
 
-#include "zrpc/event_manager.h"
+#include "zrpc/callback.h"
+#include "zrpc/connection_manager.h"
 #include "zrpc/macros.h"
 #include "zrpc/rpc.h"
 #include "zrpc/reactor.h"
@@ -153,7 +154,7 @@ void Server::HandleRequest() {
     return;
   }
 
-  ::google::protobuf::Closure *closure = ::google::protobuf::NewCallback(
+  Closure *closure = NewCallback(
       &FinalizeResponse, context, socket_);
   context->rpc.SetStatus(GenericRPCResponse::OK);
   service->CallMethod(descriptor, &context->rpc,

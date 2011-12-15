@@ -59,6 +59,7 @@ void FileGenerator::GenerateHeader(io::Printer* printer) {
     "}  // namespace google\n"
     "namespace zrpc {\n"
     "class RPC;\n"
+    "class Closure;\n"
     "}  //namesacpe zrpc\n"
     ,
     "filename", file_->name(),
@@ -103,6 +104,7 @@ void FileGenerator::GenerateSource(io::Printer* printer) {
     "#include \"$basename$.pb.h\"\n"
     "#include <google/protobuf/descriptor.h>\n"
     "#include <google/protobuf/stubs/once.h>\n"
+    "#include <zrpc/callback.h>\n"
     "#include <zrpc/rpc.h>\n"
     "namespace {\n",
     "basename", StripProto(file_->name()));

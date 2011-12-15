@@ -9,7 +9,7 @@
 #include <google/protobuf/compiler/importer.h>
 #include <google/protobuf/dynamic_message.h>
 #include <google/protobuf/text_format.h>
-#include "zrpc/event_manager.h"
+#include "zrpc/connection_manager.h"
 #include "zrpc/rpc_channel.h"
 #include "zrpc/service.h"
 #include "zrpc/rpc.h"
@@ -85,7 +85,7 @@ void RunCall(const std::string& endpoint,
   }
 
   zmq::context_t context(1);
-  zrpc::EventManager em(&context, 1);
+  zrpc::ConnectionManager em(&context, 1);
   scoped_ptr<Connection> connection(Connection::CreateConnection(&em,
           endpoint));
   scoped_ptr<RpcChannel> channel(connection->MakeChannel());

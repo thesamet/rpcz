@@ -33,9 +33,6 @@ void DeleteContainerPairPointers(const IteratorType& begin,
 
 namespace zrpc {
 using google::protobuf::scoped_ptr; 
-using google::protobuf::NewCallback;
-using google::protobuf::NewPermanentCallback;
-using google::protobuf::Closure;
 using google::protobuf::uint64;
 using google::protobuf::int64;
 }  // namespace zrpc
