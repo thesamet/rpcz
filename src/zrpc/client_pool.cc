@@ -1,11 +1,11 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   client_request.status = zrpc::ClientRequest::OK;
   client_request.closure = google::protobuf::NewCallback(
       MyCallback, &client_request);
-  
+
   zmq::socket_t req(context, ZMQ_REQ);
   req.connect("inproc://clients.app");
   zrpc::SendString(&req, "FORWARD", ZMQ_SNDMORE);
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
   zrpc::SendPointer(&req, &client_request, ZMQ_SNDMORE);
   zrpc::SendString(&req, "lafefon", ZMQ_SNDMORE);
   zrpc::SendString(&req, "hamutz");
-  
+
   sleep(5);
   google::ShutdownGoogleLogging();
   return 0;
