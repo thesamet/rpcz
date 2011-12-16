@@ -14,6 +14,14 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
+#include "zrpc/simple_rpc_channel.h"
+#include "zrpc/clock.h"
+#include "zrpc/connection_manager.h"
+#include "zrpc/callback.h"
+#include "zrpc/client_request.h"
+#include "zrpc/rpc.h"
+#include "google/protobuf/descriptor.h"                                                                                                                                                                                                      
+
 namespace zrpc {
 
 SimpleRpcChannel::SimpleRpcChannel(Connection* connection)

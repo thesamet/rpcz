@@ -18,7 +18,6 @@
 #include "zrpc/connection_manager.h"
 #include "zrpc/reactor.h"
 #include "zrpc/rpc.h"
-#include "zrpc/thread_rpc_channel.h"
 #include "zrpc/zrpc.pb.h"
 
 namespace zrpc {

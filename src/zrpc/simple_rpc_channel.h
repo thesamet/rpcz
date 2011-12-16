@@ -14,6 +14,9 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
+#ifndef ZRPC_SIMPLE_RPC_CHANNEL_H
+#define ZRPC_SIMPLE_RPC_CHANNEL_H
+
 #include "zrpc/rpc_channel.h"
 
 namespace zrpc {
