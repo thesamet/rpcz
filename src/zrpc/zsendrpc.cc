@@ -96,9 +96,8 @@ void RunCall(const std::string& endpoint,
   }
 
   zmq::context_t context(1);
-  zrpc::ConnectionManager em(&context, 1);
-  scoped_ptr<Connection> connection(Connection::CreateConnection(&em,
-          endpoint));
+  zrpc::ConnectionManager cm(&context, 1);
+  scoped_ptr<Connection> connection(cm.Connect(endpoint));
   scoped_ptr<RpcChannel> channel(connection->MakeChannel());
   RPC rpc;
   ::google::protobuf::Message *reply = factory.GetPrototype(

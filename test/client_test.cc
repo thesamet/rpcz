@@ -44,11 +44,10 @@ int main(int argc, char *argv[]) {
   FLAGS_logtostderr = true;
   {
   zmq::context_t context(1);
-  zrpc::ConnectionManager em(&context, 5);
+  zrpc::ConnectionManager cm(&context, 5);
 
-  zrpc::scoped_ptr<zrpc::Connection> connection(
-      zrpc::Connection::CreateConnection(
-          &em, "tcp://localhost:5556"));
+  zrpc::scoped_ptr<zrpc::Connection> connection(cm.Connect(
+          "tcp://localhost:5556"));
 
   zrpc::SearchService_Stub stub(connection->MakeChannel(), true);
   zrpc::SearchRequest request;

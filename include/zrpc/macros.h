@@ -19,12 +19,18 @@
 
 #include "google/protobuf/stubs/common.h"
 
+namespace zrpc {
+using google::protobuf::scoped_ptr; 
+using google::protobuf::uint64;
+using google::protobuf::int64;
+
 // A macro to disallow the copy constructor and operator= functions
 // This should be used in the private: declarations for a class
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName&);               \
     void operator=(const TypeName&)
 
+// Deletes each pointer in the range [begin, end)
 template<typename IteratorType>
 void DeleteContainerPointers(const IteratorType& begin,
                              const IteratorType& end) {
@@ -33,6 +39,7 @@ void DeleteContainerPointers(const IteratorType& begin,
   }
 }
 
+// For each item in the range [begin, end), delete item->first and item->second.
 template<typename IteratorType>
 void DeleteContainerPairPointers(const IteratorType& begin,
                                  const IteratorType& end) {
@@ -41,11 +48,5 @@ void DeleteContainerPairPointers(const IteratorType& begin,
     delete i->second;
   }
 }
-
-namespace zrpc {
-using google::protobuf::scoped_ptr; 
-using google::protobuf::uint64;
-using google::protobuf::int64;
 }  // namespace zrpc
-
 #endif

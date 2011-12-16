@@ -34,7 +34,6 @@
 #include "zrpc/rpc_channel.h"
 #include "zmq_utils.h"
 #include "zrpc/callback.h"
-#include "zrpc/client_request.h"
 #include "zrpc/clock.h"
 #include "zrpc/connection_manager_controller.h"
 #include "zrpc/macros.h"
@@ -97,6 +96,14 @@ const static char *kForward = "FORWARD";
 const static char *kQuit = "QUIT";
 
 
+struct RemoteResponseWrapper {
+  RemoteResponse* remote_response;
+  int64 deadline_ms;
+  uint64 start_time;
+  Closure* closure;
+  MessageVector return_path;
+};
+
 class ConnectionManagerControllerImpl : public ConnectionManagerController {
  private:
   void HandleDealerSocket() {
@@ -104,10 +111,10 @@ class ConnectionManagerControllerImpl : public ConnectionManagerController {
     ReadMessageToVector(dealer_, &messages);
     CHECK_EQ(messages.size(), 2);
     CHECK_EQ(messages[0]->size(), 0);
-    ClientRequest* client_request(
-        InterpretMessage<ClientRequest*>(*messages[1]));
-    CHECK_NOTNULL(client_request);
-    client_request->closure->Run();
+    RemoteResponseWrapper* remote_response_wrapper(
+        InterpretMessage<RemoteResponseWrapper*>(*messages[1]));
+    CHECK_NOTNULL(remote_response_wrapper);
+    remote_response_wrapper->closure->Run();
   }
 
  public:
@@ -144,13 +151,20 @@ class ConnectionManagerControllerImpl : public ConnectionManagerController {
   }
 
   void Forward(Connection* connection,
-               ClientRequest* client_request,
-               const MessageVector& messages) {
+               const MessageVector& request,
+               RemoteResponse* remote_response,
+               int64 deadline_ms,
+               Closure* closure) {
+    RemoteResponseWrapper* wrapper = new RemoteResponseWrapper;
+    wrapper->remote_response = remote_response;
+    wrapper->deadline_ms = deadline_ms;
+    wrapper->closure = closure;
+
     SendString(dealer_, "", ZMQ_SNDMORE);
     SendString(dealer_, kForward, ZMQ_SNDMORE);
     SendPointer(dealer_, connection, ZMQ_SNDMORE);
-    SendPointer<ClientRequest>(dealer_, client_request, ZMQ_SNDMORE);
-    WriteVectorToSocket(dealer_, messages);
+    SendPointer<RemoteResponseWrapper>(dealer_, wrapper, ZMQ_SNDMORE);
+    WriteVectorToSocket(dealer_, request);
   }
 
   int WaitUntil(StoppingCondition *stopping_condition) {
@@ -198,6 +212,39 @@ ConnectionManager::ConnectionManager(int nthreads) : context_(new zmq::context_t
   Init();
 }
 
+class ConnectionImpl : public Connection {
+ public:
+  ConnectionImpl(ConnectionManager* connection_manager)
+      : Connection(), connection_manager_(connection_manager) {}
+
+  virtual RpcChannel* MakeChannel() {
+    return new SimpleRpcChannel(this);
+  }
+
+  virtual void SendRequest(
+      const MessageVector& request,
+      RemoteResponse* reply,
+      int64 deadline_ms,
+      Closure* closure) {
+    connection_manager_->GetController()->Forward(
+        this, request, reply, deadline_ms, closure);
+  }
+
+  virtual int WaitUntil(StoppingCondition* condition) {
+    return connection_manager_->GetController()->WaitUntil(condition);
+  }
+
+ private:
+  ConnectionManager* connection_manager_;
+  DISALLOW_COPY_AND_ASSIGN(ConnectionImpl);
+};
+
+Connection* ConnectionManager::Connect(const std::string& endpoint) {
+  Connection* connection = new ConnectionImpl(this);
+  GetController()->AddRemoteEndpoint(connection, endpoint);
+  return connection;
+}
+ 
 void ConnectionManager::Init() {
   zmq::socket_t ready_sync(*context_, ZMQ_PULL);
   CHECK(pthread_key_create(&controller_key_, &DestroyController) == 0);
@@ -315,31 +362,33 @@ class ConnectionManagerThread {
   }
 
   void HandleTimeout(EventId event_id) {
-    ClientRequestMap::iterator iter = client_request_map_.find(event_id);
-    if (iter == client_request_map_.end()) {
+    RemoteResponseMap::iterator iter = remote_response_map_.find(event_id);
+    if (iter == remote_response_map_.end()) {
       return;
     }
-    ClientRequest*& client_request = iter->second;
-    client_request->status = ClientRequest::DEADLINE_EXCEEDED;
-    WriteVectorToSocket(app_socket_, client_request->return_path,
+    RemoteResponseWrapper*& remote_response_wrapper = iter->second;
+    RemoteResponse*& remote_response = remote_response_wrapper->remote_response;
+    remote_response->status = RemoteResponse::DEADLINE_EXCEEDED;
+    WriteVectorToSocket(app_socket_, remote_response_wrapper->return_path,
                         ZMQ_SNDMORE);
-    SendPointer(app_socket_, client_request, 0);
-    client_request_map_.erase(iter);
+    SendPointer(app_socket_, remote_response, 0);
+    remote_response_map_.erase(iter);
   }
 
   template<typename ForwardIterator>
   uint64 ForwardRemote(
       Connection* connection,
-      ClientRequest* client_request,
+      RemoteResponseWrapper* remote_response_wrapper,
       ForwardIterator begin,
       ForwardIterator end) {
     ConnectionMap::const_iterator it = connection_map_.find(connection);
     CHECK(it != connection_map_.end());
     EventId event_id = event_id_generator_.GetNext();
-    client_request_map_[event_id] = client_request;
-    if (client_request->deadline_ms != -1) {
+    remote_response_map_[event_id] = remote_response_wrapper;
+    if (remote_response_wrapper->deadline_ms != -1) {
       reactor_.RunClosureAt(
-          client_request->start_time + client_request->deadline_ms,
+          remote_response_wrapper->start_time +
+              remote_response_wrapper->deadline_ms,
           NewCallback(this, &ConnectionManagerThread::HandleTimeout, event_id));
     }
 
@@ -388,12 +437,12 @@ class ConnectionManagerThread {
     std::string command(MessageToString(data[0]));
     if (command == kForward) {
       CHECK_GE(data.size(), 3);
-      ClientRequest* client_request = 
-          InterpretMessage<ClientRequest*>(*data[2]);
-      routes.swap(client_request->return_path);
+      RemoteResponseWrapper* remote_response_wrapper = 
+          InterpretMessage<RemoteResponseWrapper*>(*data[2]);
+      routes.swap(remote_response_wrapper->return_path);
       ForwardRemote(
           InterpretMessage<Connection*>(*data[1]),
-          client_request,
+          remote_response_wrapper,
           data.begin() + 3, data.end());
       return;
     } else {
@@ -407,64 +456,34 @@ class ConnectionManagerThread {
     CHECK(messages.size() >= 1);
     CHECK_EQ(messages[0]->size(), 0);
     EventId event_id(InterpretMessage<EventId>(*messages[1]));
-    ClientRequestMap::iterator iter = client_request_map_.find(event_id);
-    if (iter == client_request_map_.end()) {
+    RemoteResponseMap::iterator iter = remote_response_map_.find(event_id);
+    if (iter == remote_response_map_.end()) {
       return;
     }
-    ClientRequest*& client_request = iter->second;
+    RemoteResponseWrapper*& remote_response_wrapper = iter->second;
+    RemoteResponse*& remote_response = remote_response_wrapper->remote_response;
     messages.erase(0);
     messages.erase(0);
-    client_request->result.swap(messages);
-    client_request->status = ClientRequest::DONE;
-    WriteVectorToSocket(app_socket_, client_request->return_path,
+    remote_response->reply.swap(messages);
+    remote_response->status = RemoteResponse::DONE;
+    WriteVectorToSocket(app_socket_, remote_response_wrapper->return_path,
                         ZMQ_SNDMORE);
-    SendPointer(app_socket_, client_request, 0);
-    client_request_map_.erase(iter);
+    SendPointer(app_socket_, remote_response, 0);
+    remote_response_map_.erase(iter);
   }
 
   Reactor reactor_;
   const ConnectionManagerThreadParams params_;
   zmq::socket_t* app_socket_;
   typedef std::map<Connection*, zmq::socket_t*> ConnectionMap;
-  typedef std::map<EventId, ClientRequest*> ClientRequestMap;
+  typedef std::map<EventId, RemoteResponseWrapper*> RemoteResponseMap;
   typedef std::map<uint64, EventId> DeadlineMap;
   ConnectionMap connection_map_;
-  ClientRequestMap client_request_map_;
+  RemoteResponseMap remote_response_map_;
   DeadlineMap deadline_map_;
   EventIdGenerator event_id_generator_;
   DISALLOW_COPY_AND_ASSIGN(ConnectionManagerThread);
 };
-
-class ConnectionImpl : public Connection {
- public:
-  ConnectionImpl(ConnectionManager* connection_manager)
-      : Connection(), connection_manager_(connection_manager) {}
-
-  virtual RpcChannel* MakeChannel() {
-    return new SimpleRpcChannel(this);
-  }
-
-  virtual void SendClientRequest(ClientRequest* client_request,
-                                 const MessageVector& messages) {
-    connection_manager_->GetController()->Forward(
-        this, client_request, messages);
-  }
-
-  virtual int WaitUntil(StoppingCondition* condition) {
-    return connection_manager_->GetController()->WaitUntil(condition);
-  }
-
- private:
-  ConnectionManager* connection_manager_;
-  DISALLOW_COPY_AND_ASSIGN(ConnectionImpl);
-};
-
-Connection* Connection::CreateConnection(
-    ConnectionManager* em, const std::string& endpoint) {
-  Connection* connection = new ConnectionImpl(em);
-  em->GetController()->AddRemoteEndpoint(connection, endpoint);
-  return connection;
-}
 
 namespace {
 void ConnectionManagerThreadEntryPoint(const ConnectionManagerThreadParams params) {

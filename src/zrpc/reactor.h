@@ -26,6 +26,7 @@
 namespace zrpc {
 
 class Closure;
+
 class StoppingCondition {
  public:
   virtual bool ShouldStop() {

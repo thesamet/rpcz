@@ -30,18 +30,20 @@ class StoppingCondition;
 // Controls an event manager.
 class ConnectionManagerController {
  public:
+  virtual ~ConnectionManagerController() {};
+
   virtual void AddRemoteEndpoint(Connection* connection,
                                  const std::string& remote_endpoint) = 0;
 
   virtual void Forward(Connection* connection,
-                       ClientRequest* client_request,
-                       const MessageVector& messages) = 0;
+               const MessageVector& request,
+               RemoteResponse* remote_response,
+               int64 deadline_ms,
+               Closure* closure) = 0;
 
   virtual int WaitUntil(StoppingCondition* client_request) = 0;
 
   virtual void Quit() = 0;
-
-  virtual ~ConnectionManagerController() {};
 };
 }  // namespace zrpc
 #endif
