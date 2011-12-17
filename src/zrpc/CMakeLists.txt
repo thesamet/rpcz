@@ -11,7 +11,7 @@ set(PROTO_SOURCES ${ZRPC_PB_SRCS} ${ZRPC_PB_HDRS})
 
 include_directories(${PROJECT_BINARY_DIR})
 add_library(zrpc clock.cc server.cc connection_manager.cc reactor.cc
-  zmq_utils.cc simple_rpc_channel rpc.cc
+  zmq_utils.cc simple_rpc_channel rpc.cc event_manager.cc
   ${PROTO_SOURCES})
 
 add_executable(zsendrpc zsendrpc.cc)

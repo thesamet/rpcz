@@ -32,7 +32,7 @@
 #include "glog/logging.h"
 #include "google/protobuf/stubs/common.h"
 #include "zrpc/rpc_channel.h"
-#include "zmq_utils.h"
+#include "zrpc/zmq_utils.h"
 #include "zrpc/callback.h"
 #include "zrpc/clock.h"
 #include "zrpc/connection_manager_controller.h"
@@ -157,6 +157,7 @@ class ConnectionManagerControllerImpl : public ConnectionManagerController {
                Closure* closure) {
     RemoteResponseWrapper* wrapper = new RemoteResponseWrapper;
     wrapper->remote_response = remote_response;
+    wrapper->start_time = zclock_time();
     wrapper->deadline_ms = deadline_ms;
     wrapper->closure = closure;
 
@@ -198,10 +199,11 @@ void DestroyController(void* controller) {
 }  // unnamed namespace
 
 ConnectionManager::ConnectionManager(zmq::context_t* context,
-                           int nthreads) : context_(context),
-                                           nthreads_(nthreads),
-                                           threads_(nthreads),
-                                           owns_context_(false) {
+                                     int nthreads)
+    : context_(context),
+      nthreads_(nthreads),
+      threads_(nthreads),
+      owns_context_(false) {
   Init();
 }
 

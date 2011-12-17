@@ -1,11 +1,11 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,12 +15,11 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include "zrpc/simple_rpc_channel.h"
-#include "zrpc/clock.h"
 #include "zrpc/connection_manager.h"
 #include "zrpc/callback.h"
-#include "zrpc/client_request.h"
 #include "zrpc/rpc.h"
-#include "google/protobuf/descriptor.h"                                                                                                                                                                                                      
+#include "glog/logging.h"
+#include "google/protobuf/descriptor.h"
 
 namespace zrpc {
 
@@ -36,7 +35,7 @@ struct RpcResponseContext {
   ::google::protobuf::Message* response_msg;
   std::string* response_str;
   Closure* user_closure;
-  ClientRequest client_request;
+  RemoteResponse remote_response;
 };
 
 void SimpleRpcChannel::CallMethodFull(
@@ -64,12 +63,7 @@ void SimpleRpcChannel::CallMethodFull(
   vout.push_back(payload_out);
 
   RpcResponseContext *response_context = new RpcResponseContext;
-  response_context->client_request.closure = NewCallback(
-      this, &SimpleRpcChannel::HandleClientResponse,
-      response_context);
   response_context->rpc = rpc;
-  response_context->client_request.deadline_ms = rpc->GetDeadlineMs();
-  response_context->client_request.start_time = zclock_time();
   response_context->user_closure = done;
   response_context->response_str = response_str;
   response_context->response_msg = response_msg;
@@ -77,8 +71,12 @@ void SimpleRpcChannel::CallMethodFull(
   rpc->connection_ = connection_;
   rpc->rpc_response_context_ = response_context;
 
-  connection_->SendClientRequest(&response_context->client_request,
-                                 vout);
+  connection_->SendRequest(vout,
+                           &response_context->remote_response,
+                           rpc->GetDeadlineMs(),
+                           NewCallback(
+                               this, &SimpleRpcChannel::HandleClientResponse,
+                               response_context));
 }
 
 void SimpleRpcChannel::CallMethod0(const std::string& service_name,
@@ -113,16 +111,16 @@ void SimpleRpcChannel::CallMethod(
 
 void SimpleRpcChannel::HandleClientResponse(
     RpcResponseContext* response_context) {
-  ClientRequest& client_request = response_context->client_request;
+  RemoteResponse& remote_response = response_context->remote_response;
 
-  switch (client_request.status) {
-    case ClientRequest::DEADLINE_EXCEEDED:
+  switch (remote_response.status) {
+    case RemoteResponse::DEADLINE_EXCEEDED:
       response_context->rpc->SetStatus(
           GenericRPCResponse::DEADLINE_EXCEEDED);
       break;
-    case ClientRequest::DONE: {
+    case RemoteResponse::DONE: {
         GenericRPCResponse generic_response;
-        zmq::message_t& msg_in = *response_context->client_request.result[0];
+        zmq::message_t& msg_in = *response_context->remote_response.reply[0];
         CHECK(generic_response.ParseFromArray(msg_in.data(), msg_in.size()));
         if (generic_response.status() != GenericRPCResponse::OK) {
           response_context->rpc->SetFailed(generic_response.application_error(),
@@ -131,22 +129,22 @@ void SimpleRpcChannel::HandleClientResponse(
           response_context->rpc->SetStatus(GenericRPCResponse::OK);
           if (response_context->response_msg) {
             CHECK(response_context->response_msg->ParseFromArray(
-                    response_context->client_request.result[1]->data(),
-                    response_context->client_request.result[1]->size()));
+                    response_context->remote_response.reply[1]->data(),
+                    response_context->remote_response.reply[1]->size()));
           } else if (response_context->response_str) {
             response_context->response_str->assign(
                 static_cast<char*>(
-                    response_context->client_request.result[1]->data()),
-                response_context->client_request.result[1]->size());
+                    response_context->remote_response.reply[1]->data()),
+                response_context->remote_response.reply[1]->size());
           }
         }
       }
       break;
-    case ClientRequest::ACTIVE:
-    case ClientRequest::INACTIVE:
+    case RemoteResponse::ACTIVE:
+    case RemoteResponse::INACTIVE:
     default:
-      CHECK(false) << "Unexpected ClientRequest state: "
-          << client_request.status;
+      CHECK(false) << "Unexpected RemoteResponse state: "
+          << remote_response.status;
   }
   if (response_context->user_closure) {
     response_context->user_closure->Run();

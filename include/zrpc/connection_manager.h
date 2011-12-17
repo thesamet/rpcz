@@ -20,6 +20,7 @@
 #include <pthread.h>
 #include <string>
 #include <vector>
+#include <zmq.hpp>
 
 #include "zrpc/macros.h"
 #include "zrpc/pointer_vector.h"
