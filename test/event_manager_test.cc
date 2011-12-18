@@ -67,8 +67,8 @@ void Increment(boost::mutex* mu,
                boost::condition_variable* cond, int* x) {
   mu->lock();
   (*x)++;
-  mu->unlock();
   cond->notify_one();
+  mu->unlock();
 }
 
 TEST_F(EventManagerTest, ProcessesBroadcast) {
@@ -94,12 +94,10 @@ void AddHundredClosures(EventManager* em) {
   boost::unique_lock<boost::mutex> lock(mu);
   int x = 0;
   for (int i = 0; i < 100; ++i) {
-    Closure *c = NewCallback(&Increment, &mu, &cond, &x);
-    em->Add(c);
+    em->Add(NewCallback(&Increment, &mu, &cond, &x));
   }
   CHECK_EQ(0, x);  // since we are holding the lock
   while (x != 100) {
-    LOG(INFO) << x;
     cond.wait(lock);
   }
 }

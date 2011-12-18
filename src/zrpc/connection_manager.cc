@@ -68,12 +68,6 @@ void* ClosureRunner(void* closure_as_void) {
   return NULL;
 }
 
-class ClosureRunnerFunction {
-  void operator()(Closure *closure) {
-    closure->Run();
-  }
-};
-
 void CreateThread(Closure *closure, pthread_t* thread) {
   CHECK(pthread_create(thread, NULL, ClosureRunner, closure) == 0);
 }

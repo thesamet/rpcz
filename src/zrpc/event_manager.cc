@@ -50,7 +50,6 @@ void DeviceThreadEntryPoint(zmq::context_t* context,
   }
   frontend.bind(frontend_endpoint.c_str());
   backend.bind(backend_endpoint.c_str());
-  LOG(INFO)<<"Devicing " << frontend_endpoint << " " << backend_endpoint;
   zmq::socket_t sync_socket(*context, ZMQ_PUSH);
   sync_socket.connect(sync_endpoint.c_str());
   SendString(&sync_socket, "");
@@ -58,7 +57,6 @@ void DeviceThreadEntryPoint(zmq::context_t* context,
   zmq_device(device_type, frontend, backend);
   frontend.close();
   backend.close();
-  LOG(INFO) << "Device terminated.";
 }
 
 void EventManagerThreadEntryPoint(
@@ -90,7 +88,6 @@ class EventManagerController {
       : context_(context), socket_(socket), pubsub_socket_(pubsub_socket) {}
 
   ~EventManagerController() {
-    LOG(INFO) << "EventManagerController";
     delete socket_;
     delete pubsub_socket_;
   }
@@ -134,7 +131,6 @@ EventManager::~EventManager() {
   if (owns_context_) {
     delete context_;
   }
-  LOG(INFO) << "Destructed.";
 }
 
 EventManagerController* EventManager::GetController() const {
@@ -186,7 +182,6 @@ void EventManager::Init() {
   zmq::message_t msg;
   ready_sync.recv(&msg);
   ready_sync.recv(&msg);
-  LOG(INFO)<<"Starting threads";
   for (int i = 0; i < nthreads_; ++i) {
     worker_threads_->add_thread(
         CreateThread(NewCallback(&EventManagerThreadEntryPoint,
@@ -283,7 +278,6 @@ void EventManagerThreadEntryPoint(
 
   EventManagerThread emt(context, app, pubsub);
   emt.Start();
-  LOG(INFO) << "EventManagerThread terminated.";
 }
 }  // unnamed namespace
 }  // namespace zrpc
