@@ -35,6 +35,7 @@ namespace zrpc {
 
 class Closure;
 class EventManagerController;
+class Reactor;
 
 boost::thread* CreateThread(Closure *closure);
 
@@ -71,13 +72,19 @@ class EventManager {
   zmq::context_t* context_;
   int nthreads_;
   bool owns_context_;
+  // Lets any thread in the program have a single EventManagerController.
   scoped_ptr<boost::thread_specific_ptr<EventManagerController> > controller_;
+
+  // Each worker thread is driven by a Reactor. We want to make these Reactors
+  // accessible to closures used internally by the ConnectionManager.
+  scoped_ptr<boost::thread_specific_ptr<Reactor> > reactor_;
   scoped_ptr<boost::thread_group> worker_threads_;
   scoped_ptr<boost::thread_group> device_threads_;
   std::string frontend_endpoint_;
   std::string pubsub_frontend_endpoint_;
   std::string backend_endpoint_;
   std::string pubsub_backend_endpoint_;
+  friend class EventManagerThread;
   DISALLOW_COPY_AND_ASSIGN(EventManager);
 };
 

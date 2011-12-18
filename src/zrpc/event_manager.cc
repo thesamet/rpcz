@@ -60,6 +60,7 @@ void DeviceThreadEntryPoint(zmq::context_t* context,
 }
 
 void EventManagerThreadEntryPoint(
+    EventManager* em,
     zmq::context_t* context, const string backend,
     const string pubsub_backend,
     const string sync_endpoint);
@@ -98,6 +99,7 @@ class EventManagerController {
 
   inline void Add(Closure* closure) {
     SendEmptyMessage(socket_, ZMQ_SNDMORE);
+    SendString(socket_, kCall, ZMQ_SNDMORE);
     SendPointer(socket_, closure);
   }
 
@@ -156,6 +158,7 @@ void EventManager::Broadcast(Closure* closure) {
 
 void EventManager::Init() {
   controller_.reset(new boost::thread_specific_ptr<EventManagerController>());
+  reactor_.reset(new boost::thread_specific_ptr<Reactor>());
   worker_threads_.reset(new boost::thread_group());
   device_threads_.reset(new boost::thread_group());
   frontend_endpoint_ = StringPrintf("inproc://%p.frontend", this);
@@ -185,6 +188,7 @@ void EventManager::Init() {
   for (int i = 0; i < nthreads_; ++i) {
     worker_threads_->add_thread(
         CreateThread(NewCallback(&EventManagerThreadEntryPoint,
+                                 this,
                                  context_, backend_endpoint_,
                                  pubsub_backend_endpoint_,
                                  sync_endpoint)));
@@ -197,20 +201,25 @@ void EventManager::Init() {
 
 class EventManagerThread {
  public:
-  explicit EventManagerThread(zmq::context_t* context,
-                              zmq::socket_t* app_socket,
-                              zmq::socket_t* sub_socket)
-      : reactor_(), context_(context),
+  explicit EventManagerThread(
+      EventManager* em,
+      zmq::context_t* context,
+      zmq::socket_t* app_socket,
+      zmq::socket_t* sub_socket)
+      : context_(context),
         app_socket_(app_socket),
-        sub_socket_(sub_socket) {}
+        sub_socket_(sub_socket) {
+    reactor_ = new Reactor();
+    em->reactor_->reset(reactor_);
+  }
 
   void Start() {
-    reactor_.AddSocket(app_socket_, NewPermanentCallback(
+    reactor_->AddSocket(app_socket_, NewPermanentCallback(
             this, &EventManagerThread::HandleAppSocket));
 
-    reactor_.AddSocket(sub_socket_, NewPermanentCallback(
+    reactor_->AddSocket(sub_socket_, NewPermanentCallback(
             this, &EventManagerThread::HandleSubscribeSocket));
-    reactor_.LoopUntil(NULL);
+    reactor_->LoopUntil(NULL);
   }
 
   ~EventManagerThread() {
@@ -223,7 +232,7 @@ class EventManagerThread {
     std::string command(MessageToString(data[0]));
     VLOG(2)<<"  Got PUBSUB command: " << command;
     if (command == kQuit) {
-      reactor_.SetShouldQuit();
+      reactor_->SetShouldQuit();
     } else if (command == kCall) {
       InterpretMessage<Closure*>(*data[1])->Run();
     } else {
@@ -235,8 +244,10 @@ class EventManagerThread {
     MessageVector routes;
     MessageVector data;
     CHECK(ReadMessageToVector(app_socket_, &routes, &data));
-    // std::string command(MessageToString(data[0]));
-    InterpretMessage<Closure*>(*data[0])->Run();
+    std::string command(MessageToString(data[0]));
+    if (command == kCall) {
+      InterpretMessage<Closure*>(*data[1])->Run();
+    }
     /*
     if (command == kForward) {
       CHECK_GE(data.size(), 3);
@@ -254,7 +265,7 @@ class EventManagerThread {
     */
   }
 
-  Reactor reactor_;
+  Reactor* reactor_;  // owned by EventManager.reactor_.
   zmq::context_t* context_;
   zmq::socket_t* app_socket_;
   zmq::socket_t* sub_socket_;
@@ -263,6 +274,7 @@ class EventManagerThread {
 
 namespace {
 void EventManagerThreadEntryPoint(
+    EventManager* em,
     zmq::context_t* context, const string backend,
     const string pubsub_backend,
     const string sync_endpoint) {
@@ -276,7 +288,7 @@ void EventManagerThreadEntryPoint(
   sync_socket.connect(sync_endpoint.c_str());
   SendString(&sync_socket, "");
 
-  EventManagerThread emt(context, app, pubsub);
+  EventManagerThread emt(em, context, app, pubsub);
   emt.Start();
 }
 }  // unnamed namespace
