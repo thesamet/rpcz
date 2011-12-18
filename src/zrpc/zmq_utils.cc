@@ -97,6 +97,12 @@ void WriteVectorsToSocket(zmq::socket_t* socket,
   WriteVectorToSocket(socket, data, 0);
 }
 
+void SendEmptyMessage(zmq::socket_t* socket,
+                      int flags) {
+  zmq::message_t message(0);
+  socket->send(message, flags);
+}
+
 void SendString(zmq::socket_t* socket,
                 const std::string& str,
                 int flags) {

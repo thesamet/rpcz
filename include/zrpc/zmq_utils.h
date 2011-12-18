@@ -50,6 +50,9 @@ std::string MessageToString(zmq::message_t* msg);
 
 zmq::message_t* StringToMessage(const std::string& str);
 
+void SendEmptyMessage(zmq::socket_t* socket,
+                      int flags=0);
+
 void SendString(zmq::socket_t* socket,
                 const std::string& str,
                 int flags=0);
@@ -69,20 +72,10 @@ void SendPointer(zmq::socket_t* socket, T* pointer, int flags=0) {
 }
 
 template<typename T>
-inline T InterpretMessage(zmq::message_t& msg) {
+inline T& InterpretMessage(zmq::message_t& msg) {
   CHECK_EQ(msg.size(), sizeof(T));
-  T t;
-  memcpy(&t, msg.data(), sizeof(T));
+  T &t = *static_cast<T*>(msg.data());
   return t;
 }
-
-                 /*
-template<class T>
-void RecvPointer(zmq::socket_t* socket, T** pointer_pointer) {
-  zmq::message_t msg;
-  socket->recv(&msg);
-  memcpy(pointer_pointer, msg.data(), sizeof(T*));
-}
-*/
 }  // namespace zrpc
 #endif

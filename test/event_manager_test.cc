@@ -14,27 +14,101 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
+#include <boost/thread/condition_variable.hpp>
+#include <boost/thread/mutex.hpp>
 #include "zrpc/event_manager.h"
 #include <zmq.hpp>
+#include "zrpc/callback.h"
 #include "zrpc/macros.h"
+#include "zrpc/zmq_utils.h"
 #include "gtest/gtest.h"
+#include "glog/logging.h"
 
 
 namespace zrpc {
 
+const static char* kEndpoint = "inproc://test";
+const static char* kReply = "gotit";
+
 class EventManagerTest : public ::testing::Test {
  public:
-  EventManagerTest() : context_(1) {}
+  EventManagerTest() {}
  protected:
-  zmq::context_t context_;
 };
 
-TEST_F(EventManagerTest, DoesFoo) {
-  EventManager em(&context_, 10);
+TEST_F(EventManagerTest, StartsAndFinishes) {
+  zmq::context_t context(1);
+  EventManager em(&context, 3);
+}
+
+void DoThis(zmq::context_t* context) {
+  LOG(INFO)<<"Creating socket";
+  zmq::socket_t socket(*context, ZMQ_PUSH);
+  socket.connect(kEndpoint);
+  SendString(&socket, kReply);
+  socket.close();
+  LOG(INFO)<<"socket closed";
+}
+
+TEST_F(EventManagerTest, ProcessesSingleCallback) {
+  zmq::context_t context(1);
+  EventManager em(&context, 10);
+  zmq::socket_t socket(context, ZMQ_PULL);
+  socket.bind(kEndpoint);
+  em.Add(NewCallback(&DoThis, &context));
+  MessageVector messages;
+  CHECK(ReadMessageToVector(&socket, &messages));
+  ASSERT_EQ(1, messages.size());
+  CHECK_EQ(kReply, MessageToString(messages[0]));
+}
+
+void Increment(boost::mutex* mu,
+               boost::condition_variable* cond, int* x) {
+  mu->lock();
+  (*x)++;
+  mu->unlock();
+  cond->notify_one();
+}
+
+TEST_F(EventManagerTest, ProcessesBroadcast) {
+  boost::mutex mu;
+  boost::condition_variable cond;
+  boost::unique_lock<boost::mutex> lock(mu);
+  zmq::context_t context(1);
+  EventManager em(&context, 20);
+  int x = 0;
+  Closure *c = NewPermanentCallback(&Increment, &mu, &cond, &x);
+  em.Broadcast(c);
+  em.Broadcast(c);
+  CHECK_EQ(0, x);  // since we are holding the lock
+  while (x != 40) {
+    cond.wait(lock);
+  }
+  delete c;
+}
+
+TEST_F(EventManagerTest, ProcessesManyCallbacks) {
+  boost::mutex mu;
+  boost::condition_variable cond;
+  boost::unique_lock<boost::mutex> lock(mu);
+  zmq::context_t context(1);
+  EventManager em(&context, 20);
+  int x = 0;
+  for (int i = 0; i < 100; ++i) {
+    Closure *c = NewCallback(&Increment, &mu, &cond, &x);
+    em.Add(c);
+  }
+  CHECK_EQ(0, x);  // since we are holding the lock
+  while (x != 100) {
+    cond.wait(lock);
+  }
 }
 }  // namespace zrpc
 
 int main(int argc, char** argv) {
+  ::google::InstallFailureSignalHandler();
+  ::google::InitGoogleLogging(argv[0]);
   ::testing::InitGoogleTest(&argc, argv);
+  FLAGS_logtostderr = true;
   return RUN_ALL_TESTS();
 }

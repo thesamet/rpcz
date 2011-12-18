@@ -18,6 +18,7 @@
 #define ZRPC_EVENT_MANAGER_H
 
 #include <vector>
+#include <string>
 #include "zrpc/macros.h"
 
 namespace zmq {
@@ -26,12 +27,39 @@ namespace zmq {
 
 namespace zrpc {
 
+class Closure;
+class EventManagerController;
+
+// EventManager is a multithreaded closure runner.
+//
+// Usage:
+//   zmq::context_t context(1);
+//   EventManager em(&context, 10);
+//   em.Add(NewCallback(&MyFunction, arg1, arg2));
+
 class EventManager {
  public:
+  // Starts an EventManager with nthreads threads.
+  // Does not own the provided context.
   EventManager(zmq::context_t* context, int nthreads);
+
+  virtual ~EventManager();
+
+  // Adds a closure to the event manager. The closure will be ran by one of 
+  // the EventManager threads.
+  virtual void Add(Closure* c);
+
+  // Adds a closure to the event manager that is going to be ran by each of
+  // this event manager threads. It is therefore essential to use a non
+  // self-deleting closure, like the one returned by NewPermanentCallback.
+  // The function returns after all the threads have executed the closure.
+  // It is the caller responsibility to deallocate the closure.
+  virtual void Broadcast(Closure* c);
 
  private:
   void Init();
+  EventManagerController* GetController() const;
+
   zmq::context_t* context_;
   int nthreads_;
   std::vector<pthread_t> threads_;
@@ -39,8 +67,10 @@ class EventManager {
   pthread_t pubsub_device_thread_;
   pthread_key_t controller_key_;
   bool owns_context_;
-  friend class Connection;
-  friend class ConnectionImpl;
+  std::string frontend_endpoint_;
+  std::string pubsub_frontend_endpoint_;
+  std::string backend_endpoint_;
+  std::string pubsub_backend_endpoint_;
   DISALLOW_COPY_AND_ASSIGN(EventManager);
 };
 
