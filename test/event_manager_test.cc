@@ -16,6 +16,7 @@
 
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
 #include "zrpc/event_manager.h"
 #include <zmq.hpp>
 #include "zrpc/callback.h"
@@ -87,21 +88,32 @@ TEST_F(EventManagerTest, ProcessesBroadcast) {
   delete c;
 }
 
-TEST_F(EventManagerTest, ProcessesManyCallbacks) {
+void AddHundredClosures(EventManager* em) {
   boost::mutex mu;
   boost::condition_variable cond;
   boost::unique_lock<boost::mutex> lock(mu);
-  zmq::context_t context(1);
-  EventManager em(&context, 20);
   int x = 0;
   for (int i = 0; i < 100; ++i) {
     Closure *c = NewCallback(&Increment, &mu, &cond, &x);
-    em.Add(c);
+    em->Add(c);
   }
   CHECK_EQ(0, x);  // since we are holding the lock
   while (x != 100) {
+    LOG(INFO) << x;
     cond.wait(lock);
   }
+}
+
+TEST_F(EventManagerTest, ProcessesManyCallbacksFromManyThreads) {
+  zmq::context_t context(1);
+  EventManager em(&context, 10);
+  const int thread_count = 20;
+  boost::thread_group thread_group;
+  for (int i = 0; i < thread_count; ++i) {
+    thread_group.add_thread(CreateThread(NewCallback(&AddHundredClosures,
+                                                     &em)));
+  }
+  thread_group.join_all();
 }
 }  // namespace zrpc
 

@@ -14,6 +14,8 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
+#include <boost/thread/thread.hpp>
+#include <boost/thread/tss.hpp>
 #include <zmq.hpp>
 #include "glog/logging.h"
 #include "zrpc/base/stringprintf.h"
@@ -29,15 +31,6 @@ namespace {
 void* ClosureRunner(void* closure_as_void) {
   static_cast<Closure*>(closure_as_void)->Run();
   return NULL;
-}
-
-void CreateThread(Closure *closure, pthread_t* thread) {
-  CHECK(pthread_create(thread, NULL, ClosureRunner, closure) == 0);
-}
-
-void DestroyController(void* controller) {
-  LOG(INFO)<<"Destructing";
-  // delete static_cast<EventManagerController*>(controller);
 }
 
 const static char *kQuit = "QUIT";
@@ -74,6 +67,19 @@ void EventManagerThreadEntryPoint(
     const string sync_endpoint);
 }  // unnamed namespace
 
+class ClosureRunnerFunction {
+ public:
+  void operator()(Closure *closure) {
+    closure->Run();
+  }
+};
+
+boost::thread* CreateThread(Closure *closure) {
+  ClosureRunnerFunction func;
+  boost::thread* t = new boost::thread(func, closure);
+  return t;
+}
+
 // EventManagerController is stored in thread-local storage and contains
 // a socket that is connected to the event manager frontend. This allows a way
 // for any thread to talk to the EventManager.
@@ -84,6 +90,7 @@ class EventManagerController {
       : context_(context), socket_(socket), pubsub_socket_(pubsub_socket) {}
 
   ~EventManagerController() {
+    LOG(INFO) << "EventManagerController";
     delete socket_;
     delete pubsub_socket_;
   }
@@ -113,20 +120,16 @@ EventManager::EventManager(
     zmq::context_t* context, int nthreads)
   : context_(context),
     nthreads_(nthreads),
-    threads_(nthreads),
     owns_context_(false) {
- Init();
+  Init();
 };
 
 EventManager::~EventManager() {
   EventManagerController* controller = GetController();
   controller->Quit();
-  delete controller;
+  controller_->reset(NULL);
   VLOG(2) << "Waiting for EventManagerThreads to quit.";
-  for (int i = 0; i < nthreads_; ++i) {
-    CHECK_EQ(pthread_join(threads_[i], NULL), 0);
-  }
-  pthread_setspecific(controller_key_, NULL);
+  worker_threads_->join_all();
   VLOG(2) << "EventManagerThreads finished.";
   if (owns_context_) {
     delete context_;
@@ -135,15 +138,14 @@ EventManager::~EventManager() {
 }
 
 EventManagerController* EventManager::GetController() const {
-  EventManagerController* controller = static_cast<EventManagerController*>(
-      pthread_getspecific(controller_key_));
+  EventManagerController* controller = controller_->get();
   if (controller == NULL) {
     zmq::socket_t* socket = new zmq::socket_t(*context_, ZMQ_DEALER);
     socket->connect(frontend_endpoint_.c_str());
     zmq::socket_t* pubsub_socket = new zmq::socket_t(*context_, ZMQ_PUB);
     pubsub_socket->connect(pubsub_frontend_endpoint_.c_str());
     controller = new EventManagerController(context_, socket, pubsub_socket);
-    pthread_setspecific(controller_key_, controller);
+    controller_->reset(controller);
   }
   return controller;
 }
@@ -157,7 +159,9 @@ void EventManager::Broadcast(Closure* closure) {
 }
 
 void EventManager::Init() {
-  CHECK(pthread_key_create(&controller_key_, &DestroyController) == 0);
+  controller_.reset(new boost::thread_specific_ptr<EventManagerController>());
+  worker_threads_.reset(new boost::thread_group());
+  device_threads_.reset(new boost::thread_group());
   frontend_endpoint_ = StringPrintf("inproc://%p.frontend", this);
   backend_endpoint_ = StringPrintf("inproc://%p.backend", this);
   pubsub_frontend_endpoint_ = StringPrintf("inproc://%p.all.frontend", this);
@@ -165,34 +169,30 @@ void EventManager::Init() {
   string sync_endpoint = StringPrintf("inproc://%p.sync", this);
   zmq::socket_t ready_sync(*context_, ZMQ_PULL);
   ready_sync.bind(sync_endpoint.c_str());
-  {
-    CreateThread(NewCallback(&DeviceThreadEntryPoint,
-                             context_,
-                             ZMQ_QUEUE,
-                             ZMQ_ROUTER, frontend_endpoint_,
-                             ZMQ_DEALER, backend_endpoint_,
-                             sync_endpoint),
-                 &worker_device_thread_);
-  }
-  {
-    CreateThread(NewCallback(&DeviceThreadEntryPoint,
-                             context_,
-                             ZMQ_FORWARDER,
-                             ZMQ_SUB, pubsub_frontend_endpoint_,
-                             ZMQ_PUB, pubsub_backend_endpoint_,
-                             sync_endpoint),
-                 &pubsub_device_thread_);
-  }
+  device_threads_->add_thread(
+      CreateThread(NewCallback(&DeviceThreadEntryPoint,
+                               context_,
+                               ZMQ_QUEUE,
+                               ZMQ_ROUTER, frontend_endpoint_,
+                               ZMQ_DEALER, backend_endpoint_,
+                               sync_endpoint)));
+  device_threads_->add_thread(
+      CreateThread(NewCallback(&DeviceThreadEntryPoint,
+                               context_,
+                               ZMQ_FORWARDER,
+                               ZMQ_SUB, pubsub_frontend_endpoint_,
+                               ZMQ_PUB, pubsub_backend_endpoint_,
+                               sync_endpoint)));
   zmq::message_t msg;
   ready_sync.recv(&msg);
   ready_sync.recv(&msg);
   LOG(INFO)<<"Starting threads";
   for (int i = 0; i < nthreads_; ++i) {
-    Closure *cl = NewCallback(&EventManagerThreadEntryPoint,
-                              context_, backend_endpoint_,
-                              pubsub_backend_endpoint_,
-                              sync_endpoint);
-    CreateThread(cl, &threads_[i]);
+    worker_threads_->add_thread(
+        CreateThread(NewCallback(&EventManagerThreadEntryPoint,
+                                 context_, backend_endpoint_,
+                                 pubsub_backend_endpoint_,
+                                 sync_endpoint)));
   }
   for (int i = 0; i < nthreads_; ++i) {
     ready_sync.recv(&msg);

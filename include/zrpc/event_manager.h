@@ -24,11 +24,19 @@
 namespace zmq {
   class context_t;
 }  // namespace zmq
+namespace boost {
+class thread;
+class thread_group;
+template <typename T>
+class thread_specific_ptr;
+}  // namespace boost
 
 namespace zrpc {
 
 class Closure;
 class EventManagerController;
+
+boost::thread* CreateThread(Closure *closure);
 
 // EventManager is a multithreaded closure runner.
 //
@@ -62,11 +70,10 @@ class EventManager {
 
   zmq::context_t* context_;
   int nthreads_;
-  std::vector<pthread_t> threads_;
-  pthread_t worker_device_thread_;
-  pthread_t pubsub_device_thread_;
-  pthread_key_t controller_key_;
   bool owns_context_;
+  scoped_ptr<boost::thread_specific_ptr<EventManagerController> > controller_;
+  scoped_ptr<boost::thread_group> worker_threads_;
+  scoped_ptr<boost::thread_group> device_threads_;
   std::string frontend_endpoint_;
   std::string pubsub_frontend_endpoint_;
   std::string backend_endpoint_;
