@@ -25,7 +25,7 @@ namespace zrpc {
 RPC::RPC()
     : status_(GenericRPCResponse::INACTIVE),
       connection_(NULL),
-      rpc_response_context_(NULL),
+      remote_response_(NULL),
       application_error_(0),
       deadline_ms_(-1) {
 };
@@ -46,18 +46,6 @@ void RPC::SetFailed(int application_error, const std::string& error_message) {
   application_error_ = application_error;
 }
 
-class IsRpcDone : public StoppingCondition {
- public:
-  IsRpcDone(RPC* rpc) : rpc_(rpc) {};
-
-  bool ShouldStop() {
-    return (rpc_->GetStatus() != GenericRPCResponse::INFLIGHT);
-  }
-
- private:
-  RPC* rpc_;
-};
-
 int RPC::Wait() {
   GenericRPCResponse::Status status = GetStatus();
   CHECK_NE(status, GenericRPCResponse::INACTIVE)
@@ -65,7 +53,6 @@ int RPC::Wait() {
   if (status != GenericRPCResponse::INFLIGHT) {
     return GetStatus();
   }
-  IsRpcDone is_rpc_done(this);
-  return connection_->WaitUntil(&is_rpc_done);
+  return connection_->WaitFor(remote_response_);
 }
 }  // namespace zrpc

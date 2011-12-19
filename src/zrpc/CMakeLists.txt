@@ -15,7 +15,8 @@ add_library(zrpc clock.cc server.cc connection_manager.cc reactor.cc
   ${PROTO_SOURCES})
 
 add_executable(zsendrpc zsendrpc.cc)
-target_link_libraries(zsendrpc zrpc zmq glog gflags ${PROTOBUF_LIBRARY})
+target_link_libraries(zsendrpc zrpc zmq glog gflags ${PROTOBUF_LIBRARY}
+  ${Boost_THREAD_LIBRARIES})
 
 # add_executable(client_pool client_pool.cc connection_manager.cc zmq_utils.cc)
 # target_link_libraries(client_pool zmq glog gflags protobuf)

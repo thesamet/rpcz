@@ -58,9 +58,9 @@ void SimpleRpcChannel::CallMethodFull(
   zmq::message_t* payload_out = new zmq::message_t(request.size());
   memcpy(payload_out->data(), request.c_str(), request.size());
 
-  MessageVector vout;
-  vout.push_back(msg_out);
-  vout.push_back(payload_out);
+  MessageVector* msg_vector = new MessageVector;
+  msg_vector->push_back(msg_out);
+  msg_vector->push_back(payload_out);
 
   RpcResponseContext *response_context = new RpcResponseContext;
   response_context->rpc = rpc;
@@ -69,14 +69,14 @@ void SimpleRpcChannel::CallMethodFull(
   response_context->response_msg = response_msg;
   rpc->SetStatus(GenericRPCResponse::INFLIGHT);
   rpc->connection_ = connection_;
-  rpc->rpc_response_context_ = response_context;
+  rpc->remote_response_ = &response_context->remote_response;
 
-  connection_->SendRequest(vout,
+  connection_->SendRequest(msg_vector,
                            &response_context->remote_response,
                            rpc->GetDeadlineMs(),
                            NewCallback(
                                this, &SimpleRpcChannel::HandleClientResponse,
-                               response_context));
+                               msg_vector, response_context));
 }
 
 void SimpleRpcChannel::CallMethod0(const std::string& service_name,
@@ -110,7 +110,9 @@ void SimpleRpcChannel::CallMethod(
 }
 
 void SimpleRpcChannel::HandleClientResponse(
+    MessageVector* request,
     RpcResponseContext* response_context) {
+  delete request;
   RemoteResponse& remote_response = response_context->remote_response;
 
   switch (remote_response.status) {

@@ -19,12 +19,19 @@
 
 #include "zrpc/rpc_channel.h"
 
+namespace zmq {
+class message_t; 
+}  // namespace zmq
+
 namespace zrpc {
 
 class Connection;
 class ClientRequest;
 class Closure;
 class ConnectionManager;
+template <typename T>
+class PointerVector;
+typedef PointerVector<zmq::message_t> MessageVector;
 struct RpcResponseContext;
 
 class SimpleRpcChannel: public RpcChannel {
@@ -44,7 +51,8 @@ class SimpleRpcChannel: public RpcChannel {
       std::string* response, Closure* done);
 
  private:
-  virtual void HandleClientResponse(RpcResponseContext *response_context);
+  virtual void HandleClientResponse(MessageVector* request,
+                                    RpcResponseContext *response_context);
 
   void CallMethodFull(
     const std::string& service_name,

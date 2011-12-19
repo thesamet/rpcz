@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <zmq.hpp>
+#include <boost/thread/thread.hpp>
 
 #include "zrpc/macros.h"
 #include "zrpc/pointer_vector.h"
@@ -28,16 +29,24 @@
 namespace zmq {
 class context_t;
 class message_t;
+class socket_t;
 }  // namespace zmq
+
+namespace boost {
+template <typename T>
+class thread_specific_ptr;
+}  // namespace boost
 
 namespace zrpc {
 class Closure;
 class Connection;
 class ConnectionManagerController;
-struct RemoteResponse;
+class ConnectionThreadContext;
+class EventManager;
+class RemoteResponse;
+class RemoteResponseWrapper;
 class RpcChannel;
 class StoppingCondition;
-
 typedef PointerVector<zmq::message_t> MessageVector;
 
 
@@ -48,7 +57,7 @@ typedef PointerVector<zmq::message_t> MessageVector;
 // to share a pool of connections in a lock-free manner.
 //
 // ConnectionManager cm(2);
-// Connnectin* c = cm.Connect("tcp://localhost:5557");
+// Connection* c = cm.Connect("tcp://localhost:5557");
 // 
 // Now, it is possible to send requests to this backend fron any thread:
 // c->SendRequest(...);
@@ -56,40 +65,34 @@ typedef PointerVector<zmq::message_t> MessageVector;
 // ConnectionManager and Connection are thread-safe.
 class ConnectionManager {
  public:
-  // Constructs a ConnectionManager with nthreads worker threads. 
-  // By the time the constructor returns all the threads are running.
-  // The actual number of threads that are started may be larger than nthreads
-  // by a small constant (such as 2), for internal worker threads.
-  explicit ConnectionManager(int nthreads = 1);
-
-  virtual ~ConnectionManager();
-
   // Constructs an EventManager that uses the provided ZeroMQ context and
   // has nthreads worker threads. The ConnectionManager does not take ownership
-  // of the given ZeroMQ context. See the above for constructor documentation
-  // for details on nthreads.
-  ConnectionManager(zmq::context_t* context, int nthreads = 1);
+  // of the given ZeroMQ context. The provided event_manager is used for
+  // executing user-supplied closures. If the event_manager is NULL then the
+  // closure parameter supplied to SendRequest must be NULL.
+  ConnectionManager(zmq::context_t* context, EventManager* event_manager,
+                    int nthreads=1);
 
-  // Returns the number of threads in this ConnectionManager.
-  inline int GetThreadCount() const { return nthreads_; }
+  virtual ~ConnectionManager();
 
   // Connects all ConnectionManager threads to the given endpoint. On success
   // this method returns a Connection object that can be used from any thread
   // to communicate with this endpoint. Returns NULL in error.
   virtual Connection* Connect(const std::string& endpoint);
 
+  // Lets any connection manager thread have its own data. Temporarily public,
+  // please do not use.
+  scoped_ptr<boost::thread_specific_ptr<ConnectionThreadContext> > thread_context_;
+
  private:
-  ConnectionManagerController* GetController() const;
-
-  void Init();
-
   zmq::context_t* context_;
-  int nthreads_;
-  std::vector<pthread_t> threads_;
-  pthread_t worker_device_thread_;
-  pthread_t pubsub_device_thread_;
-  pthread_key_t controller_key_;
-  bool owns_context_;
+  // There are two EventManagers involved. The external event manager is used
+  // for running user-supplied closures when responses arrive (or exceed their
+  // deadline).
+  // The internal event manager is used as a controller for the worker threads of
+  // this connection manager.
+  EventManager* external_event_manager_;
+  scoped_ptr<EventManager> internal_event_manager_;
   friend class Connection;
   friend class ConnectionImpl;
   DISALLOW_COPY_AND_ASSIGN(ConnectionManager);
@@ -109,19 +112,23 @@ class Connection {
   //           ran (and may be deleted by the closure).
   // deadline_ms - milliseconds before giving up on this request. -1 means
   //               forever.
-  // closure - a closure that will be ran by WaitUntil() when a response
+  // closure - a closure that will be ran by the EventManager when a response
   //           arrives. The closure gets called also if the request times out.
-  //           Hence, it is necessary to check response->status.
+  //           Hence, it is necessary to check response->status. If no
+  //           EventManager was provided to the constructor, this must be NULL.
   virtual void SendRequest(
-      const MessageVector& request,
-      RemoteResponse* reply,
+      MessageVector* request,
+      RemoteResponse* remote_response,
       int64 deadline_ms,
       Closure* closure) = 0;
 
-  virtual int WaitUntil(StoppingCondition* stopping_condition) = 0;
+  // Waits for the request associated with this response object to complete.
+  virtual int WaitFor(RemoteResponse* response) = 0;
 
   // Creates a thread-specific RpcChannel for this connection.
   virtual RpcChannel* MakeChannel() = 0;
+
+  virtual zmq::socket_t* CreateConnectedSocket(zmq::context_t* context) = 0;
 
  protected:
   Connection() {};
@@ -130,7 +137,10 @@ class Connection {
   DISALLOW_COPY_AND_ASSIGN(Connection);
 };
 
-struct RemoteResponse {
+class RemoteResponse {
+ public:
+  RemoteResponse() : status(INACTIVE), reply() {}
+
   enum Status {
     INACTIVE = 0,
     ACTIVE = 1,
@@ -139,6 +149,11 @@ struct RemoteResponse {
   };
   Status status;
   MessageVector reply;
+
+ private:
+  boost::condition_variable status_cond;
+  friend class ConnectionImpl;
+  friend class ConnectionThreadContext;
 };
 }  // namespace zrpc
 #endif

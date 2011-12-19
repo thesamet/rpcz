@@ -5,11 +5,11 @@ find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 include_directories(${PROJECT_BINARY_DIR}/test)
 
-find_package(Boost REQUIRED COMPONENTS thread)
 function(add_zrpc_test TESTNAME)
   CMAKE_PARSE_ARGUMENTS(OPTIONS "USE_GTEST_MAIN" "" "SRCS;LIBS" ${ARGN})
   add_executable(${TESTNAME} ${OPTIONS_SRCS})
-  set(LIBS zrpc zmq glog ${GTEST_LIBRARIES})
+  set(LIBS zrpc zmq glog ${GTEST_LIBRARIES} ${PROTOBUF_LIBRARY}
+    ${Boost_THREAD_LIBRARIES})
   if(OPTIONS_USE_GTEST_MAIN)
     list(APPEND LIBS ${GTEST_MAIN_LIBRARIES})
   endif(OPTIONS_USE_GTEST_MAIN)
@@ -28,5 +28,5 @@ endfunction()
 # 
 
 add_zrpc_test(callback_test USE_GTEST_MAIN SRCS callback_test.cc)
-add_zrpc_test(event_manager_test SRCS event_manager_test.cc
-  LIBS ${Boost_THREAD_LIBRARIES})
+add_zrpc_test(event_manager_test SRCS event_manager_test.cc)
+add_zrpc_test(connection_manager_test SRCS connection_manager_test.cc)

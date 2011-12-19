@@ -24,7 +24,7 @@
 namespace zrpc {
 class Connection;
 class SimpleRpcChannel;
-struct RpcResponseContext;
+struct RemoteResponse;
 
 class RPC {
  public:
@@ -67,7 +67,7 @@ class RPC {
 
   GenericRPCResponse::Status status_;
   Connection* connection_;
-  RpcResponseContext* rpc_response_context_;
+  RemoteResponse* remote_response_;
   std::string error_message_;
   int application_error_;
   int64 deadline_ms_;

@@ -23,6 +23,7 @@
 
 namespace zmq {
   class context_t;
+  class socket_t;
 }  // namespace zmq
 namespace boost {
 class thread;
@@ -48,7 +49,10 @@ boost::thread* CreateThread(Closure *closure);
 
 class EventManager {
  public:
-  // Starts an EventManager with nthreads threads.
+  // Constructs an EventManager with nthreads worker threads. 
+  // By the time the constructor returns all the threads are running.
+  // The actual number of threads that are started may be larger than nthreads
+  // by a small constant (such as 2), for internal worker threads.
   // Does not own the provided context.
   EventManager(zmq::context_t* context, int nthreads);
 
@@ -65,8 +69,23 @@ class EventManager {
   // It is the caller responsibility to deallocate the closure.
   virtual void Broadcast(Closure* c);
 
+  struct ThreadContext {
+    zmq::context_t* zmq_context;
+    zmq::socket_t* app_socket;
+    zmq::socket_t* sub_socket;
+    Reactor* reactor;
+  };
+
+  typedef void(ThreadInitializer)(EventManager*, ThreadContext*, void*);
+
  private:
-  void Init();
+  // A constructor that runs thread_init for each thread and supplies it with
+  // (this, thread_context, user_data).
+  EventManager(zmq::context_t* context, int nthreads,
+               ThreadInitializer thread_init, void* user_data);
+
+  void Init(ThreadInitializer thread_init, void* user_data);
+
   EventManagerController* GetController() const;
 
   zmq::context_t* context_;
@@ -75,9 +94,9 @@ class EventManager {
   // Lets any thread in the program have a single EventManagerController.
   scoped_ptr<boost::thread_specific_ptr<EventManagerController> > controller_;
 
-  // Each worker thread is driven by a Reactor. We want to make these Reactors
-  // accessible to closures used internally by the ConnectionManager.
-  scoped_ptr<boost::thread_specific_ptr<Reactor> > reactor_;
+  // Local thread-data for each worker thread.
+  scoped_ptr<boost::thread_specific_ptr<ThreadContext> > thread_context_;
+
   scoped_ptr<boost::thread_group> worker_threads_;
   scoped_ptr<boost::thread_group> device_threads_;
   std::string frontend_endpoint_;
@@ -85,6 +104,8 @@ class EventManager {
   std::string backend_endpoint_;
   std::string pubsub_backend_endpoint_;
   friend class EventManagerThread;
+  friend class ConnectionThreadContext;
+  friend class ConnectionManager;
   DISALLOW_COPY_AND_ASSIGN(EventManager);
 };
 

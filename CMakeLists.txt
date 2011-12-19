@@ -4,6 +4,7 @@ enable_testing()
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
 find_package(ProtobufPlugin REQUIRED)
+find_package(Boost REQUIRED COMPONENTS thread)
 include_directories(${PROTOBUF_INCLUDE_DIR})
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
