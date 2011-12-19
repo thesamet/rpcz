@@ -21,8 +21,8 @@
 #include <string>
 #include <vector>
 #include <zmq.hpp>
-#include <boost/thread/thread.hpp>
 
+#include "zrpc/event_manager.h"
 #include "zrpc/macros.h"
 #include "zrpc/pointer_vector.h"
 
@@ -42,13 +42,12 @@ class Closure;
 class Connection;
 class ConnectionManagerController;
 class ConnectionThreadContext;
-class EventManager;
 class RemoteResponse;
 class RemoteResponseWrapper;
 class RpcChannel;
 class StoppingCondition;
+class SyncEvent;
 typedef PointerVector<zmq::message_t> MessageVector;
-
 
 // A ConnectionManager is a multi-threaded asynchronous system for client-side
 // communication over ZeroMQ sockets. Each thread in a connection manager holds
@@ -82,7 +81,8 @@ class ConnectionManager {
 
   // Lets any connection manager thread have its own data. Temporarily public,
   // please do not use.
-  scoped_ptr<boost::thread_specific_ptr<ConnectionThreadContext> > thread_context_;
+  scoped_ptr<boost::thread_specific_ptr<ConnectionThreadContext> >
+      thread_context_;
 
  private:
   zmq::context_t* context_;
@@ -95,6 +95,8 @@ class ConnectionManager {
   scoped_ptr<EventManager> internal_event_manager_;
   friend class Connection;
   friend class ConnectionImpl;
+  friend void InitContext(EventManager*, EventManager::ThreadContext*,
+                          void* user_data);
   DISALLOW_COPY_AND_ASSIGN(ConnectionManager);
 };
 
@@ -122,9 +124,6 @@ class Connection {
       int64 deadline_ms,
       Closure* closure) = 0;
 
-  // Waits for the request associated with this response object to complete.
-  virtual int WaitFor(RemoteResponse* response) = 0;
-
   // Creates a thread-specific RpcChannel for this connection.
   virtual RpcChannel* MakeChannel() = 0;
 
@@ -139,7 +138,11 @@ class Connection {
 
 class RemoteResponse {
  public:
-  RemoteResponse() : status(INACTIVE), reply() {}
+  RemoteResponse();
+
+  ~RemoteResponse();
+
+  void Wait();
 
   enum Status {
     INACTIVE = 0,
@@ -151,7 +154,7 @@ class RemoteResponse {
   MessageVector reply;
 
  private:
-  boost::condition_variable status_cond;
+  scoped_ptr<SyncEvent> sync_event_;
   friend class ConnectionImpl;
   friend class ConnectionThreadContext;
 };

@@ -53,6 +53,7 @@ int RPC::Wait() {
   if (status != GenericRPCResponse::INFLIGHT) {
     return GetStatus();
   }
-  return connection_->WaitFor(remote_response_);
+  remote_response_->Wait();
+  return 0;
 }
 }  // namespace zrpc

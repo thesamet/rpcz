@@ -24,6 +24,7 @@
 #include "zrpc/connection_manager.h"
 #include "zrpc/event_manager.h"
 #include "zrpc/macros.h"
+#include "zrpc/sync_event.h"
 #include "zrpc/zmq_utils.h"
 
 
@@ -47,12 +48,15 @@ void EchoServer(zmq::socket_t *socket) {
   delete socket;
 }
 
+boost::thread* StartServer(zmq::context_t* context) {
+  zmq::socket_t* server = new zmq::socket_t(*context, ZMQ_DEALER);
+  server->bind("inproc://server.test");
+  return CreateThread(NewCallback(&EchoServer, server));
+}
+
 TEST_F(ConnectionManagerTest, TestSendRequestSync) {
   zmq::context_t context(1);
-
-  zmq::socket_t* server = new zmq::socket_t(context, ZMQ_DEALER);
-  server->bind("inproc://server.test");
-  boost::thread* thread = CreateThread(NewCallback(&EchoServer, server));
+  scoped_ptr<boost::thread> thread(StartServer(&context));
 
   ConnectionManager cm(&context, NULL, 2);
   scoped_ptr<Connection> connection(cm.Connect("inproc://server.test"));
@@ -62,11 +66,85 @@ TEST_F(ConnectionManagerTest, TestSendRequestSync) {
   RemoteResponse response;
 
   connection->SendRequest(&request, &response, -1, NULL);
-  CHECK_EQ(0, connection->WaitFor(&response));
+  response.Wait();
   CHECK_EQ(RemoteResponse::DONE, response.status);
   CHECK_EQ(2, response.reply.size());
   CHECK_EQ("hello", MessageToString(response.reply[0]));
   CHECK_EQ("there", MessageToString(response.reply[1]));
+  thread->join();
+}
+
+void CheckResponse(RemoteResponse* response, SyncEvent* sync) {
+  CHECK_EQ(RemoteResponse::DONE, response->status);
+  CHECK_EQ(2, response->reply.size());
+  CHECK_EQ("hello", MessageToString(response->reply[0]));
+  CHECK_EQ("there", MessageToString(response->reply[1]));
+  sync->Signal();
+}
+
+TEST_F(ConnectionManagerTest, TestSendRequestClosure) {
+  zmq::context_t context(1);
+  scoped_ptr<boost::thread> thread(StartServer(&context));
+
+  EventManager em(&context, 5);
+  ConnectionManager cm(&context, &em, 2);
+  scoped_ptr<Connection> connection(cm.Connect("inproc://server.test"));
+  MessageVector request;
+  request.push_back(StringToMessage("hello"));
+  request.push_back(StringToMessage("there"));
+  RemoteResponse response;
+
+  SyncEvent event;
+  connection->SendRequest(&request, &response, -1,
+                          NewCallback(CheckResponse, &response, &event));
+  event.Wait();
+  thread->join();
+  // Double-check:
+  CHECK_EQ(RemoteResponse::DONE, response.status);
+  CHECK_EQ(2, response.reply.size());
+}
+
+void ExpectTimeout(RemoteResponse* response, SyncEvent* sync) {
+  LOG(INFO) << "I am here";
+  CHECK_EQ(RemoteResponse::DEADLINE_EXCEEDED, response->status);
+  CHECK_EQ(0, response->reply.size());
+  sync->Signal();
+}
+
+TEST_F(ConnectionManagerTest, TestTimeoutSync) {
+  zmq::context_t context(1);
+  zmq::socket_t server(context, ZMQ_DEALER);
+  server.bind("inproc://server.test");
+
+  EventManager em(&context, 5);
+  ConnectionManager cm(&context, &em, 2);
+  scoped_ptr<Connection> connection(cm.Connect("inproc://server.test"));
+  MessageVector request;
+  request.push_back(StringToMessage("hello"));
+  request.push_back(StringToMessage("there"));
+  RemoteResponse response;
+
+  connection->SendRequest(&request, &response, 1, NULL);
+  response.Wait();
+}
+
+TEST_F(ConnectionManagerTest, TestTimeoutAsync) {
+  zmq::context_t context(1);
+  zmq::socket_t server(context, ZMQ_DEALER);
+  server.bind("inproc://server.test");
+
+  EventManager em(&context, 5);
+  ConnectionManager cm(&context, &em, 2);
+  scoped_ptr<Connection> connection(cm.Connect("inproc://server.test"));
+  MessageVector request;
+  request.push_back(StringToMessage("hello"));
+  request.push_back(StringToMessage("there"));
+  RemoteResponse response;
+
+  SyncEvent event;
+  connection->SendRequest(&request, &response, 1,
+                          NewCallback(ExpectTimeout, &response, &event));
+  event.Wait();
 }
 }  // namespace zrpc
 

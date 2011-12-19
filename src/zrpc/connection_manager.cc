@@ -41,6 +41,7 @@
 #include "zrpc/reactor.h"
 #include "zrpc/rpc_channel.h"
 #include "zrpc/simple_rpc_channel.h"
+#include "zrpc/sync_event.h"
 #include "zrpc/zmq_utils.h"
 
 namespace zrpc {
@@ -67,6 +68,16 @@ class EventIdGenerator {
 };
 }  // unnamed namespace
 
+RemoteResponse::RemoteResponse()
+  : status(INACTIVE), reply(), sync_event_(new SyncEvent) {}
+
+RemoteResponse::~RemoteResponse() {
+}
+
+void RemoteResponse::Wait() {
+  sync_event_->Wait();
+}
+
 struct RemoteResponseWrapper {
   RemoteResponse* remote_response;
   int64 deadline_ms;
@@ -79,8 +90,10 @@ class ConnectionThreadContext {
  public:
   ConnectionThreadContext(
       EventManager* internal_event_manager,
+      EventManager* external_event_manager,
       EventManager::ThreadContext* thread_context) {
     internal_event_manager_ = internal_event_manager;
+    external_event_manager_ = external_event_manager;
     thread_context_ = thread_context;
   }
 
@@ -100,8 +113,15 @@ class ConnectionThreadContext {
     messages.erase(0);
     remote_response->reply.swap(messages);
     remote_response->status = RemoteResponse::DONE;
-    LOG(INFO)<<"Notifying";
-    remote_response->status_cond.notify_all();
+    remote_response->sync_event_->Signal();
+    if (remote_response_wrapper->closure) {
+      if (external_event_manager_) {
+        external_event_manager_->Add(remote_response_wrapper->closure);
+      } else {
+        LOG(ERROR) << "Can't run closure: no event manager supplied.";
+      }
+    }
+    delete remote_response_wrapper;
     remote_response_map_.erase(iter);
   }
 
@@ -148,10 +168,14 @@ class ConnectionThreadContext {
     RemoteResponseWrapper*& remote_response_wrapper = iter->second;
     RemoteResponse*& remote_response = remote_response_wrapper->remote_response;
     remote_response->status = RemoteResponse::DEADLINE_EXCEEDED;
-    WriteVectorToSocket(thread_context_->app_socket,
-                        remote_response_wrapper->return_path,
-                        ZMQ_SNDMORE);
-    SendPointer(thread_context_->app_socket, remote_response, 0);
+    remote_response->sync_event_->Signal();
+    if (remote_response_wrapper->closure) {
+      if (external_event_manager_) {
+        external_event_manager_->Add(remote_response_wrapper->closure);
+      } else {
+        LOG(ERROR) << "Can't run closure: no event manager supplied.";
+      }
+    }
     remote_response_map_.erase(iter);
   }
 
@@ -164,14 +188,18 @@ class ConnectionThreadContext {
   DeadlineMap deadline_map_;
   EventIdGenerator event_id_generator_;
   EventManager* internal_event_manager_;
+  EventManager* external_event_manager_;
   EventManager::ThreadContext* thread_context_;
 };
 
+// Initializes a connection manager's thread. Extra-care must be taken:
+// ConnectinManager's constructor and the internal EventManager's constructor
+// may be still running!
 void InitContext(EventManager* em, EventManager::ThreadContext* context,
                  void* user_data) {
-  ConnectionThreadContext* conn_context = new ConnectionThreadContext(
-      em, context);
   ConnectionManager *conn = static_cast<ConnectionManager*>(user_data);
+  ConnectionThreadContext* conn_context = new ConnectionThreadContext(
+      em, conn->external_event_manager_, context);
   conn->thread_context_->reset(conn_context);
 }
 
@@ -228,16 +256,6 @@ class ConnectionImpl : public Connection {
             &internal_thread::SendRequest,
             connection_manager_,
             static_cast<Connection*>(this), request, wrapper));
-  }
-
-  virtual int WaitFor(RemoteResponse* response) {
-    boost::mutex mut;
-    boost::unique_lock<boost::mutex> lock(mut);
-    while ((response->status == RemoteResponse::ACTIVE) ||
-           (response->status == RemoteResponse::INACTIVE)) {
-      response->status_cond.wait(lock);
-    }
-    return 0;
   }
 
   virtual zmq::socket_t* CreateConnectedSocket(zmq::context_t* context) {
