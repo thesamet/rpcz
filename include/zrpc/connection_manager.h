@@ -108,7 +108,10 @@ void InstallSignalHandler();
 class Connection {
  public:
   // Asynchronously sends a request over the connection.
-  // request: a vector of messages to be sent.
+  // request: a vector of messages to be sent. Does not take ownership of the
+  //          request. The vector has to live valid at least until the request
+  //          completes. It can be safely de-allocated inside the provided
+  //          closure or after remote_response->Wait() returns.
   // response: points to a RemoteResponse object that will receive the response.
   //           this object must live at least until when the closure has been
   //           ran (and may be deleted by the closure).

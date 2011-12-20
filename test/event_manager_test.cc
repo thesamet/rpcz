@@ -88,16 +88,17 @@ TEST_F(EventManagerTest, ProcessesBroadcast) {
   delete c;
 }
 
-void AddHundredClosures(EventManager* em) {
+void AddManyClosures(EventManager* em) {
   boost::mutex mu;
   boost::condition_variable cond;
   boost::unique_lock<boost::mutex> lock(mu);
   int x = 0;
-  for (int i = 0; i < 100; ++i) {
+  const int kMany = 137;
+  for (int i = 0; i < kMany; ++i) {
     em->Add(NewCallback(&Increment, &mu, &cond, &x));
   }
   CHECK_EQ(0, x);  // since we are holding the lock
-  while (x != 100) {
+  while (x != kMany) {
     cond.wait(lock);
   }
 }
@@ -105,10 +106,10 @@ void AddHundredClosures(EventManager* em) {
 TEST_F(EventManagerTest, ProcessesManyCallbacksFromManyThreads) {
   zmq::context_t context(1);
   EventManager em(&context, 10);
-  const int thread_count = 20;
+  const int thread_count = 10;
   boost::thread_group thread_group;
   for (int i = 0; i < thread_count; ++i) {
-    thread_group.add_thread(CreateThread(NewCallback(&AddHundredClosures,
+    thread_group.add_thread(CreateThread(NewCallback(&AddManyClosures,
                                                      &em)));
   }
   thread_group.join_all();
