@@ -17,6 +17,7 @@
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
+#include <stdio.h>
 #include <zmq.hpp>
 #include "glog/logging.h"
 #include "gtest/gtest.h"
@@ -42,16 +43,16 @@ TEST_F(ConnectionManagerTest, TestStartsAndFinishes) {
   ConnectionManager cm(&context, NULL, 2);
 }
 
-void EchoServer(zmq::socket_t *socket, bool looping) {
+void EchoServer(zmq::socket_t *socket) {
   bool should_quit = false;
   int messages = 0;
-  while (!should_quit && (looping || messages == 0)) {
+  while (!should_quit) {
     MessageVector v;
     CHECK(ReadMessageToVector(socket, &v));
     ++messages;
     CHECK_EQ(4, v.size());
     if (MessageToString(v[2]) == "hello") {
-      CHECK_EQ("there", MessageToString(v[3]));
+      CHECK_EQ("there", MessageToString(v[3]).substr(0, 5));
     } else if (MessageToString(v[2]) == "QUIT") {
       should_quit = true;
     } else {
@@ -63,43 +64,18 @@ void EchoServer(zmq::socket_t *socket, bool looping) {
   delete socket;
 }
 
-boost::thread* StartServer(zmq::context_t* context, bool looping) {
+boost::thread* StartServer(zmq::context_t* context) {
   zmq::socket_t* server = new zmq::socket_t(*context, ZMQ_DEALER);
   server->bind("inproc://server.test");
-  return CreateThread(NewCallback(&EchoServer, server, looping));
+  return CreateThread(NewCallback(&EchoServer, server));
 }
 
-TEST_F(ConnectionManagerTest, TestSendRequestSync) {
-  scoped_ptr<boost::thread> thread(StartServer(&context, false));
-
-  ConnectionManager cm(&context, NULL, 2);
-  scoped_ptr<Connection> connection(cm.Connect("inproc://server.test"));
-  MessageVector request;
-  request.push_back(StringToMessage("hello"));
-  request.push_back(StringToMessage("there"));
-  RemoteResponse response;
-
-  connection->SendRequest(&request, &response, -1, NULL);
-  response.Wait();
-  CHECK_EQ(RemoteResponse::DONE, response.status);
-  CHECK_EQ(2, response.reply.size());
-  CHECK_EQ("hello", MessageToString(response.reply[0]));
-  CHECK_EQ("there", MessageToString(response.reply[1]));
-  thread->join();
-}
-
-void CheckResponse(RemoteResponse* response, SyncEvent* sync) {
-  CHECK_EQ(RemoteResponse::DONE, response->status);
-  CHECK_EQ(2, response->reply.size());
-  CHECK_EQ("hello", MessageToString(response->reply[0]));
-  CHECK_EQ("there", MessageToString(response->reply[1]));
-  sync->Signal();
-}
-
-MessageVector* CreateSimpleRequest() {
+MessageVector* CreateSimpleRequest(int number=0) {
   MessageVector* request = new MessageVector;
   request->push_back(StringToMessage("hello"));
-  request->push_back(StringToMessage("there"));
+  char str[256];
+  sprintf(str, "there_%d", number);
+  request->push_back(StringToMessage(str));
   return request;
 }
 
@@ -110,8 +86,36 @@ MessageVector* CreateQuitRequest() {
   return request;
 }
 
+TEST_F(ConnectionManagerTest, TestSendRequestSync) {
+  scoped_ptr<boost::thread> thread(StartServer(&context));
+
+  ConnectionManager cm(&context, NULL, 2);
+  scoped_ptr<Connection> connection(cm.Connect("inproc://server.test"));
+  scoped_ptr<MessageVector> request(CreateSimpleRequest());
+  RemoteResponse response;
+  connection->SendRequest(request.get(), &response, -1, NULL);
+  response.Wait();
+  CHECK_EQ(RemoteResponse::DONE, response.status);
+  CHECK_EQ(2, response.reply.size());
+  CHECK_EQ("hello", MessageToString(response.reply[0]));
+  CHECK_EQ("there_0", MessageToString(response.reply[1]));
+
+  request.reset(CreateQuitRequest());
+  connection->SendRequest(request.get(), &response, -1, NULL);
+  response.Wait();
+  thread->join();
+}
+
+void CheckResponse(RemoteResponse* response, SyncEvent* sync) {
+  CHECK_EQ(RemoteResponse::DONE, response->status);
+  CHECK_EQ(2, response->reply.size());
+  CHECK_EQ("hello", MessageToString(response->reply[0]));
+  CHECK_EQ("there_0", MessageToString(response->reply[1]));
+  sync->Signal();
+}
+
 TEST_F(ConnectionManagerTest, TestSendRequestClosure) {
-  scoped_ptr<boost::thread> thread(StartServer(&context, false));
+  scoped_ptr<boost::thread> thread(StartServer(&context));
 
   EventManager em(&context, 5);
   ConnectionManager cm(&context, &em, 2);
@@ -123,10 +127,16 @@ TEST_F(ConnectionManagerTest, TestSendRequestClosure) {
   connection->SendRequest(request.get(), &response, -1,
                           NewCallback(CheckResponse, &response, &event));
   event.Wait();
-  thread->join();
+
   // Double-check:
   CHECK_EQ(RemoteResponse::DONE, response.status);
   CHECK_EQ(2, response.reply.size());
+
+  request.reset(CreateQuitRequest());
+  connection->SendRequest(request.get(), &response, -1, NULL);
+  response.Wait();
+
+  thread->join();
 }
 
 void ExpectTimeout(RemoteResponse* response, SyncEvent* sync) {
@@ -192,13 +202,16 @@ class BarrierClosure : public Closure {
   int count_;
 };
 
-void SendManyMessages(Connection* connection, bool sync_with_wait) {
+void SendManyMessages(Connection* connection, int thread_id,
+                      bool sync_with_wait) {
   PointerVector<RemoteResponse> responses;
   PointerVector<MessageVector> requests;
   const int request_count = 100;
   BarrierClosure barrier;
   for (int i = 0; i < request_count; ++i) {
-    MessageVector* request = CreateSimpleRequest();
+    MessageVector* request = CreateSimpleRequest(
+        thread_id * request_count * 17 + i);
+    requests.push_back(request);
     RemoteResponse* response = new RemoteResponse;
     responses.push_back(response);
     connection->SendRequest(request, response, -1, 
@@ -208,6 +221,10 @@ void SendManyMessages(Connection* connection, bool sync_with_wait) {
   if (sync_with_wait) {
     for (int i = 0; i < request_count; ++i) {
       responses[i]->Wait();
+      CHECK_EQ("hello", MessageToString(responses[i]->reply[0]));
+      char expected[256];
+      sprintf(expected, "there_%d", thread_id * request_count * 17 + i);
+      CHECK_EQ(expected, MessageToString(responses[i]->reply[1]));
     }
   } else {
     barrier.Wait(request_count);
@@ -215,7 +232,7 @@ void SendManyMessages(Connection* connection, bool sync_with_wait) {
 }
 
 TEST_F(ConnectionManagerTest, ManyClientsTest) {
-  scoped_ptr<boost::thread> thread(StartServer(&context, true));
+  scoped_ptr<boost::thread> thread(StartServer(&context));
 
   EventManager em(&context, 5);
   ConnectionManager cm(&context, &em, 1);
@@ -224,7 +241,8 @@ TEST_F(ConnectionManagerTest, ManyClientsTest) {
   boost::thread_group group;
   for (int i = 0; i < 10; ++i) {
     group.add_thread(
-        CreateThread(NewCallback(SendManyMessages, connection.get(), i < 5)));
+        CreateThread(NewCallback(SendManyMessages, connection.get(), i,
+                                 i < 5)));
   }
   group.join_all();
   scoped_ptr<MessageVector> request(CreateQuitRequest());
