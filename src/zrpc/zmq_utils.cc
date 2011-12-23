@@ -61,9 +61,8 @@ bool ReadMessageToVector(zmq::socket_t* socket,
   while (1) {
     zmq::message_t *msg = new zmq::message_t;
     socket->recv(msg, 0);
-    std::string str(MessageToString(msg));
     int64_t more;           //  Multipart detection
-    size_t more_size = sizeof (more);
+    size_t more_size = sizeof(more);
     socket->getsockopt(ZMQ_RCVMORE, &more, &more_size);
     if (first_part) {
       routes->push_back(msg);
