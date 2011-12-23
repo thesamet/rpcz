@@ -14,37 +14,17 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_SERVER_H
-#define ZRPC_SERVER_H
+#include "gtest/gtest.h"
+#include "glog/logging.h"
+#include "google/protobuf/stubs/common.h"
 
-#include <map>
-#include <string>
-
-namespace zmq {
-class socket_t;
-class message_t;
-};
-
-namespace zrpc {
-class EventManager;
-class Service;
-
-class Server {
- public:
-  Server(zmq::socket_t* socket, EventManager* em);
-
-  void Start();
-
-  void RegisterService(Service *service);
-
- private:
-  void HandleRequest();
-
-  zmq::socket_t* socket_;
-  EventManager* event_manager_;
-  typedef std::map<std::string, zrpc::Service*> ServiceMap;
-  ServiceMap service_map_;
-};
-
-}  // namespace
-#endif
+int main(int argc, char** argv) {
+  ::google::InstallFailureSignalHandler();
+  ::google::InitGoogleLogging(argv[0]);
+  ::testing::InitGoogleTest(&argc, argv);
+  FLAGS_logtostderr = true;
+  int retval = RUN_ALL_TESTS();
+  ::google::protobuf::ShutdownProtobufLibrary();
+  ::google::ShutdownGoogleLogging();
+  return retval;
+}

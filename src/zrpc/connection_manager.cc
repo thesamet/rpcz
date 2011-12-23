@@ -193,7 +193,7 @@ class ConnectionThreadContext {
 };
 
 // Initializes a connection manager's thread. Extra-care must be taken:
-// ConnectinManager's constructor and the internal EventManager's constructor
+// ConnectionManager's constructor and the internal EventManager's constructor
 // may be still running!
 void InitContext(EventManager* em, EventManager::ThreadContext* context,
                  void* user_data) {

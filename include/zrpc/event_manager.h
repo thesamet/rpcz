@@ -108,6 +108,5 @@ class EventManager {
   friend class ConnectionManager;
   DISALLOW_COPY_AND_ASSIGN(EventManager);
 };
-
 }  // namespace zrpc
 #endif

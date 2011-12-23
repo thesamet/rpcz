@@ -252,11 +252,3 @@ TEST_F(ConnectionManagerTest, ManyClientsTest) {
   thread->join();
 }
 }  // namespace zrpc
-
-int main(int argc, char** argv) {
-  ::google::InstallFailureSignalHandler();
-  ::google::InitGoogleLogging(argv[0]);
-  ::testing::InitGoogleTest(&argc, argv);
-  FLAGS_logtostderr = true;
-  return RUN_ALL_TESTS();
-}

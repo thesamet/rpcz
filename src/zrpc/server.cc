@@ -40,7 +40,8 @@
 
 namespace zrpc {
 
-Server::Server(zmq::socket_t* socket) : socket_(socket) {}
+Server::Server(zmq::socket_t* socket, EventManager* event_manager)
+    : socket_(socket), event_manager_(event_manager) {}
 
 void Server::Start() {
   InstallSignalHandler();
@@ -118,7 +119,7 @@ void ReplyWithAppError(zmq::socket_t* socket,
   }
   SendGenericResponse(socket, request_id, response, StringPiece());
 }
-}
+}  // unnamed namespace
 
 void Server::HandleRequest() {
   MessageVector data;

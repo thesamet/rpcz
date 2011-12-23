@@ -17,9 +17,10 @@
 #include <zmq.hpp>
 #include <iostream>
 #include <glog/logging.h>
-#include <google/gflags.h>
+#include "gtest/gtest.h"
 #include "proto/search.pb.h"
 #include "proto/search.zrpc.h"
+#include "zrpc/callback.h"
 #include "zrpc/rpc.h"
 #include "zrpc/server.h"
 
@@ -30,7 +31,7 @@ namespace zrpc {
 class SearchServiceImpl : public SearchService {
   virtual void Search(
       zrpc::RPC* rpc, const SearchRequest* request,
-      SearchResponse* response, ::google::protobuf::Closure* done) {
+      SearchResponse* response, Closure* done) {
     if (request->query() == "foo") {
       rpc->SetFailed("I don't like foo.");
     } else if (request->query() == "bar") {
@@ -43,19 +44,29 @@ class SearchServiceImpl : public SearchService {
   }
 };
 
+class ServerTest : public ::testing::Test {
+ public:
+  ServerTest() :
+      context(1) {}
+
+ protected:
+  zmq::context_t context;
+};
+
 }  // namespace
 
 int main(int argc, char **argv) {
   ::google::InitGoogleLogging(argv[0]);
   ::google::ParseCommandLineFlags(&argc, &argv, true);
   ::google::InstallFailureSignalHandler();
-  zmq::context_t context(1);
+  /*
   zmq::socket_t socket(context, ZMQ_REP);
-  socket.bind("tcp://*:5556");
+  // socket.bind("tcp:// *:5556");
   zrpc::Server server(&socket);
   zrpc::SearchServiceImpl search_service;
   server.RegisterService(&search_service);
   server.Start();
+  */
   ::google::protobuf::ShutdownProtobufLibrary();
   ::google::ShutdownGoogleLogging();
 }

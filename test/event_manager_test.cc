@@ -115,11 +115,3 @@ TEST_F(EventManagerTest, ProcessesManyCallbacksFromManyThreads) {
   thread_group.join_all();
 }
 }  // namespace zrpc
-
-int main(int argc, char** argv) {
-  ::google::InstallFailureSignalHandler();
-  ::google::InitGoogleLogging(argv[0]);
-  ::testing::InitGoogleTest(&argc, argv);
-  FLAGS_logtostderr = true;
-  return RUN_ALL_TESTS();
-}

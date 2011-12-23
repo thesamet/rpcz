@@ -35,6 +35,7 @@ void* ClosureRunner(void* closure_as_void) {
 
 const static char *kQuit = "QUIT";
 const static char *kCall = "CALL";
+const static char *kCallWithResponse = "CALLRESPONSE";
 
 void DeviceThreadEntryPoint(zmq::context_t* context,
                             int device_type,
@@ -102,7 +103,7 @@ class EventManagerController {
   inline void Add(Closure* closure) {
     SendEmptyMessage(socket_, ZMQ_SNDMORE);
     SendString(socket_, kCall, ZMQ_SNDMORE);
-    SendPointer(socket_, closure);
+    SendPointer(socket_, closure, 0);
   }
 
   inline void Broadcast(Closure* closure, int thread_count) {
