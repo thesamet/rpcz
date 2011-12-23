@@ -42,12 +42,16 @@ class Closure;
 class Connection;
 class ConnectionManagerController;
 class ConnectionThreadContext;
+class FunctionServer;
 class RemoteResponse;
-class RemoteResponseWrapper;
+struct RemoteResponseWrapper;
 class RpcChannel;
 class StoppingCondition;
 class SyncEvent;
 typedef PointerVector<zmq::message_t> MessageVector;
+namespace internal {
+struct ThreadContext;
+}  // namespace internal
 
 // A ConnectionManager is a multi-threaded asynchronous system for client-side
 // communication over ZeroMQ sockets. Each thread in a connection manager holds
@@ -79,24 +83,20 @@ class ConnectionManager {
   // to communicate with this endpoint. Returns NULL in error.
   virtual Connection* Connect(const std::string& endpoint);
 
-  // Lets any connection manager thread have its own data. Temporarily public,
-  // please do not use.
   scoped_ptr<boost::thread_specific_ptr<ConnectionThreadContext> >
       thread_context_;
 
  private:
   zmq::context_t* context_;
-  // There are two EventManagers involved. The external event manager is used
-  // for running user-supplied closures when responses arrive (or exceed their
-  // deadline).
-  // The internal event manager is used as a controller for the worker threads of
+  // The external event manager is used for running user-supplied closures when
+  // responses arrive (or exceed their deadline).
+  // The internal event manager is used as a container for the worker threads of
   // this connection manager.
   EventManager* external_event_manager_;
   scoped_ptr<EventManager> internal_event_manager_;
   friend class Connection;
   friend class ConnectionImpl;
-  friend void InitContext(EventManager*, EventManager::ThreadContext*,
-                          void* user_data);
+  friend void InitContext(FunctionServer*, internal::ThreadContext*);
   DISALLOW_COPY_AND_ASSIGN(ConnectionManager);
 };
 

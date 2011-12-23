@@ -36,22 +36,42 @@ namespace zrpc {
 class FunctionServerController;
 class Reactor;
 
-class FunctionServer {
- public:
-  typedef boost::function<void(const MessageVector*)> ReplyFunction;
-  typedef boost::function<void(MessageVector*, ReplyFunction)>
-      HandlerFunction;
+namespace internal {
   struct ThreadContext {
     zmq::context_t* zmq_context;
     zmq::socket_t* app_socket;
     zmq::socket_t* sub_socket;
     Reactor* reactor;
   };
-  typedef boost::function<void(FunctionServer*, ThreadContext*)>
+}  // namespace FunctionServer
+
+class FunctionServer {
+ public:
+  typedef boost::function<void(const MessageVector*)> ReplyFunction;
+  typedef boost::function<void(FunctionServer*, internal::ThreadContext*)>
       ThreadInitFunc;
 
+  class HandlerFunction {
+    typedef boost::function<void(ReplyFunction)> FunctionType;
+
+   public:
+    template <typename T>
+    HandlerFunction(T function) : function_(FunctionType(function)) {}
+
+    inline void Run(ReplyFunction reply_function) {
+      function_(reply_function);
+      delete this;
+    }
+
+   private:
+    FunctionType function_;
+  };
+
+  // Constructs an EventManager with nthreads worker threads. 
+  // By the time the constructor returns all the threads are running.
+  // The actual number of threads that are started may be larger than nthreads
+  // by a small constant (such as 2), for internal worker threads.
   FunctionServer(zmq::context_t* context, int nthreads,
-                 HandlerFunction handler_function,
                  ThreadInitFunc thread_init_func);
 
   ~FunctionServer();
@@ -59,11 +79,9 @@ class FunctionServer {
   zmq::socket_t* GetConnectedSocket() const;
 
  private:
-  void Init(HandlerFunction handler_function,
-            ThreadInitFunc thread_init_func);
+  void Init(ThreadInitFunc thread_init_func);
 
   void Reply(MessageVector* routes,
-             MessageVector* request,
              const MessageVector* reply);
 
   void Quit();
@@ -72,7 +90,8 @@ class FunctionServer {
   int nthreads_;
 
   // Local thread-data for each worker thread.
-  scoped_ptr<boost::thread_specific_ptr<ThreadContext> > thread_context_;
+  scoped_ptr<boost::thread_specific_ptr<internal::ThreadContext> >
+      thread_context_;
 
   scoped_ptr<boost::thread_group> worker_threads_;
   scoped_ptr<boost::thread_group> device_threads_;

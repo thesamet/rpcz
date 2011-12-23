@@ -43,7 +43,7 @@ TEST_F(EventManagerTest, StartsAndFinishes) {
 }
 
 void DoThis(zmq::context_t* context) {
-  LOG(INFO)<<"Creating socket";
+  LOG(INFO)<<"Creating socket. Context="<<context;
   zmq::socket_t socket(*context, ZMQ_PUSH);
   socket.connect(kEndpoint);
   SendString(&socket, kReply);
@@ -53,6 +53,7 @@ void DoThis(zmq::context_t* context) {
 
 TEST_F(EventManagerTest, ProcessesSingleCallback) {
   zmq::context_t context(1);
+  LOG(INFO)<<"context="<<&context;
   EventManager em(&context, 10);
   zmq::socket_t socket(context, ZMQ_PULL);
   socket.bind(kEndpoint);
@@ -69,23 +70,6 @@ void Increment(boost::mutex* mu,
   (*x)++;
   cond->notify_one();
   mu->unlock();
-}
-
-TEST_F(EventManagerTest, ProcessesBroadcast) {
-  boost::mutex mu;
-  boost::condition_variable cond;
-  boost::unique_lock<boost::mutex> lock(mu);
-  zmq::context_t context(1);
-  EventManager em(&context, 20);
-  int x = 0;
-  Closure *c = NewPermanentCallback(&Increment, &mu, &cond, &x);
-  em.Broadcast(c);
-  em.Broadcast(c);
-  CHECK_EQ(0, x);  // since we are holding the lock
-  while (x != 40) {
-    cond.wait(lock);
-  }
-  delete c;
 }
 
 void AddManyClosures(EventManager* em) {
@@ -109,8 +93,8 @@ TEST_F(EventManagerTest, ProcessesManyCallbacksFromManyThreads) {
   const int thread_count = 10;
   boost::thread_group thread_group;
   for (int i = 0; i < thread_count; ++i) {
-    thread_group.add_thread(CreateThread(NewCallback(&AddManyClosures,
-                                                     &em)));
+    thread_group.add_thread(
+        new boost::thread(boost::bind(AddManyClosures, &em)));
   }
   thread_group.join_all();
 }

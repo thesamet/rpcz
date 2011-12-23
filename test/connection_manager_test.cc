@@ -67,7 +67,7 @@ void EchoServer(zmq::socket_t *socket) {
 boost::thread* StartServer(zmq::context_t* context) {
   zmq::socket_t* server = new zmq::socket_t(*context, ZMQ_DEALER);
   server->bind("inproc://server.test");
-  return CreateThread(NewCallback(&EchoServer, server));
+  return new boost::thread(boost::bind(EchoServer, server));
 }
 
 MessageVector* CreateSimpleRequest(int number=0) {
@@ -241,8 +241,8 @@ TEST_F(ConnectionManagerTest, ManyClientsTest) {
   boost::thread_group group;
   for (int i = 0; i < 10; ++i) {
     group.add_thread(
-        CreateThread(NewCallback(SendManyMessages, connection.get(), i,
-                                 i < 5)));
+        new boost::thread(boost::bind(SendManyMessages, connection.get(),
+                                      i, i<5)));
   }
   group.join_all();
   scoped_ptr<MessageVector> request(CreateQuitRequest());

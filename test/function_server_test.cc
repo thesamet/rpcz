@@ -26,50 +26,41 @@ namespace zrpc {
 
 class FunctionServerTest : public ::testing::Test {
  public:
-  FunctionServerTest() : context_(1) {}
+  FunctionServerTest() : context_(1), fs_(&context_, 10, NULL) {}
  protected:
   zmq::context_t context_;
+  FunctionServer fs_;
 };
 
 TEST_F(FunctionServerTest, InitializesAndFinishes) {
-  FunctionServer fs(&context_, 3, FunctionServer::HandlerFunction(),
-                    FunctionServer::ThreadInitFunc());
 }
 
 void HandlerFunction(
     SyncEvent* sync_event,
-    MessageVector* request,
     FunctionServer::ReplyFunction reply) {
-  CHECK_EQ(3, request->size());
-  EXPECT_EQ("element0", MessageToString((*request)[0]));
-  EXPECT_EQ("element1", MessageToString((*request)[1]));
-  EXPECT_EQ("element2", MessageToString((*request)[2]));
   reply(NULL);
   sync_event->Signal();
+}
+
+void SendHandler(zmq::socket_t* socket,
+                 FunctionServer::HandlerFunction* handler_function) {
+  SendEmptyMessage(socket, ZMQ_SNDMORE);
+  SendPointer(socket, handler_function, 0);
 }
 
 TEST_F(FunctionServerTest, HandlesSingleRequest) {
   // Tests a single request with empty reply.
   SyncEvent event;
-  FunctionServer fs(&context_, 3, boost::bind(HandlerFunction, &event, _1, _2),
-                    FunctionServer::ThreadInitFunc());
-  scoped_ptr<zmq::socket_t> socket(fs.GetConnectedSocket());
-  SendEmptyMessage(socket.get(), ZMQ_SNDMORE);
-  SendString(socket.get(), "element0", ZMQ_SNDMORE);
-  SendString(socket.get(), "element1", ZMQ_SNDMORE);
-  SendString(socket.get(), "element2", 0);
+  scoped_ptr<zmq::socket_t> socket(fs_.GetConnectedSocket());
+  SendHandler(socket.get(), new FunctionServer::HandlerFunction(
+          boost::bind(HandlerFunction, &event, _1)));
   event.Wait();
   zmq::message_t msg;
   EXPECT_FALSE(socket->recv(&msg, ZMQ_NOBLOCK));
 }
 
 void ReplyingHandlerFunction(
-    MessageVector* request,
     FunctionServer::ReplyFunction reply) {
-  CHECK_EQ(3, request->size());
-  EXPECT_EQ("element0", MessageToString((*request)[0]));
-  EXPECT_EQ("element1", MessageToString((*request)[1]));
-  EXPECT_EQ("element2", MessageToString((*request)[2]));
   MessageVector reply_vector;
   reply_vector.push_back(StringToMessage("reply1"));
   reply_vector.push_back(StringToMessage("reply2"));
@@ -78,13 +69,9 @@ void ReplyingHandlerFunction(
 
 TEST_F(FunctionServerTest, HandlesSingleRequestWithResponse) {
   // Tests a single request with one reply.
-  FunctionServer fs(&context_, 3, ReplyingHandlerFunction,
-                    FunctionServer::ThreadInitFunc());
-  scoped_ptr<zmq::socket_t> socket(fs.GetConnectedSocket());
-  SendEmptyMessage(socket.get(), ZMQ_SNDMORE);
-  SendString(socket.get(), "element0", ZMQ_SNDMORE);
-  SendString(socket.get(), "element1", ZMQ_SNDMORE);
-  SendString(socket.get(), "element2", 0);
+  scoped_ptr<zmq::socket_t> socket(fs_.GetConnectedSocket());
+  SendHandler(socket.get(), 
+              new FunctionServer::HandlerFunction(ReplyingHandlerFunction));
   MessageVector reply;
   ReadMessageToVector(socket.get(), &reply);
   CHECK_EQ(3, reply.size());
@@ -94,14 +81,14 @@ TEST_F(FunctionServerTest, HandlesSingleRequestWithResponse) {
 }
 
 void PropagatingHandlerFunction(FunctionServer* fs,
-                                MessageVector* request,
+                                int count,
                                 FunctionServer::ReplyFunction reply) {
-  CHECK_EQ(1, request->size());
-  int count = boost::lexical_cast<int>(MessageToString((*request)[0]));
   if (count < 7) {
     scoped_ptr<zmq::socket_t> socket(fs->GetConnectedSocket());
-    SendEmptyMessage(socket.get(), ZMQ_SNDMORE);
-    SendString(socket.get(), boost::lexical_cast<std::string>(count + 1));
+    SendHandler(socket.get(),
+                new FunctionServer::HandlerFunction(boost::bind(
+                    PropagatingHandlerFunction,
+                    fs, count + 1, _1)));
     MessageVector reply_vector;
     ReadMessageToVector(socket.get(), &reply_vector);
     socket->close();
@@ -120,13 +107,10 @@ void PropagatingHandlerFunction(FunctionServer* fs,
 TEST_F(FunctionServerTest, HandlerPropagates) {
   // In this test the handlers send their own message to the same fs,
   // wait for the reply, and based on that reply to the original request.
-  FunctionServer fs(&context_, 10, 
-                    boost::bind(PropagatingHandlerFunction,
-                                &fs, _1, _2),
-                    FunctionServer::ThreadInitFunc());
-  scoped_ptr<zmq::socket_t> socket(fs.GetConnectedSocket());
-  SendEmptyMessage(socket.get(), ZMQ_SNDMORE);
-  SendString(socket.get(), "0", 0);
+  scoped_ptr<zmq::socket_t> socket(fs_.GetConnectedSocket());
+  SendHandler(socket.get(), new FunctionServer::HandlerFunction(
+          boost::bind(PropagatingHandlerFunction,
+                      &fs_, 0, _1)));
   MessageVector reply_vector;
   ReadMessageToVector(socket.get(), &reply_vector);
   CHECK_EQ(9, reply_vector.size());
@@ -136,36 +120,38 @@ TEST_F(FunctionServerTest, HandlerPropagates) {
   }
 }
 
-void DelegatingHandlerFunction(SyncEvent* sync_event,
-                               FunctionServer* fs,
-                               MessageVector* request,
+void DelegatingHandlerFunction(FunctionServer* fs,
+                               int count,
+                               FunctionServer::ReplyFunction* delegated,
                                FunctionServer::ReplyFunction reply) {
-  CHECK_GE(request->size(), 1);
-  int count = boost::lexical_cast<int>(MessageToString((*request)[0]));
-  LOG(INFO)<<"Count=" << count;
   if (count == 0) {
     scoped_ptr<zmq::socket_t> socket(fs->GetConnectedSocket());
-    SendEmptyMessage(socket.get(), ZMQ_SNDMORE);
-    SendString(socket.get(), "1", ZMQ_SNDMORE);
+    SendHandler(socket.get(),
+        new FunctionServer::HandlerFunction(bind(
+                DelegatingHandlerFunction,
+                fs, 1, &reply, _1)));
     // We pass around a pointer to the ReplyFunction, to be called by the 7'th
-    // handler. The reason this point remains valid is that we Wait() in this
-    // thread.
-    SendPointer<FunctionServer::ReplyFunction>(socket.get(), &reply, 0);
-    sync_event->Wait();
+    // handler. The reason this pointer remains valid is that we Wait() in
+    // this thread.
+    MessageVector r;
+    CHECK(ReadMessageToVector(socket.get(), &r));
   } else if (count >= 1 && count < 7) {
     scoped_ptr<zmq::socket_t> socket(fs->GetConnectedSocket());
-    SendEmptyMessage(socket.get(), ZMQ_SNDMORE);
-    SendString(socket.get(), boost::lexical_cast<std::string>(count + 1),
-               ZMQ_SNDMORE);
-    socket->send(*(*request)[1]);
-    sync_event->Wait();
-    reply(NULL);
+    SendHandler(
+        socket.get(),
+        new FunctionServer::HandlerFunction(bind(
+            DelegatingHandlerFunction, fs, count + 1, delegated,
+            _1)));
+    MessageVector r;
+    CHECK(ReadMessageToVector(socket.get(), &r));
+    reply(&r);
   } else if (count == 7) {
     MessageVector reply_vector;
     reply_vector.push_back(StringToMessage("This is it!"));
-    (*InterpretMessage<FunctionServer::ReplyFunction*>(*(*request)[1]))(&reply_vector);
-    reply(NULL);
-    sync_event->Signal();
+    (*delegated)(&reply_vector);
+    MessageVector r;
+    r.push_back(StringToMessage("INNER!"));
+    reply(&r);
   } else {
     LOG(FATAL) << "Unexpected to be here";
   }
@@ -175,14 +161,10 @@ TEST_F(FunctionServerTest, TestDelegatingHandler) {
   // In this test the handlers delegate the responsibility to call the reply
   // function to another reliable. We use an event to make sure the thread that
   // replies is a different thread that received the original function.
-  SyncEvent event;
-  FunctionServer fs(&context_, 10, 
-                    boost::bind(DelegatingHandlerFunction,
-                                &event, &fs, _1, _2),
-                    FunctionServer::ThreadInitFunc());
-  scoped_ptr<zmq::socket_t> socket(fs.GetConnectedSocket());
-  SendEmptyMessage(socket.get(), ZMQ_SNDMORE);
-  SendString(socket.get(), "0", 0);
+  scoped_ptr<zmq::socket_t> socket(fs_.GetConnectedSocket());
+  FunctionServer::ReplyFunction ref;
+  SendHandler(socket.get(), new FunctionServer::HandlerFunction(
+          bind(DelegatingHandlerFunction, &fs_, 0, &ref, _1)));
   MessageVector reply_vector;
   ReadMessageToVector(socket.get(), &reply_vector);
   CHECK_EQ(2, reply_vector.size());

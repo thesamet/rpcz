@@ -26,7 +26,7 @@ class message_t;
 namespace zrpc {
 
 class Connection;
-class ClientRequest;
+struct ClientRequest;
 class Closure;
 class ConnectionManager;
 template <typename T>

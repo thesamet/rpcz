@@ -24,7 +24,7 @@
 namespace zrpc {
 class Connection;
 class SimpleRpcChannel;
-struct RemoteResponse;
+class RemoteResponse;
 
 class RPC {
  public:

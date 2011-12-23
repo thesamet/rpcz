@@ -59,7 +59,6 @@ void FunctionServerThreadEntryPoint(
     zmq::context_t* context, const string backend,
     const string pubsub_backend,
     const string sync_endpoint,
-    FunctionServer::HandlerFunction handler_function,
     FunctionServer::ThreadInitFunc thread_init);
 }  // unnamed namespace
 
@@ -71,11 +70,10 @@ boost::thread* CreateThread(Callable callable) {
 
 FunctionServer::FunctionServer(
     zmq::context_t* context, int nthreads,
-    HandlerFunction handler_function,
     ThreadInitFunc thread_init_func)
   : context_(context),
     nthreads_(nthreads) {
-  Init(handler_function, thread_init_func);
+  Init(thread_init_func);
 }
 
 FunctionServer::~FunctionServer() {
@@ -100,9 +98,9 @@ void FunctionServer::Quit() {
 }
 
 void FunctionServer::Init(
-    FunctionServer::HandlerFunction handler_function,
     FunctionServer::ThreadInitFunc thread_init_func) {
-  thread_context_.reset(new boost::thread_specific_ptr<ThreadContext>());
+  thread_context_.reset(new boost::thread_specific_ptr<
+                        internal::ThreadContext>());
   worker_threads_.reset(new boost::thread_group());
   device_threads_.reset(new boost::thread_group());
   frontend_endpoint_ = StringPrintf("inproc://%p.frontend", this);
@@ -138,7 +136,7 @@ void FunctionServer::Init(
                         this,
                         context_, backend_endpoint_,
                         pubsub_backend_endpoint_,
-                        sync_endpoint, handler_function, thread_init_func)));
+                        sync_endpoint, thread_init_func)));
   }
   for (int i = 0; i < nthreads_; ++i) {
     ready_sync.recv(&msg);
@@ -147,9 +145,8 @@ void FunctionServer::Init(
 }
 
 void FunctionServer::Reply(MessageVector* routes,
-                           MessageVector* request,
                            const MessageVector* reply) {
-  ThreadContext* context = thread_context_->get();
+  internal::ThreadContext* context = thread_context_->get();
   if (context != NULL) {
     if (reply) {
       WriteVectorsToSocket(context->app_socket, *routes, *reply);
@@ -157,7 +154,6 @@ void FunctionServer::Reply(MessageVector* routes,
   } else {
     LOG(ERROR) << "Reply() has been called in a non function-server thread.";
   }
-  delete request;
   delete routes;
 }
 
@@ -168,11 +164,9 @@ class FunctionServerThread {
       zmq::context_t* context,
       zmq::socket_t* app_socket,
       zmq::socket_t* sub_socket,
-      FunctionServer::HandlerFunction handler_function,
       FunctionServer::ThreadInitFunc thread_init) :
-  function_server_(function_server),
-  handler_function_(handler_function) {
-    thread_context_ = new FunctionServer::ThreadContext;
+  function_server_(function_server) {
+    thread_context_ = new internal::ThreadContext;
     thread_context_->zmq_context = context;
     thread_context_->app_socket = app_socket;
     thread_context_->sub_socket = sub_socket;
@@ -214,22 +208,22 @@ class FunctionServerThread {
 
   void HandleAppSocket() {
     MessageVector* routes = new MessageVector;
-    MessageVector* request = new MessageVector;
-    CHECK(ReadMessageToVector(thread_context_->app_socket, routes, request));
+    MessageVector request;
+    CHECK(ReadMessageToVector(thread_context_->app_socket, routes, &request));
+    CHECK_EQ(1, request.size());
     FunctionServer::ReplyFunction reply_function =
         FunctionServer::ReplyFunction(
             boost::bind(
                 &FunctionServer::Reply,
                 function_server_,
                 routes,
-                request,
                 _1));
-    handler_function_(request, reply_function);
+    InterpretMessage<FunctionServer::HandlerFunction*>(*request[0])->Run(
+        reply_function);
   }
 
   // owned by FunctionServer.thread_context_;
-  FunctionServer::ThreadContext* thread_context_;
-  FunctionServer::HandlerFunction handler_function_;
+  internal::ThreadContext* thread_context_;
   FunctionServer* function_server_;
   DISALLOW_COPY_AND_ASSIGN(FunctionServerThread);
 };
@@ -240,7 +234,6 @@ void FunctionServerThreadEntryPoint(
     zmq::context_t* context, const string backend,
     const string pubsub_backend,
     const string sync_endpoint,
-    FunctionServer::HandlerFunction handler_function,
     FunctionServer::ThreadInitFunc thread_init) {
   zmq::socket_t* app = new zmq::socket_t(*context, ZMQ_DEALER);
   app->connect(backend.c_str());
@@ -252,8 +245,7 @@ void FunctionServerThreadEntryPoint(
   sync_socket.connect(sync_endpoint.c_str());
   SendString(&sync_socket, "");
 
-  FunctionServerThread fst(fs, context, app, pubsub, handler_function,
-                           thread_init);
+  FunctionServerThread fst(fs, context, app, pubsub, thread_init);
   fst.Start();
 }
 }  // unnamed namespace

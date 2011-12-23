@@ -37,6 +37,7 @@
 #include "zrpc/clock.h"
 #include "zrpc/connection_manager_controller.h"
 #include "zrpc/event_manager.h"
+#include "zrpc/function_server.h"
 #include "zrpc/macros.h"
 #include "zrpc/reactor.h"
 #include "zrpc/rpc_channel.h"
@@ -89,10 +90,10 @@ struct RemoteResponseWrapper {
 class ConnectionThreadContext {
  public:
   ConnectionThreadContext(
-      EventManager* internal_event_manager,
+      FunctionServer* function_server,
       EventManager* external_event_manager,
-      EventManager::ThreadContext* thread_context) {
-    internal_event_manager_ = internal_event_manager;
+      internal::ThreadContext* thread_context) {
+    function_server_ = function_server;
     external_event_manager_ = external_event_manager;
     thread_context_ = thread_context;
   }
@@ -187,30 +188,39 @@ class ConnectionThreadContext {
   RemoteResponseMap remote_response_map_;
   DeadlineMap deadline_map_;
   EventIdGenerator event_id_generator_;
-  EventManager* internal_event_manager_;
+  FunctionServer* function_server_;
   EventManager* external_event_manager_;
-  EventManager::ThreadContext* thread_context_;
+  internal::ThreadContext* thread_context_;
 };
 
-// Initializes a connection manager's thread. Extra-care must be taken:
-// ConnectionManager's constructor and the internal EventManager's constructor
-// may be still running!
-void InitContext(EventManager* em, EventManager::ThreadContext* context,
-                 void* user_data) {
-  ConnectionManager *conn = static_cast<ConnectionManager*>(user_data);
+// Initializes a connection manager's thread.
+void InitContext(
+    FunctionServer* fs,
+    internal::ThreadContext* context,
+    EventManager* external_event_manager,
+    boost::thread_specific_ptr<ConnectionThreadContext>*
+         thread_context_registry) {
   ConnectionThreadContext* conn_context = new ConnectionThreadContext(
-      em, conn->external_event_manager_, context);
-  conn->thread_context_->reset(conn_context);
+      fs, external_event_manager, context);
+  thread_context_registry->reset(conn_context);
+}
+
+void Handler(MessageVector* Request, FunctionServer::ReplyFunction reply) {
 }
 
 ConnectionManager::ConnectionManager(
     zmq::context_t* context, EventManager* event_manager,
     int nthreads)
-  : context_(context),
-    external_event_manager_(event_manager),
-    thread_context_(new boost::thread_specific_ptr<ConnectionThreadContext>()) {
+  : thread_context_(new boost::thread_specific_ptr<ConnectionThreadContext>()), 
+    context_(context),
+    external_event_manager_(event_manager) {
+  FunctionServer* fs = new FunctionServer(context, nthreads,
+                                          boost::bind(InitContext,
+                                                      _1, _2,
+                                                      event_manager,
+                                                      thread_context_.get()));
   internal_event_manager_.reset(
-      new EventManager(context, nthreads, InitContext, this));
+      new EventManager(fs));
 }
 
 namespace internal_thread {

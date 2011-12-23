@@ -17,7 +17,6 @@ function(zrpc_test TESTNAME)
   list(APPEND LIBS ${OPTIONS_LIBS})
   target_link_libraries(${TESTNAME} ${LIBS})
   add_test(${TESTNAME} ${TESTNAME} --logtostderr)
-  message(${TESTNAME} ${LIBS})
 endfunction()
 
 # add_executable(client_test client_test.cc)
@@ -25,8 +24,8 @@ endfunction()
 #     search_pb zrpc glog zmq gflags)
 
 
+zrpc_test(function_server_test SRCS function_server_test.cc)
 zrpc_test(callback_test SRCS callback_test.cc)
 zrpc_test(connection_manager_test SRCS connection_manager_test.cc)
 zrpc_test(event_manager_test SRCS event_manager_test.cc)
-zrpc_test(function_server_test SRCS function_server_test.cc)
 zrpc_test(rpc_test SRCS search_main.cc LIBS search_pb)
