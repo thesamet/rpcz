@@ -29,7 +29,40 @@ class message_t;
 }
 
 namespace zrpc {
-typedef boost::ptr_vector<boost::nullable<zmq::message_t> > MessageVector;
+
+class MessageVector {
+ public:
+  zmq::message_t& operator[](int index) {
+    return data_[index];
+  }
+
+  size_t size() const { return data_.size(); }
+
+  // transfers points in the the range [from, to) from the other
+  // MessageVector to the beginning of this messsage vector.
+  void transfer(size_t from, size_t to, MessageVector& other) {
+    data_.transfer(data_.begin(),
+                   other.data_.begin() + from, other.data_.begin() + to,
+                   other.data_);
+  }
+
+  template <typename T>
+  T begin() {
+    return data_.begin();
+  }
+
+  void push_back(zmq::message_t* msg) { data_.push_back(msg); }
+
+  void erase_first() { data_.erase(data_.begin()); }
+
+  zmq::message_t* release(int index) {
+    return data_.replace(index, NULL).release(); }
+
+ private:
+  typedef boost::ptr_vector<boost::nullable<zmq::message_t> > DataType;
+
+  DataType data_;
+};
 
 bool ReadMessageToVector(zmq::socket_t* socket,
                          MessageVector* data);

@@ -43,7 +43,6 @@
 #include "zrpc/rpc_channel.h"
 #include "zrpc/simple_rpc_channel.h"
 #include "zrpc/sync_event.h"
-#include "zrpc/zmq_utils.h"
 
 namespace zrpc {
 namespace {
@@ -106,9 +105,7 @@ class ConnectionThreadContext {
     }
     RemoteResponseWrapper*& remote_response_wrapper = iter->second;
     RemoteResponse*& remote_response = remote_response_wrapper->remote_response;
-    remote_response->reply.transfer(
-        remote_response->reply.begin(), messages.begin() + 2, messages.end(),
-        messages);
+    remote_response->reply.transfer(2, messages.size(), messages);
     remote_response->status = RemoteResponse::DONE;
     if (remote_response_wrapper->closure) {
       if (external_event_manager_) {

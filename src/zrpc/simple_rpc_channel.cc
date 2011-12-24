@@ -114,13 +114,17 @@ void SimpleRpcChannel::HandleClientResponse(
     RpcResponseContext* response_context) {
   delete request;
   RemoteResponse& remote_response = response_context->remote_response;
-
   switch (remote_response.status) {
     case RemoteResponse::DEADLINE_EXCEEDED:
       response_context->rpc->SetStatus(
           GenericRPCResponse::DEADLINE_EXCEEDED);
       break;
     case RemoteResponse::DONE: {
+        if (remote_response.reply.size() != 2) {
+          response_context->rpc->SetFailed(GenericRPCResponse::INVALID_MESSAGE,
+                                           "");
+          break;
+        }
         GenericRPCResponse generic_response;
         zmq::message_t& msg_in = response_context->remote_response.reply[0];
         CHECK(generic_response.ParseFromArray(msg_in.data(), msg_in.size()));
@@ -146,7 +150,7 @@ void SimpleRpcChannel::HandleClientResponse(
     case RemoteResponse::INACTIVE:
     default:
       CHECK(false) << "Unexpected RemoteResponse state: "
-          << remote_response.status;
+                   << remote_response.status;
   }
   // We call Signal() before we execute closure sync the closure may delete
   // the RPC object (which contains the sync_event).

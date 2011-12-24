@@ -140,7 +140,7 @@ class ServerImpl {
   void HandleFunctionResponse(zmq::socket_t* fs_socket) {
     MessageVector data;
     CHECK(ReadMessageToVector(fs_socket, &data));
-    data.erase(data.begin());
+    data.erase_first();
     WriteVectorToSocket(socket_, data);
   }
 
@@ -151,7 +151,7 @@ class ServerImpl {
     // contain, so first wrap them in scoped_ptr's.
     scoped_ptr<RPCRequestContext> context(CHECK_NOTNULL(new RPCRequestContext));
     context->routes.reset(routes_);
-    context->request_id.reset(data_->replace(0, NULL).release());
+    context->request_id.reset(data_->release(0));
 
     scoped_ptr<MessageVector> data(data_);
     CHECK_EQ(3, data->size());
