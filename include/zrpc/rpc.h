@@ -18,12 +18,10 @@
 #define ZRPC_RPC_H
 
 #include <string>
-#include <zrpc/macros.h>
+#include "zrpc/macros.h"
 #include "zrpc/zrpc.pb.h"
 
 namespace zrpc {
-class Connection;
-class SimpleRpcChannel;
 class SyncEvent;
 
 class RPC {
@@ -71,7 +69,7 @@ class RPC {
   int64 deadline_ms_;
   scoped_ptr<SyncEvent> sync_event_;
 
-  friend class SimpleRpcChannel;
+  friend class RpcChannelImpl;
   friend class ServerImpl;
 };
 }  // namespace

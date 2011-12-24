@@ -14,29 +14,23 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_SIMPLE_RPC_CHANNEL_H
-#define ZRPC_SIMPLE_RPC_CHANNEL_H
+#ifndef ZRPC_RPC_CHANNEL_IMPL_H
+#define ZRPC_RPC_CHANNEL_IMPL_H
 
 #include "zrpc/rpc_channel.h"
-
-namespace zmq {
-class message_t; 
-}  // namespace zmq
 
 namespace zrpc {
 
 class Connection;
-struct ClientRequest;
 class Closure;
-class ConnectionManager;
 class MessageVector;
 struct RpcResponseContext;
 
-class SimpleRpcChannel: public RpcChannel {
+class RpcChannelImpl: public RpcChannel {
  public:
-  SimpleRpcChannel(Connection* connection);
+  RpcChannelImpl(Connection* connection);
 
-  virtual ~SimpleRpcChannel();
+  virtual ~RpcChannelImpl();
 
   virtual void CallMethod(const google::protobuf::MethodDescriptor* method,
                           RPC* rpc, const google::protobuf::Message* request,
@@ -64,4 +58,4 @@ class SimpleRpcChannel: public RpcChannel {
   Connection* connection_;
 };
 } // namespace zrpc
-#endif /* ZRPC_SIMPLE_RPC_CHANNEL_H_ */
+#endif /* ZRPC_SIMPLE_RPC_CHANNEL_IMPL_H_ */

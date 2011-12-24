@@ -41,7 +41,7 @@
 #include "zrpc/macros.h"
 #include "zrpc/reactor.h"
 #include "zrpc/rpc_channel.h"
-#include "zrpc/simple_rpc_channel.h"
+#include "zrpc/rpc_channel_impl.h"
 #include "zrpc/sync_event.h"
 
 namespace zrpc {
@@ -238,7 +238,7 @@ class ConnectionImpl : public Connection {
         endpoint_(endpoint) {}
 
   virtual RpcChannel* MakeChannel() {
-    return new SimpleRpcChannel(this);
+    return new RpcChannelImpl(this);
   }
 
   virtual void SendRequest(

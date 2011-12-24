@@ -14,10 +14,10 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include <glog/logging.h>
-#include <google/protobuf/descriptor.h>
-#include <zmq.hpp>
-#include "zrpc/simple_rpc_channel.h"
+#include "glog/logging.h"
+#include "google/protobuf/descriptor.h"
+#include "zmq.hpp"
+#include "zrpc/rpc_channel_impl.h"
 #include "zrpc/connection_manager.h"
 #include "zrpc/callback.h"
 #include "zrpc/rpc.h"
@@ -25,11 +25,11 @@
 
 namespace zrpc {
 
-SimpleRpcChannel::SimpleRpcChannel(Connection* connection)
+RpcChannelImpl::RpcChannelImpl(Connection* connection)
     : connection_(connection) {
 }
 
-SimpleRpcChannel::~SimpleRpcChannel() {
+RpcChannelImpl::~RpcChannelImpl() {
 }
 
 struct RpcResponseContext {
@@ -40,7 +40,7 @@ struct RpcResponseContext {
   RemoteResponse remote_response;
 };
 
-void SimpleRpcChannel::CallMethodFull(
+void RpcChannelImpl::CallMethodFull(
     const std::string& service_name,
     const std::string& method_name,
     RPC* rpc,
@@ -75,11 +75,11 @@ void SimpleRpcChannel::CallMethodFull(
                            &response_context->remote_response,
                            rpc->GetDeadlineMs(),
                            NewCallback(
-                               this, &SimpleRpcChannel::HandleClientResponse,
+                               this, &RpcChannelImpl::HandleClientResponse,
                                msg_vector, response_context));
 }
 
-void SimpleRpcChannel::CallMethod0(const std::string& service_name,
+void RpcChannelImpl::CallMethod0(const std::string& service_name,
                                 const std::string& method_name,
                                 RPC* rpc,
                                 const std::string& request,
@@ -94,7 +94,7 @@ void SimpleRpcChannel::CallMethod0(const std::string& service_name,
                  done);
 }
 
-void SimpleRpcChannel::CallMethod(
+void RpcChannelImpl::CallMethod(
     const google::protobuf::MethodDescriptor* method,
     RPC* rpc,
     const google::protobuf::Message* request,
@@ -109,7 +109,7 @@ void SimpleRpcChannel::CallMethod(
                  done);
 }
 
-void SimpleRpcChannel::HandleClientResponse(
+void RpcChannelImpl::HandleClientResponse(
     MessageVector* request,
     RpcResponseContext* response_context) {
   delete request;
