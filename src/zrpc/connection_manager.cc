@@ -98,17 +98,17 @@ class ConnectionThreadContext {
     MessageVector messages;
     ReadMessageToVector(socket, &messages);
     CHECK(messages.size() >= 1);
-    CHECK_EQ(messages[0]->size(), 0);
-    EventId event_id(InterpretMessage<EventId>(*messages[1]));
+    CHECK_EQ(messages[0].size(), 0);
+    EventId event_id(InterpretMessage<EventId>(messages[1]));
     RemoteResponseMap::iterator iter = remote_response_map_.find(event_id);
     if (iter == remote_response_map_.end()) {
       return;
     }
     RemoteResponseWrapper*& remote_response_wrapper = iter->second;
     RemoteResponse*& remote_response = remote_response_wrapper->remote_response;
-    messages.erase(0);
-    messages.erase(0);
-    remote_response->reply.swap(messages);
+    remote_response->reply.transfer(
+        remote_response->reply.begin(), messages.begin() + 2, messages.end(),
+        messages);
     remote_response->status = RemoteResponse::DONE;
     if (remote_response_wrapper->closure) {
       if (external_event_manager_) {

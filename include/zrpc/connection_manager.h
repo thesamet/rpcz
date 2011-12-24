@@ -19,10 +19,11 @@
 
 #include <string>
 #include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "zrpc/event_manager.h"
 #include "zrpc/macros.h"
-#include "zrpc/pointer_vector.h"
+#include "zrpc/zmq_utils.h"
 
 namespace zmq {
 class context_t;
@@ -45,7 +46,7 @@ class RemoteResponse;
 struct RemoteResponseWrapper;
 class RpcChannel;
 class StoppingCondition;
-typedef PointerVector<zmq::message_t> MessageVector;
+
 namespace internal {
 struct ThreadContext;
 }  // namespace internal

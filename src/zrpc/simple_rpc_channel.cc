@@ -122,7 +122,7 @@ void SimpleRpcChannel::HandleClientResponse(
       break;
     case RemoteResponse::DONE: {
         GenericRPCResponse generic_response;
-        zmq::message_t& msg_in = *response_context->remote_response.reply[0];
+        zmq::message_t& msg_in = response_context->remote_response.reply[0];
         CHECK(generic_response.ParseFromArray(msg_in.data(), msg_in.size()));
         if (generic_response.status() != GenericRPCResponse::OK) {
           response_context->rpc->SetFailed(generic_response.application_error(),
@@ -131,13 +131,13 @@ void SimpleRpcChannel::HandleClientResponse(
           response_context->rpc->SetStatus(GenericRPCResponse::OK);
           if (response_context->response_msg) {
             CHECK(response_context->response_msg->ParseFromArray(
-                    response_context->remote_response.reply[1]->data(),
-                    response_context->remote_response.reply[1]->size()));
+                    response_context->remote_response.reply[1].data(),
+                    response_context->remote_response.reply[1].size()));
           } else if (response_context->response_str) {
             response_context->response_str->assign(
                 static_cast<char*>(
-                    response_context->remote_response.reply[1]->data()),
-                response_context->remote_response.reply[1]->size());
+                    response_context->remote_response.reply[1].data()),
+                response_context->remote_response.reply[1].size());
           }
         }
       }
@@ -148,6 +148,8 @@ void SimpleRpcChannel::HandleClientResponse(
       CHECK(false) << "Unexpected RemoteResponse state: "
           << remote_response.status;
   }
+  // We call Signal() before we execute closure sync the closure may delete
+  // the RPC object (which contains the sync_event).
   response_context->rpc->sync_event_->Signal();
   if (response_context->user_closure) {
     response_context->user_closure->Run();

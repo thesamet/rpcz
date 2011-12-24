@@ -140,7 +140,7 @@ class ServerImpl {
   void HandleFunctionResponse(zmq::socket_t* fs_socket) {
     MessageVector data;
     CHECK(ReadMessageToVector(fs_socket, &data));
-    data.erase(0);
+    data.erase(data.begin());
     WriteVectorToSocket(socket_, data);
   }
 
@@ -151,16 +151,16 @@ class ServerImpl {
     // contain, so first wrap them in scoped_ptr's.
     scoped_ptr<RPCRequestContext> context(CHECK_NOTNULL(new RPCRequestContext));
     context->routes.reset(routes_);
-    context->request_id.reset(data_->release(0));
+    context->request_id.reset(data_->replace(0, NULL).release());
 
     scoped_ptr<MessageVector> data(data_);
     CHECK_EQ(3, data->size());
-    zmq::message_t* const& request = (*data)[1];
-    zmq::message_t* const& payload = (*data)[2];
+    zmq::message_t& request = (*data)[1];
+    zmq::message_t& payload = (*data)[2];
 
     GenericRPCRequest generic_rpc_request;
-    VLOG(2) << "Received request of size " << request->size();
-    if (!generic_rpc_request.ParseFromArray(request->data(), request->size())) {
+    VLOG(2) << "Received request of size " << request.size();
+    if (!generic_rpc_request.ParseFromArray(request.data(), request.size())) {
       // Handle bad RPC.
       VLOG(2) << "Received corrupt message.";
       ReplyWithAppError(reply, *context,
@@ -190,7 +190,7 @@ class ServerImpl {
         service->GetRequestPrototype(descriptor).New()));
     context->response.reset(CHECK_NOTNULL(
         service->GetResponsePrototype(descriptor).New()));
-    if (!context->request->ParseFromArray(payload->data(), payload->size())) {
+    if (!context->request->ParseFromArray(payload.data(), payload.size())) {
       VLOG(2) << "Failed to parse payload.";
       // Invalid proto;
       ReplyWithAppError(reply, *context,

@@ -26,10 +26,11 @@
 #include "glog/logging.h"
 #include "google/protobuf/stubs/common.h"
 #include "zmq.hpp"
+#include "zrpc/macros.h"
 
 namespace zrpc {
-std::string MessageToString(zmq::message_t* msg) {
-  return std::string((char*)msg->data(), msg->size());
+std::string MessageToString(zmq::message_t& msg) {
+  return std::string((char*)msg.data(), msg.size());
 }
 
 zmq::message_t* StringToMessage(const std::string& str) {
@@ -79,18 +80,18 @@ bool ReadMessageToVector(zmq::socket_t* socket,
 }
 
 void WriteVectorToSocket(zmq::socket_t* socket,
-                         const MessageVector& data,
+                         MessageVector& data,
                          int flags) {
   for (size_t i = 0; i < data.size(); ++i) {
-    socket->send(*data[i], 
+    socket->send(data[i], 
                  flags |
                  ((i < data.size() - 1) ? ZMQ_SNDMORE : 0));
   }
 }
 
 void WriteVectorsToSocket(zmq::socket_t* socket,
-                          const MessageVector& routes,
-                          const MessageVector& data) {
+                          MessageVector& routes,
+                          MessageVector& data) {
   CHECK_GE(data.size(), 1);
   WriteVectorToSocket(socket, routes, ZMQ_SNDMORE);
   WriteVectorToSocket(socket, data, 0);

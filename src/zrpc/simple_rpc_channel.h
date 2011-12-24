@@ -17,6 +17,7 @@
 #ifndef ZRPC_SIMPLE_RPC_CHANNEL_H
 #define ZRPC_SIMPLE_RPC_CHANNEL_H
 
+#include <boost/ptr_container/ptr_vector.hpp>
 #include "zrpc/rpc_channel.h"
 
 namespace zmq {
@@ -29,9 +30,7 @@ class Connection;
 struct ClientRequest;
 class Closure;
 class ConnectionManager;
-template <typename T>
-class PointerVector;
-typedef PointerVector<zmq::message_t> MessageVector;
+typedef boost::ptr_vector<boost::nullable<zmq::message_t> > MessageVector;
 struct RpcResponseContext;
 
 class SimpleRpcChannel: public RpcChannel {

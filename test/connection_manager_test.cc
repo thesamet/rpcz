@@ -14,6 +14,7 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
@@ -142,8 +143,8 @@ class BarrierClosure : public Closure {
 };
 
 void SendManyMessages(Connection* connection, int thread_id) {
-  PointerVector<RemoteResponse> responses;
-  PointerVector<MessageVector> requests;
+  boost::ptr_vector<RemoteResponse> responses;
+  boost::ptr_vector<MessageVector> requests;
   const int request_count = 100;
   BarrierClosure barrier;
   for (int i = 0; i < request_count; ++i) {

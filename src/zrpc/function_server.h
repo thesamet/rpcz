@@ -17,6 +17,11 @@
 #ifndef ZRPC_FUNCTION_SERVER_H
 #define ZRPC_FUNCTION_SERVER_H
 
+#include <boost/function.hpp>
+#include <zmq.hpp>
+#include "zrpc/macros.h"
+#include "zrpc/zmq_utils.h"
+
 namespace boost {
 class thread;
 class thread_group;
@@ -27,9 +32,6 @@ namespace zmq {
   class context_t;
   class socket_t;
 }  // namespace zmq
-#include "boost/function.hpp"
-#include "zrpc/zmq_utils.h"
-#include "zmq.hpp"
 
 namespace zrpc {
 // A multithreaded function executor.
@@ -47,7 +49,7 @@ namespace internal {
 
 class FunctionServer {
  public:
-  typedef boost::function<void(const MessageVector*)> ReplyFunction;
+  typedef boost::function<void(MessageVector*)> ReplyFunction;
   typedef boost::function<void(FunctionServer*, internal::ThreadContext*)>
       ThreadInitFunc;
 
@@ -91,7 +93,7 @@ class FunctionServer {
   void Init(ThreadInitFunc thread_init_func);
 
   void Reply(MessageVector* routes,
-             const MessageVector* reply);
+             MessageVector* reply);
 
   void Quit();
 

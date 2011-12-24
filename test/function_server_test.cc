@@ -86,7 +86,7 @@ void PropagatingHandlerFunction(FunctionServer* fs,
     socket->close();
     reply_vector.push_back(StringToMessage(
             boost::lexical_cast<std::string>(count)));
-    reply_vector.erase(0);
+    reply_vector.erase(reply_vector.begin());
     reply(&reply_vector);
   }
   if (count == 7) {
@@ -136,7 +136,7 @@ void DelegatingHandlerFunction(FunctionServer* fs,
     CHECK(ReadMessageToVector(socket.get(), &r));
     CHECK_EQ(2, r.size());
     CHECK_EQ("INNER!", MessageToString(r[1]));
-    r.erase(0);
+    r.erase(r.begin());
     reply(&r);
   } else if (count == 7) {
     MessageVector reply_vector;

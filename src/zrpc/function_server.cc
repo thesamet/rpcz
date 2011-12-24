@@ -145,7 +145,7 @@ void FunctionServer::Init(
 }
 
 void FunctionServer::Reply(MessageVector* routes,
-                           const MessageVector* reply) {
+                           MessageVector* reply) {
   internal::ThreadContext* context = thread_context_->get();
   if (context != NULL) {
     if (reply) {
@@ -200,7 +200,7 @@ class FunctionServerThread {
     if (command == kQuit) {
       thread_context_->reactor->SetShouldQuit();
     } else if (command == kCall) {
-      InterpretMessage<Closure*>(*data[1])->Run();
+      InterpretMessage<Closure*>(data[1])->Run();
     } else {
       CHECK(false) << "Got unknown command: " << command;
     }
@@ -218,7 +218,7 @@ class FunctionServerThread {
                 function_server_,
                 routes,
                 _1));
-    InterpretMessage<FunctionServer::HandlerFunction*>(*request[0])->Run(
+    InterpretMessage<FunctionServer::HandlerFunction*>(request[0])->Run(
         reply_function);
   }
 
