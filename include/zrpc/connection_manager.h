@@ -38,7 +38,6 @@ class Closure;
 class Connection;
 class ConnectionThreadContext;
 class MessageVector;
-class FunctionServer;
 class RemoteResponse;
 class RpcChannel;
 
