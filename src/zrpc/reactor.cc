@@ -78,7 +78,11 @@ int Reactor::LoopUntil(StoppingCondition* stop_condition) {
     long poll_timeout = ProcessClosureRunMap();
     int rc = zmq_poll(&pollitems_[0], pollitems_.size(), poll_timeout);
     if (rc == -1) {
-      CHECK_NE(zmq_errno(), EFAULT);
+      int zmq_err = zmq_errno();
+      CHECK_NE(zmq_err, EFAULT);
+      if (zmq_err == ETERM) {
+        return -1;
+      }
     }
     for (size_t i = 0; i < pollitems_.size(); ++i) {
       if (!pollitems_[i].revents & ZMQ_POLLIN) {

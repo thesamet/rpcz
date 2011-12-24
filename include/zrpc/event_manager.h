@@ -59,19 +59,22 @@ class EventManager {
 
  private:
   zmq::context_t* context_;
-  EventManager(FunctionServer* function_server);
+  FunctionServer* function_server_;
 
+  EventManager(FunctionServer* function_server);
   EventManagerController* GetController() const;
 
   void InitFunctionServer(zmq::context_t* context, int nthreads);
 
-  FunctionServer* function_server_;
+  FunctionServer* GetFunctionServer() { return function_server_; }
+
   // Lets any thread in the program have a single EventManagerController.
   scoped_ptr<boost::thread_specific_ptr<EventManagerController> > controller_;
 
   friend class EventManagerThread;
   friend class ConnectionThreadContext;
   friend class ConnectionManager;
+  friend class Server;
   DISALLOW_COPY_AND_ASSIGN(EventManager);
 };
 }  // namespace zrpc

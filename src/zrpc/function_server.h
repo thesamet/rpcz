@@ -76,7 +76,16 @@ class FunctionServer {
 
   ~FunctionServer();
 
+  // Returns a dealer socket connected to the frontend of this function server.
   zmq::socket_t* GetConnectedSocket() const;
+
+  // Sends a function object to the socket, for later execution by the function
+  // server.
+  template <typename T>
+  inline static void AddFunction(zmq::socket_t* socket, T function) {
+    SendEmptyMessage(socket, ZMQ_SNDMORE);
+    SendPointer(socket, new HandlerFunction(function), 0);
+  }
 
  private:
   void Init(ThreadInitFunc thread_init_func);

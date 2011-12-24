@@ -17,10 +17,8 @@
 #ifndef ZRPC_CONNECTION_MANAGER_H
 #define ZRPC_CONNECTION_MANAGER_H
 
-#include <pthread.h>
 #include <string>
 #include <vector>
-#include <zmq.hpp>
 
 #include "zrpc/event_manager.h"
 #include "zrpc/macros.h"

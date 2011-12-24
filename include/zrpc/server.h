@@ -19,32 +19,28 @@
 
 #include <map>
 #include <string>
+#include "zrpc/macros.h"
 
 namespace zmq {
 class socket_t;
-class message_t;
 };
 
 namespace zrpc {
 class EventManager;
+class ServerImpl;
 class Service;
 
 class Server {
  public:
-  Server(zmq::socket_t* socket, EventManager* em);
+  Server(zmq::socket_t* socket, EventManager* event_manager);
 
   void Start();
 
   void RegisterService(Service *service);
 
  private:
-  void HandleRequest();
-
-  zmq::socket_t* socket_;
-  EventManager* event_manager_;
-  typedef std::map<std::string, zrpc::Service*> ServiceMap;
-  ServiceMap service_map_;
+  ServerImpl* server_impl_;
+  DISALLOW_COPY_AND_ASSIGN(Server);
 };
-
 }  // namespace
 #endif

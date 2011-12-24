@@ -24,7 +24,7 @@
 namespace zrpc {
 class Connection;
 class SimpleRpcChannel;
-class RemoteResponse;
+class SyncEvent;
 
 class RPC {
  public:
@@ -67,13 +67,13 @@ class RPC {
 
   GenericRPCResponse::Status status_;
   Connection* connection_;
-  RemoteResponse* remote_response_;
   std::string error_message_;
   int application_error_;
   int64 deadline_ms_;
+  scoped_ptr<SyncEvent> sync_event_;
 
   friend class SimpleRpcChannel;
-  friend class Server;
+  friend class ServerImpl;
 };
 }  // namespace
 #endif

@@ -14,13 +14,18 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include <zmq.hpp>
 #include <iostream>
+#include <boost/thread/thread.hpp>
 #include <glog/logging.h>
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+#include <zmq.hpp>
+
 #include "proto/search.pb.h"
 #include "proto/search.zrpc.h"
 #include "zrpc/callback.h"
+#include "zrpc/connection_manager.h"
+#include "zrpc/event_manager.h"
+#include "zrpc/rpc_channel.h"
 #include "zrpc/rpc.h"
 #include "zrpc/server.h"
 
@@ -44,29 +49,50 @@ class SearchServiceImpl : public SearchService {
   }
 };
 
+void ServerThread(zmq::socket_t* socket, EventManager* em) {
+  Server server(socket, em);
+  SearchServiceImpl service;
+  server.RegisterService(&service);
+  server.Start();
+}
+
 class ServerTest : public ::testing::Test {
  public:
   ServerTest() :
-      context(1) {}
+      context_(new zmq::context_t(1)),
+      em_(new EventManager(context_.get(), 10)),
+      cm_(new ConnectionManager(context_.get(), em_.get(), 1)) {
+  }
+
+  ~ServerTest() {
+    // Terminate the context, which will cause the thread to quit.
+    em_.reset(NULL);
+    cm_.reset(NULL);
+    context_.reset(NULL);
+    server_thread_.join();
+  }
 
  protected:
-  zmq::context_t context;
+  scoped_ptr<zmq::context_t> context_;
+  scoped_ptr<EventManager> em_;
+  scoped_ptr<ConnectionManager> cm_;
+  boost::thread server_thread_;
 };
 
-}  // namespace
-
-int main(int argc, char **argv) {
-  ::google::InitGoogleLogging(argv[0]);
-  ::google::ParseCommandLineFlags(&argc, &argv, true);
-  ::google::InstallFailureSignalHandler();
-  /*
-  zmq::socket_t socket(context, ZMQ_REP);
-  // socket.bind("tcp:// *:5556");
-  zrpc::Server server(&socket);
-  zrpc::SearchServiceImpl search_service;
-  server.RegisterService(&search_service);
-  server.Start();
-  */
-  ::google::protobuf::ShutdownProtobufLibrary();
-  ::google::ShutdownGoogleLogging();
+TEST_F(ServerTest, SimpleStart) {
+  zmq::socket_t *socket = new zmq::socket_t(*context_, ZMQ_ROUTER);
+  socket->bind("inproc://myserver");
+  server_thread_ = boost::thread(boost::bind(ServerThread,
+                                             socket, em_.get()));
+  scoped_ptr<Connection> connection(cm_->Connect("inproc://myserver"));
+  SearchService_Stub stub(connection->MakeChannel());
+  SearchRequest request;
+  SearchResponse response;
+  RPC rpc;
+  request.set_query("quer");
+  stub.Search(&rpc, &request, &response, NULL);
+  rpc.Wait();
+  CHECK(rpc.OK());
+  CHECK_EQ(2, response.results_size());
 }
+}  // namespace

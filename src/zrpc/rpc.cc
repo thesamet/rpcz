@@ -14,10 +14,11 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "glog/logging.h"
+#include "zrpc/rpc.h"
+#include <glog/logging.h>
 #include "zrpc/connection_manager.h"
 #include "zrpc/reactor.h"
-#include "zrpc/rpc.h"
+#include "zrpc/sync_event.h"
 #include "zrpc/zrpc.pb.h"
 
 namespace zrpc {
@@ -25,9 +26,9 @@ namespace zrpc {
 RPC::RPC()
     : status_(GenericRPCResponse::INACTIVE),
       connection_(NULL),
-      remote_response_(NULL),
       application_error_(0),
-      deadline_ms_(-1) {
+      deadline_ms_(-1),
+      sync_event_(new SyncEvent()) {
 };
 
 RPC::~RPC() {}
@@ -53,7 +54,7 @@ int RPC::Wait() {
   if (status != GenericRPCResponse::INFLIGHT) {
     return GetStatus();
   }
-  remote_response_->Wait();
+  sync_event_->Wait();
   return 0;
 }
 }  // namespace zrpc

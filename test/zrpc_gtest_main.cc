@@ -14,12 +14,14 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
+#include "gflags/gflags.h"
 #include "gtest/gtest.h"
 #include "glog/logging.h"
 #include "google/protobuf/stubs/common.h"
 
 int main(int argc, char** argv) {
   ::google::InstallFailureSignalHandler();
+  ::google::ParseCommandLineFlags(&argc, &argv, true);
   ::google::InitGoogleLogging(argv[0]);
   ::testing::InitGoogleTest(&argc, argv);
   FLAGS_logtostderr = true;

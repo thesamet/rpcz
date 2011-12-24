@@ -14,12 +14,14 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
+#include <glog/logging.h>
+#include <google/protobuf/descriptor.h>
+#include <zmq.hpp>
 #include "zrpc/simple_rpc_channel.h"
 #include "zrpc/connection_manager.h"
 #include "zrpc/callback.h"
 #include "zrpc/rpc.h"
-#include "glog/logging.h"
-#include "google/protobuf/descriptor.h"
+#include "zrpc/sync_event.h"
 
 namespace zrpc {
 
@@ -46,7 +48,7 @@ void SimpleRpcChannel::CallMethodFull(
     std::string* response_str,
     ::google::protobuf::Message* response_msg,
     Closure* done) {
-  CHECK(rpc->GetStatus() == GenericRPCResponse::INACTIVE);
+  CHECK_EQ(rpc->GetStatus(), GenericRPCResponse::INACTIVE);
   GenericRPCRequest generic_request;
   generic_request.set_service(service_name);
   generic_request.set_method(method_name);
@@ -69,7 +71,6 @@ void SimpleRpcChannel::CallMethodFull(
   response_context->response_msg = response_msg;
   rpc->SetStatus(GenericRPCResponse::INFLIGHT);
   rpc->connection_ = connection_;
-  rpc->remote_response_ = &response_context->remote_response;
 
   connection_->SendRequest(msg_vector,
                            &response_context->remote_response,
@@ -151,6 +152,7 @@ void SimpleRpcChannel::HandleClientResponse(
   if (response_context->user_closure) {
     response_context->user_closure->Run();
   }
+  response_context->rpc->sync_event_->Signal();
   delete response_context;
 }
 }  // namespace zrpc

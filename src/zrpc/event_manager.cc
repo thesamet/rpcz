@@ -40,9 +40,9 @@ class EventManagerController {
       : socket_(socket) {}
 
   inline void Add(Closure* closure) {
-    SendEmptyMessage(socket_.get(), ZMQ_SNDMORE);
-    SendPointer(socket_.get(), new FunctionServer::HandlerFunction(
-            bind(ClosureRunner, closure, _1)), 0);
+    FunctionServer::AddFunction(
+        socket_.get(), 
+        bind(ClosureRunner, closure, _1));
   }
 
  private:
