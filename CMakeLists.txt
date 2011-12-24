@@ -8,7 +8,7 @@ include_directories(${PROTOBUF_INCLUDE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_BINARY_DIR}/src)
 
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required (VERSION 2.8.0)
 set(CMAKE_CXX_FLAGS "-Wall -Werror -O3")
 set(CMAKE_OSX_ARCHITECTURES x86_64)
 
