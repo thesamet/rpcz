@@ -15,7 +15,6 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include "zrpc/zmq_utils.h"
-#include <i386/types.h>
 #include <stddef.h>
 #include <string.h>
 #include <zmq.h>

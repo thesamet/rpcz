@@ -6,23 +6,19 @@ include_directories(${GTEST_INCLUDE_DIRS})
 include_directories(${PROJECT_BINARY_DIR}/test)
 include_directories(${PROJECT_SOURCE_DIR}/src)
 add_library(zrpc_gtest_main zrpc_gtest_main.cc)
-
 function(zrpc_test TESTNAME)
   CMAKE_PARSE_ARGUMENTS(OPTIONS "" "" "SRCS;LIBS" ${ARGN})
   add_executable(${TESTNAME} ${OPTIONS_SRCS})
   set(LIBS zrpc zmq glog gflags zrpc_gtest_main
     ${GTEST_LIBRARIES}
     ${PROTOBUF_LIBRARY}
-    ${Boost_THREAD_LIBRARIES})
+    ${Boost_THREAD_LIBRARIES}
+    ${GLOG_LIBRARIES}
+    ${GFlags_LIBRARY})
   list(APPEND LIBS ${OPTIONS_LIBS})
   target_link_libraries(${TESTNAME} ${LIBS})
   add_test(${TESTNAME} ${TESTNAME} --logtostderr)
 endfunction()
-
-# add_executable(client_test client_test.cc)
-# target_link_libraries(client_test
-#     search_pb zrpc glog zmq gflags)
-
 
 zrpc_test(function_server_test SRCS function_server_test.cc)
 zrpc_test(callback_test SRCS callback_test.cc)

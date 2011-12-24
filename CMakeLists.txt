@@ -1,10 +1,16 @@
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 option(zrpc_build_tests "Build zrpc's tests." OFF)
 
+find_package(ZeroMQ REQUIRED)
 find_package(ProtobufPlugin REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread)
-include_directories(${PROTOBUF_INCLUDE_DIR})
-
+find_package(Glog REQUIRED)
+find_package(GFlags REQUIRED)
+include_directories(${ZeroMQ_INCLUDE_DIRS})
+include_directories(${PROTOBUF_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS})
+# include_directories(${GLOG_INCLUDE_DIRS})
+include_directories(${GFlags_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_BINARY_DIR}/src)
 

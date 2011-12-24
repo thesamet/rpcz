@@ -153,6 +153,6 @@ int main(int argc, char *argv[]) {
   }
 
   ::google::protobuf::ShutdownProtobufLibrary();
-  ::google::ShutdownGoogleLogging();
+  // ::google::ShutdownGoogleLogging();
   return retval;
 }
