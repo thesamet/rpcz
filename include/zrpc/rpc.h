@@ -66,7 +66,6 @@ class RPC {
   void SetStatus(GenericRPCResponse::Status status);
 
   GenericRPCResponse::Status status_;
-  Connection* connection_;
   std::string error_message_;
   int application_error_;
   int64 deadline_ms_;

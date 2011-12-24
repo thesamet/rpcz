@@ -45,7 +45,6 @@ class RemoteResponse;
 struct RemoteResponseWrapper;
 class RpcChannel;
 class StoppingCondition;
-class SyncEvent;
 typedef PointerVector<zmq::message_t> MessageVector;
 namespace internal {
 struct ThreadContext;
@@ -143,8 +142,6 @@ class RemoteResponse {
 
   ~RemoteResponse();
 
-  void Wait();
-
   enum Status {
     INACTIVE = 0,
     ACTIVE = 1,
@@ -155,7 +152,6 @@ class RemoteResponse {
   MessageVector reply;
 
  private:
-  scoped_ptr<SyncEvent> sync_event_;
   friend class ConnectionImpl;
   friend class ConnectionThreadContext;
 };

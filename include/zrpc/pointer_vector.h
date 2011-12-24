@@ -46,6 +46,12 @@ class PointerVector {
     data_.resize(sz);
   }
 
+  T* release(int index) {
+    T* t = data_[index];
+    data_[index] = NULL;
+    return t;
+  }
+
   inline iterator begin() {
     return data_.begin();
   }

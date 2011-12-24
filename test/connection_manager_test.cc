@@ -86,26 +86,6 @@ MessageVector* CreateQuitRequest() {
   return request;
 }
 
-TEST_F(ConnectionManagerTest, TestSendRequestSync) {
-  scoped_ptr<boost::thread> thread(StartServer(&context));
-
-  ConnectionManager cm(&context, NULL, 2);
-  scoped_ptr<Connection> connection(cm.Connect("inproc://server.test"));
-  scoped_ptr<MessageVector> request(CreateSimpleRequest());
-  RemoteResponse response;
-  connection->SendRequest(request.get(), &response, -1, NULL);
-  response.Wait();
-  CHECK_EQ(RemoteResponse::DONE, response.status);
-  CHECK_EQ(2, response.reply.size());
-  CHECK_EQ("hello", MessageToString(response.reply[0]));
-  CHECK_EQ("there_0", MessageToString(response.reply[1]));
-
-  request.reset(CreateQuitRequest());
-  connection->SendRequest(request.get(), &response, -1, NULL);
-  response.Wait();
-  thread->join();
-}
-
 void CheckResponse(RemoteResponse* response, SyncEvent* sync) {
   CHECK_EQ(RemoteResponse::DONE, response->status);
   CHECK_EQ(2, response->reply.size());
@@ -114,51 +94,10 @@ void CheckResponse(RemoteResponse* response, SyncEvent* sync) {
   sync->Signal();
 }
 
-TEST_F(ConnectionManagerTest, TestSendRequestClosure) {
-  scoped_ptr<boost::thread> thread(StartServer(&context));
-
-  EventManager em(&context, 5);
-  ConnectionManager cm(&context, &em, 2);
-  scoped_ptr<Connection> connection(cm.Connect("inproc://server.test"));
-  scoped_ptr<MessageVector> request(CreateSimpleRequest());
-  RemoteResponse response;
-
-  SyncEvent event;
-  connection->SendRequest(request.get(), &response, -1,
-                          NewCallback(CheckResponse, &response, &event));
-  event.Wait();
-
-  // Double-check:
-  CHECK_EQ(RemoteResponse::DONE, response.status);
-  CHECK_EQ(2, response.reply.size());
-
-  request.reset(CreateQuitRequest());
-  connection->SendRequest(request.get(), &response, -1, NULL);
-  response.Wait();
-
-  thread->join();
-}
-
 void ExpectTimeout(RemoteResponse* response, SyncEvent* sync) {
   CHECK_EQ(RemoteResponse::DEADLINE_EXCEEDED, response->status);
   CHECK_EQ(0, response->reply.size());
   sync->Signal();
-}
-
-TEST_F(ConnectionManagerTest, TestTimeoutSync) {
-  zmq::socket_t server(context, ZMQ_DEALER);
-  server.bind("inproc://server.test");
-
-  EventManager em(&context, 5);
-  ConnectionManager cm(&context, &em, 2);
-  scoped_ptr<Connection> connection(cm.Connect("inproc://server.test"));
-  scoped_ptr<MessageVector> request(CreateSimpleRequest());
-  RemoteResponse response;
-
-  connection->SendRequest(request.get(), &response, 1, NULL);
-  response.Wait();
-  CHECK_EQ(RemoteResponse::DEADLINE_EXCEEDED, response.status);
-  CHECK_EQ(0, response.reply.size());
 }
 
 TEST_F(ConnectionManagerTest, TestTimeoutAsync) {
@@ -202,8 +141,7 @@ class BarrierClosure : public Closure {
   int count_;
 };
 
-void SendManyMessages(Connection* connection, int thread_id,
-                      bool sync_with_wait) {
+void SendManyMessages(Connection* connection, int thread_id) {
   PointerVector<RemoteResponse> responses;
   PointerVector<MessageVector> requests;
   const int request_count = 100;
@@ -215,20 +153,9 @@ void SendManyMessages(Connection* connection, int thread_id,
     RemoteResponse* response = new RemoteResponse;
     responses.push_back(response);
     connection->SendRequest(request, response, -1, 
-                            sync_with_wait ? NULL :
-                                             &barrier);
+                            &barrier);
   }
-  if (sync_with_wait) {
-    for (int i = 0; i < request_count; ++i) {
-      responses[i]->Wait();
-      CHECK_EQ("hello", MessageToString(responses[i]->reply[0]));
-      char expected[256];
-      sprintf(expected, "there_%d", thread_id * request_count * 17 + i);
-      CHECK_EQ(expected, MessageToString(responses[i]->reply[1]));
-    }
-  } else {
-    barrier.Wait(request_count);
-  }
+  barrier.Wait(request_count);
 }
 
 TEST_F(ConnectionManagerTest, ManyClientsTest) {
@@ -241,14 +168,13 @@ TEST_F(ConnectionManagerTest, ManyClientsTest) {
   boost::thread_group group;
   for (int i = 0; i < 10; ++i) {
     group.add_thread(
-        new boost::thread(boost::bind(SendManyMessages, connection.get(),
-                                      i, i<5)));
+        new boost::thread(boost::bind(SendManyMessages, connection.get(), i)));
   }
   group.join_all();
   scoped_ptr<MessageVector> request(CreateQuitRequest());
   RemoteResponse response;
   connection->SendRequest(request.get(), &response, -1, NULL);
-  response.Wait();
+  // response.Wait();
   thread->join();
 }
 }  // namespace zrpc

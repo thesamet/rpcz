@@ -70,13 +70,9 @@ class EventIdGenerator {
 }  // unnamed namespace
 
 RemoteResponse::RemoteResponse()
-  : status(INACTIVE), reply(), sync_event_(new SyncEvent) {}
+  : status(INACTIVE), reply() {}
 
 RemoteResponse::~RemoteResponse() {
-}
-
-void RemoteResponse::Wait() {
-  sync_event_->Wait();
 }
 
 struct RemoteResponseWrapper {
@@ -114,7 +110,6 @@ class ConnectionThreadContext {
     messages.erase(0);
     remote_response->reply.swap(messages);
     remote_response->status = RemoteResponse::DONE;
-    remote_response->sync_event_->Signal();
     if (remote_response_wrapper->closure) {
       if (external_event_manager_) {
         external_event_manager_->Add(remote_response_wrapper->closure);
@@ -169,7 +164,6 @@ class ConnectionThreadContext {
     RemoteResponseWrapper*& remote_response_wrapper = iter->second;
     RemoteResponse*& remote_response = remote_response_wrapper->remote_response;
     remote_response->status = RemoteResponse::DEADLINE_EXCEEDED;
-    remote_response->sync_event_->Signal();
     if (remote_response_wrapper->closure) {
       if (external_event_manager_) {
         external_event_manager_->Add(remote_response_wrapper->closure);

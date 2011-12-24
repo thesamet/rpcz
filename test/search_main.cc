@@ -28,10 +28,16 @@
 #include "zrpc/rpc_channel.h"
 #include "zrpc/rpc.h"
 #include "zrpc/server.h"
+#include "zrpc/sync_event.h"
 
 using namespace std;
 
 namespace zrpc {
+
+void SuperDone(RPC* newrpc, Closure* done) {
+  delete newrpc;
+  done->Run();
+}
 
 class SearchServiceImpl : public SearchService {
  public:
@@ -45,8 +51,10 @@ class SearchServiceImpl : public SearchService {
     } else if (request->query() == "bar") {
       rpc->SetFailed(17, "I don't like bar.");
     } else if (request->query() == "delegate") {
-      RPC* rpc = new RPC;
-      backend_->Search(rpc, request, response, done);
+      RPC* newrpc = new RPC;
+      backend_->Search(newrpc, request, response, NewCallback(SuperDone,
+                                                              newrpc,
+                                                              done));
       return;
     } else if (request->query() == "timeout") {
       // we lose the request
@@ -145,6 +153,22 @@ TEST_F(ServerTest, SimpleRequest) {
   CHECK_EQ("The search for happiness", response.results(0));
 }
 
+TEST_F(ServerTest, SimpleRequestAsync) {
+  StartServer();
+  SearchService_Stub stub(frontend_connection_->MakeChannel());
+  SearchRequest request;
+  SearchResponse response;
+  RPC rpc;
+  request.set_query("happiness");
+  SyncEvent sync;
+  stub.Search(&rpc, &request, &response, NewCallback(
+          &sync, &SyncEvent::Signal));
+  sync.Wait();
+  CHECK(rpc.OK());
+  CHECK_EQ(2, response.results_size());
+  CHECK_EQ("The search for happiness", response.results(0));
+}
+
 TEST_F(ServerTest, SimpleRequestWithError) {
   StartServer();
   SearchService_Stub stub(frontend_connection_->MakeChannel());
@@ -171,6 +195,21 @@ TEST_F(ServerTest, SimpleRequestWithTimeout) {
   CHECK_EQ(GenericRPCResponse::DEADLINE_EXCEEDED, rpc.GetStatus());
 }
 
+TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
+  StartServer();
+  SearchService_Stub stub(frontend_connection_->MakeChannel());
+  SearchRequest request;
+  SearchResponse response;
+  RPC rpc;
+  request.set_query("timeout");
+  rpc.SetDeadlineMs(1);
+  SyncEvent event;
+  stub.Search(&rpc, &request, &response, 
+              NewCallback(&event, &SyncEvent::Signal));
+  rpc.Wait();
+  CHECK_EQ(GenericRPCResponse::DEADLINE_EXCEEDED, rpc.GetStatus());
+}
+
 TEST_F(ServerTest, DelegatedRequest) {
   StartServer();
   SearchService_Stub stub(frontend_connection_->MakeChannel());
@@ -178,7 +217,6 @@ TEST_F(ServerTest, DelegatedRequest) {
   SearchResponse response;
   RPC rpc;
   request.set_query("delegate");
-  rpc.SetDeadlineMs(1);
   stub.Search(&rpc, &request, &response, NULL);
   rpc.Wait();
   CHECK_EQ(GenericRPCResponse::OK, rpc.GetStatus());

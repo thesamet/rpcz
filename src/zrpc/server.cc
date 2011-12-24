@@ -42,8 +42,16 @@
 
 namespace zrpc {
 namespace {
-void SendGenericResponse(MessageVector* routes,
-                         zmq::message_t* request_id,
+struct RPCRequestContext {
+  RPC rpc;
+  scoped_ptr<MessageVector> routes;
+  scoped_ptr<zmq::message_t> request_id;
+
+  scoped_ptr<google::protobuf::Message> request;
+  scoped_ptr<google::protobuf::Message> response;
+};
+
+void SendGenericResponse(RPCRequestContext& context,
                          const GenericRPCResponse& generic_rpc_response,
                          const StringPiece& payload,
                          FunctionServer::ReplyFunction reply) {
@@ -57,16 +65,14 @@ void SendGenericResponse(MessageVector* routes,
   zmq::message_t* zmq_payload_message = new zmq::message_t(payload.size());
   memcpy(zmq_payload_message->data(), payload.data(), payload.size());
 
-  routes->push_back(request_id);
-  routes->push_back(zmq_response_message);
-  routes->push_back(zmq_payload_message);
-  reply(routes);
-  delete routes;
+  context.routes->push_back(context.request_id.release());
+  context.routes->push_back(zmq_response_message);
+  context.routes->push_back(zmq_payload_message);
+  reply(context.routes.get());
 }
 
 void ReplyWithAppError(FunctionServer::ReplyFunction reply,
-                       MessageVector* routes,
-                       zmq::message_t* request_id,
+                       RPCRequestContext& context,
                        int application_error,
                        const std::string& error="") {
   GenericRPCResponse response;
@@ -75,18 +81,9 @@ void ReplyWithAppError(FunctionServer::ReplyFunction reply,
   if (!error.empty()) {
     response.set_error(error);
   }
-  SendGenericResponse(routes,
-                      request_id, 
+  SendGenericResponse(context,
                       response, StringPiece(), reply);
 }
-
-struct RPCRequestContext {
-  RPC rpc;
-  ::google::protobuf::Message* request;
-  ::google::protobuf::Message* response;
-  MessageVector* routes;
-  zmq::message_t* request_id;
-};
 
 void FinalizeResponse(
     RPCRequestContext *context,
@@ -106,12 +103,9 @@ void FinalizeResponse(
       generic_rpc_response.set_error(error_message);
     }
   }
-  SendGenericResponse(context->routes,
-                      context->request_id,
+  SendGenericResponse(*context,
                       generic_rpc_response,
                       StringPiece(payload), reply); 
-  delete context->request;
-  delete context->response;
   delete context;
 }
 }  // unnamed namespace 
@@ -153,11 +147,14 @@ class ServerImpl {
   void HandleRequestWorker(MessageVector* routes_,
                            MessageVector* data_,
                            FunctionServer::ReplyFunction reply) {
-    scoped_ptr<MessageVector> routes(routes_);
+    // We are responsible to delete routes and data (and the pointers they
+    // contain, so first wrap them in scoped_ptr's.
+    scoped_ptr<RPCRequestContext> context(CHECK_NOTNULL(new RPCRequestContext));
+    context->routes.reset(routes_);
+    context->request_id.reset(data_->release(0));
+
     scoped_ptr<MessageVector> data(data_);
     CHECK_EQ(3, data->size());
-    zmq::message_t* request_id = new zmq::message_t;
-    request_id->move((*data)[0]);
     zmq::message_t* const& request = (*data)[1];
     zmq::message_t* const& payload = (*data)[2];
 
@@ -166,7 +163,7 @@ class ServerImpl {
     if (!generic_rpc_request.ParseFromArray(request->data(), request->size())) {
       // Handle bad RPC.
       VLOG(2) << "Received corrupt message.";
-      ReplyWithAppError(reply, routes_, request_id,
+      ReplyWithAppError(reply, *context,
                         GenericRPCResponse::INVALID_GENERIC_WRAPPER);
       return;
     };
@@ -174,8 +171,9 @@ class ServerImpl {
         generic_rpc_request.service());
     if (service_it == service_map_.end()) {
       // Handle invalid service.
+      VLOG(2) << "Invalid service: " << generic_rpc_request.service();
       ReplyWithAppError(
-          reply, routes_, request_id, GenericRPCResponse::UNKNOWN_SERVICE);
+          reply, *context, GenericRPCResponse::UNKNOWN_SERVICE);
       return;
     }
     zrpc::Service* service = service_it->second;
@@ -184,47 +182,43 @@ class ServerImpl {
             generic_rpc_request.method());
     if (descriptor == NULL) {
       // Invalid method name
-      ReplyWithAppError(reply, routes_,
-                        request_id, GenericRPCResponse::UNKNOWN_METHOD);
+      VLOG(2) << "Invalid method name: " << generic_rpc_request.method();
+      ReplyWithAppError(reply, *context, GenericRPCResponse::UNKNOWN_METHOD);
       return;
     }
-    RPCRequestContext* context = CHECK_NOTNULL(new RPCRequestContext);
-    context->routes = routes.release();
-    context->request_id = request_id;
-    context->request = CHECK_NOTNULL(
-        service->GetRequestPrototype(descriptor).New());
-    context->response = CHECK_NOTNULL(
-        service->GetResponsePrototype(descriptor).New());
+    context->request.reset(CHECK_NOTNULL(
+        service->GetRequestPrototype(descriptor).New()));
+    context->response.reset(CHECK_NOTNULL(
+        service->GetResponsePrototype(descriptor).New()));
     if (!context->request->ParseFromArray(payload->data(), payload->size())) {
+      VLOG(2) << "Failed to parse payload.";
       // Invalid proto;
-      ReplyWithAppError(reply, routes_,
-                        request_id, GenericRPCResponse::INVALID_MESSAGE);
-      delete context->request;
-      delete context->response;
+      ReplyWithAppError(reply, *context,
+                        GenericRPCResponse::INVALID_MESSAGE);
       return;
     }
+
     Closure *closure = NewCallback(
-        &FinalizeResponse, context, reply);
+        &FinalizeResponse, context.get(), reply);
     context->rpc.SetStatus(GenericRPCResponse::OK);
     service->CallMethod(descriptor, &context->rpc,
-                        context->request,
-                        context->response, closure);
+                        context->request.get(),
+                        context->response.get(), closure);
+    context.release();
   }
 
   void HandleRequest(zmq::socket_t* fs_socket) {
-    MessageVector* routes = new MessageVector();
-    MessageVector* data = new MessageVector();
-    ReadMessageToVector(socket_, routes, data);
+    scoped_ptr<MessageVector> routes(new MessageVector());
+    scoped_ptr<MessageVector> data(new MessageVector());
+    ReadMessageToVector(socket_, routes.get(), data.get());
     if (data->size() != 3) {
       VLOG(2) << "Dropping invalid requests.";
-      delete routes;
-      delete data;
       return;
     }
     FunctionServer::AddFunction(
         fs_socket,
         boost::bind(&ServerImpl::HandleRequestWorker,
-                    this, routes, data, _1));
+                    this, routes.release(), data.release(), _1));
   }
 
   zmq::socket_t* socket_;

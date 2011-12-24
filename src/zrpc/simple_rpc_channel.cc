@@ -53,9 +53,9 @@ void SimpleRpcChannel::CallMethodFull(
   generic_request.set_service(service_name);
   generic_request.set_method(method_name);
 
-  std::string msg_request = generic_request.SerializeAsString();
-  zmq::message_t* msg_out = new zmq::message_t(msg_request.size());
-  memcpy(msg_out->data(), msg_request.c_str(), msg_request.size());
+  size_t msg_size = generic_request.ByteSize();
+  zmq::message_t* msg_out = new zmq::message_t(msg_size);
+  CHECK(generic_request.SerializeToArray(msg_out->data(), msg_size));
 
   zmq::message_t* payload_out = new zmq::message_t(request.size());
   memcpy(payload_out->data(), request.c_str(), request.size());
@@ -70,7 +70,6 @@ void SimpleRpcChannel::CallMethodFull(
   response_context->response_str = response_str;
   response_context->response_msg = response_msg;
   rpc->SetStatus(GenericRPCResponse::INFLIGHT);
-  rpc->connection_ = connection_;
 
   connection_->SendRequest(msg_vector,
                            &response_context->remote_response,
@@ -149,10 +148,10 @@ void SimpleRpcChannel::HandleClientResponse(
       CHECK(false) << "Unexpected RemoteResponse state: "
           << remote_response.status;
   }
+  response_context->rpc->sync_event_->Signal();
   if (response_context->user_closure) {
     response_context->user_closure->Run();
   }
-  response_context->rpc->sync_event_->Signal();
   delete response_context;
 }
 }  // namespace zrpc

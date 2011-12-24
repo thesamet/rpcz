@@ -16,7 +16,6 @@
 
 #include "zrpc/rpc.h"
 #include <glog/logging.h>
-#include "zrpc/connection_manager.h"
 #include "zrpc/reactor.h"
 #include "zrpc/sync_event.h"
 #include "zrpc/zrpc.pb.h"
@@ -25,7 +24,6 @@ namespace zrpc {
 
 RPC::RPC()
     : status_(GenericRPCResponse::INACTIVE),
-      connection_(NULL),
       application_error_(0),
       deadline_ms_(-1),
       sync_event_(new SyncEvent()) {
