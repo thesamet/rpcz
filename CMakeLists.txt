@@ -1,6 +1,3 @@
-set(CMAKE_CXX_COMPILER_WORKS:INTERNAL 1)
-enable_testing()
-
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 option(zrpc_build_tests "Build zrpc's tests." OFF)
 
@@ -17,5 +14,6 @@ set(CMAKE_OSX_ARCHITECTURES x86_64)
 
 add_subdirectory(src)
 if(zrpc_build_tests)
+  enable_testing()
   add_subdirectory(test)
 endif(zrpc_build_tests)
