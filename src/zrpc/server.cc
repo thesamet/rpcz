@@ -22,12 +22,12 @@
 #include <iostream>
 #include <utility>
 
-#include <boost/bind.hpp>
-#include <glog/logging.h>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/message.h>
-#include <google/protobuf/stubs/common.h>
-#include <zmq.hpp>
+#include "boost/bind.hpp"
+#include "glog/logging.h"
+#include "google/protobuf/descriptor.h"
+#include "google/protobuf/message.h"
+#include "google/protobuf/stubs/common.h"
+#include "zmq.hpp"
 
 #include "zrpc/callback.h"
 #include "zrpc/connection_manager.h"
@@ -51,23 +51,21 @@ struct RPCRequestContext {
   scoped_ptr<google::protobuf::Message> response;
 };
 
+// Sends the response back to a function server through the reply function.
+// Takes ownership of the provided payload message.
 void SendGenericResponse(RPCRequestContext& context,
                          const GenericRPCResponse& generic_rpc_response,
-                         const StringPiece& payload,
+                         zmq::message_t* payload,
                          FunctionServer::ReplyFunction reply) {
-  std::string serialized_generic_response;
   size_t msg_size = generic_rpc_response.ByteSize();
   zmq::message_t* zmq_response_message = new zmq::message_t(msg_size);
   CHECK(generic_rpc_response.SerializeToArray(
       zmq_response_message->data(),
       msg_size));
 
-  zmq::message_t* zmq_payload_message = new zmq::message_t(payload.size());
-  memcpy(zmq_payload_message->data(), payload.data(), payload.size());
-
   context.routes->push_back(context.request_id.release());
   context.routes->push_back(zmq_response_message);
-  context.routes->push_back(zmq_payload_message);
+  context.routes->push_back(payload);
   reply(context.routes.get());
 }
 
@@ -82,17 +80,18 @@ void ReplyWithAppError(FunctionServer::ReplyFunction reply,
     response.set_error(error);
   }
   SendGenericResponse(context,
-                      response, StringPiece(), reply);
+                      response, new zmq::message_t(), reply);
 }
 
 void FinalizeResponse(
     RPCRequestContext *context,
     FunctionServer::ReplyFunction reply) {
   GenericRPCResponse generic_rpc_response;
-  std::string payload;
+  int msg_size = context->response->ByteSize();
+  zmq::message_t* payload = NULL;
   if (context->rpc.OK()) {
-    CHECK(context->response->SerializeToString(
-          &payload));
+    payload = new zmq::message_t(msg_size);
+    CHECK(context->response->SerializeToArray(payload->data(), msg_size));
   } else {
     generic_rpc_response.set_status(
         context->rpc.GetStatus());
@@ -102,10 +101,11 @@ void FinalizeResponse(
     if (!error_message.empty()) {
       generic_rpc_response.set_error(error_message);
     }
+    payload = new zmq::message_t;
   }
   SendGenericResponse(*context,
                       generic_rpc_response,
-                      StringPiece(payload), reply); 
+                      payload, reply); 
   delete context;
 }
 }  // unnamed namespace 

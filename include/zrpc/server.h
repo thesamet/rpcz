@@ -17,8 +17,6 @@
 #ifndef ZRPC_SERVER_H
 #define ZRPC_SERVER_H
 
-#include <map>
-#include <string>
 #include "zrpc/macros.h"
 
 namespace zmq {
