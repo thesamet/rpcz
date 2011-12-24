@@ -14,13 +14,13 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
+#include "zrpc/reactor.h"
 #include <signal.h>
 #include <vector>
 #include "glog/logging.h"
 #include "zrpc/callback.h"
 #include "zrpc/clock.h"
 #include "zrpc/macros.h"
-#include "zrpc/reactor.h"
 #include "zmq.hpp"
 
 namespace zrpc {
@@ -67,9 +67,8 @@ void Reactor::RunClosureAt(uint64 timestamp, Closure* closure) {
   closure_run_map_[timestamp].push_back(closure);
 }
 
-int Reactor::LoopUntil(StoppingCondition* stop_condition) {
-  while (!should_quit_ && !g_interrupted && (stop_condition == NULL ||
-                                             !stop_condition->ShouldStop())) {
+int Reactor::Loop() {
+  while (!should_quit_ && !g_interrupted) {
     if (is_dirty_) {
       RebuildPollItems(sockets_, &pollitems_);
       is_dirty_ = false;

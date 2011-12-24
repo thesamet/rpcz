@@ -191,7 +191,7 @@ class FunctionServerThread {
     thread_context_->reactor->AddSocket(
         thread_context_->sub_socket, NewPermanentCallback(
             this, &FunctionServerThread::HandleSubscribeSocket));
-    thread_context_->reactor->LoopUntil(NULL);
+    thread_context_->reactor->Loop();
   }
 
   ~FunctionServerThread() {

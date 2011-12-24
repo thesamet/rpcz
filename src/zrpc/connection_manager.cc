@@ -35,7 +35,6 @@
 #include "google/protobuf/stubs/common.h"
 #include "zrpc/callback.h"
 #include "zrpc/clock.h"
-#include "zrpc/connection_manager_controller.h"
 #include "zrpc/event_manager.h"
 #include "zrpc/function_server.h"
 #include "zrpc/macros.h"
@@ -194,9 +193,6 @@ void InitContext(
   ConnectionThreadContext* conn_context = new ConnectionThreadContext(
       fs, external_event_manager, context);
   thread_context_registry->reset(conn_context);
-}
-
-void Handler(MessageVector* Request, FunctionServer::ReplyFunction reply) {
 }
 
 ConnectionManager::ConnectionManager(

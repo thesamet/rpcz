@@ -36,7 +36,6 @@
 #include "zrpc/rpc.h"
 #include "zrpc/reactor.h"
 #include "zrpc/service.h"
-#include "zrpc/string_piece.h"
 #include "zrpc/zmq_utils.h"
 #include "zrpc/zrpc.pb.h"
 
@@ -126,7 +125,7 @@ class ServerImpl {
                       NewPermanentCallback(
                           this, &ServerImpl::HandleFunctionResponse,
                           fs_socket));
-    reactor.LoopUntil(NULL);
+    reactor.Loop();
     LOG(INFO) << "Server shutdown.";
   }
 

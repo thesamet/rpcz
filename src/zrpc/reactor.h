@@ -17,22 +17,14 @@
 #ifndef ZRPC_REACTOR_H
 #define ZRPC_REACTOR_H
 
-#include <utility>
 #include <map>
 #include <vector>
-#include <zmq.hpp>
+#include "zmq.hpp"
 #include "zrpc/macros.h"
 
 namespace zrpc {
 
 class Closure;
-
-class StoppingCondition {
- public:
-  virtual bool ShouldStop() {
-    return false;
-  }
-};
 
 class Reactor {
  public:
@@ -43,7 +35,7 @@ class Reactor {
 
   void RunClosureAt(uint64 timestamp, Closure *callback);
 
-  int LoopUntil(StoppingCondition* stopping_condition);
+  int Loop();
 
   void SetShouldQuit();
 
