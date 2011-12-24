@@ -125,7 +125,7 @@ class Connection {
       int64 deadline_ms,
       Closure* closure) = 0;
 
-  // Creates a thread-specific RpcChannel for this connection.
+  // Creates an RpcChannel for this connection.
   virtual RpcChannel* MakeChannel() = 0;
 
   virtual zmq::socket_t* CreateConnectedSocket(zmq::context_t* context) = 0;
