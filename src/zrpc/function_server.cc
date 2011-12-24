@@ -14,14 +14,16 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include <boost/bind.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/tss.hpp>
-#include <zmq.hpp>
-#include "glog/logging.h"
-#include "zrpc/base/stringprintf.h"
-#include "zrpc/callback.h"
 #include "zrpc/function_server.h"
+#include "boost/bind.hpp"
+#include "boost/lexical_cast.hpp"
+#include "boost/thread/thread.hpp"
+#include "boost/thread/tss.hpp"
+#include "glog/logging.h"
+#include "zmq.hpp"
+
+#include <string>
+#include "zrpc/callback.h"
 #include "zrpc/reactor.h"
 #include "zrpc/zmq_utils.h"
 
@@ -34,10 +36,10 @@ const static char *kCall = "CALL";
 void DeviceThreadEntryPoint(zmq::context_t* context,
                             int device_type,
                             int frontend_type,
-                            const string frontend_endpoint,
+                            const std::string& frontend_endpoint,
                             int backend_type,
-                            const string backend_endpoint,
-                            const string sync_endpoint) {
+                            const std::string& backend_endpoint,
+                            const std::string& sync_endpoint) {
   zmq::socket_t frontend(*context, frontend_type);
   zmq::socket_t backend(*context, backend_type);
   if (frontend_type == ZMQ_SUB) {
@@ -56,9 +58,9 @@ void DeviceThreadEntryPoint(zmq::context_t* context,
 
 void FunctionServerThreadEntryPoint(
     FunctionServer* fs,
-    zmq::context_t* context, const string backend,
-    const string pubsub_backend,
-    const string sync_endpoint,
+    zmq::context_t* context, const std::string& backend,
+    const std::string& pubsub_backend,
+    const std::string& sync_endpoint,
     FunctionServer::ThreadInitFunc thread_init);
 }  // unnamed namespace
 
@@ -103,11 +105,16 @@ void FunctionServer::Init(
                         internal::ThreadContext>());
   worker_threads_.reset(new boost::thread_group());
   device_threads_.reset(new boost::thread_group());
-  frontend_endpoint_ = StringPrintf("inproc://%p.frontend", this);
-  backend_endpoint_ = StringPrintf("inproc://%p.backend", this);
-  pubsub_frontend_endpoint_ = StringPrintf("inproc://%p.all.frontend", this);
-  pubsub_backend_endpoint_ = StringPrintf("inproc://%p.all.backend", this);
-  string sync_endpoint = StringPrintf("inproc://%p.sync", this);
+  frontend_endpoint_ = "inproc://" +
+      boost::lexical_cast<std::string>(this) + ".frontend";
+  backend_endpoint_ = "inproc://" +
+      boost::lexical_cast<std::string>(this) + ".backend";
+  pubsub_frontend_endpoint_ = "inproc://" +
+      boost::lexical_cast<std::string>(this) + ".all.frontend";
+  pubsub_backend_endpoint_ = "inproc://" +
+      boost::lexical_cast<std::string>(this) + ".all.backend";
+  std::string sync_endpoint = "inproc://" +
+      boost::lexical_cast<std::string>(this) + ".sync";
   zmq::socket_t ready_sync(*context_, ZMQ_PULL);
   ready_sync.bind(sync_endpoint.c_str());
   device_threads_->add_thread(
@@ -231,9 +238,10 @@ class FunctionServerThread {
 namespace {
 void FunctionServerThreadEntryPoint(
     FunctionServer* fs,
-    zmq::context_t* context, const string backend,
-    const string pubsub_backend,
-    const string sync_endpoint,
+    zmq::context_t* context,
+    const std::string& backend,
+    const std::string& pubsub_backend,
+    const std::string& sync_endpoint,
     FunctionServer::ThreadInitFunc thread_init) {
   zmq::socket_t* app = new zmq::socket_t(*context, ZMQ_DEALER);
   app->connect(backend.c_str());

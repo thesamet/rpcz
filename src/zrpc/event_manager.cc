@@ -14,13 +14,12 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include <boost/thread/thread.hpp>
-#include <boost/thread/tss.hpp>
-#include <zmq.hpp>
-#include "glog/logging.h"
-#include "zrpc/base/stringprintf.h"
-#include "zrpc/callback.h"
 #include "zrpc/event_manager.h"
+#include "boost/thread/thread.hpp"
+#include "boost/thread/tss.hpp"
+#include "glog/logging.h"
+#include "zmq.hpp"
+#include "zrpc/callback.h"
 #include "zrpc/function_server.h"
 #include "zrpc/zmq_utils.h"
 

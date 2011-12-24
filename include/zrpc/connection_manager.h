@@ -19,7 +19,6 @@
 
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "zrpc/event_manager.h"
 #include "zrpc/macros.h"
@@ -39,13 +38,10 @@ class thread_specific_ptr;
 namespace zrpc {
 class Closure;
 class Connection;
-class ConnectionManagerController;
 class ConnectionThreadContext;
 class FunctionServer;
 class RemoteResponse;
-struct RemoteResponseWrapper;
 class RpcChannel;
-class StoppingCondition;
 
 namespace internal {
 struct ThreadContext;
@@ -92,9 +88,7 @@ class ConnectionManager {
   // this connection manager.
   EventManager* external_event_manager_;
   scoped_ptr<EventManager> internal_event_manager_;
-  friend class Connection;
   friend class ConnectionImpl;
-  friend void InitContext(FunctionServer*, internal::ThreadContext*);
   DISALLOW_COPY_AND_ASSIGN(ConnectionManager);
 };
 
@@ -151,10 +145,6 @@ class RemoteResponse {
   };
   Status status;
   MessageVector reply;
-
- private:
-  friend class ConnectionImpl;
-  friend class ConnectionThreadContext;
 };
 }  // namespace zrpc
 #endif

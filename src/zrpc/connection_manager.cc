@@ -17,8 +17,8 @@
 #include "zrpc/connection_manager.h"
 
 #include <algorithm>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/tss.hpp>
+#include "boost/thread/thread.hpp"
+#include "boost/thread/tss.hpp"
 #include <map>
 #include <ostream>
 #include <pthread.h>
@@ -28,8 +28,8 @@
 #include <unistd.h>
 #include <utility>
 #include <vector>
-#include <zmq.h>
-#include <zmq.hpp>
+#include "zmq.h"
+#include "zmq.hpp"
 
 #include "glog/logging.h"
 #include "google/protobuf/stubs/common.h"

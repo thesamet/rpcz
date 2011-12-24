@@ -17,8 +17,8 @@
 #ifndef ZRPC_FUNCTION_SERVER_H
 #define ZRPC_FUNCTION_SERVER_H
 
-#include <boost/function.hpp>
-#include <zmq.hpp>
+#include "boost/function.hpp"
+#include "zmq.hpp"
 #include "zrpc/macros.h"
 #include "zrpc/zmq_utils.h"
 
@@ -35,7 +35,6 @@ namespace zmq {
 
 namespace zrpc {
 // A multithreaded function executor.
-class FunctionServerController;
 class Reactor;
 
 namespace internal {

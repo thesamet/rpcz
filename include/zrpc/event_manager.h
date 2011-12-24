@@ -17,13 +17,10 @@
 #ifndef ZRPC_EVENT_MANAGER_H
 #define ZRPC_EVENT_MANAGER_H
 
-#include <vector>
-#include <string>
 #include "zrpc/macros.h"
 
 namespace zmq {
   class context_t;
-  class socket_t;
 }  // namespace zmq
 namespace boost {
 template <typename T>

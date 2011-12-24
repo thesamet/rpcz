@@ -13,7 +13,7 @@ include_directories(${PROJECT_BINARY_DIR})
 add_library(zrpc clock.cc function_server.cc
   connection_manager.cc simple_rpc_channel.cc rpc.cc server.cc
   reactor.cc zmq_utils.cc sync_event.cc
-  event_manager.cc base/stringprintf.cc
+  event_manager.cc
   ${PROTO_SOURCES})
 
 # add_executable(zsendrpc zsendrpc.cc)
