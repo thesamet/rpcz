@@ -18,10 +18,10 @@
 #define ZRPC_ZMQ_UTILS_H
 
 #include <string>
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <glog/logging.h>
-#include <google/protobuf/stubs/common.h>
-#include <zmq.hpp>
+#include "boost/ptr_container/ptr_vector.hpp"
+#include "glog/logging.h"
+#include "google/protobuf/stubs/common.h"
+#include "zmq.hpp"
 
 namespace zmq {
 class socket_t;
@@ -97,15 +97,8 @@ void SendUint64(zmq::socket_t* socket,
 bool ForwardMessage(zmq::socket_t &socket_in,
                     zmq::socket_t &socket_out);
 
-template<class T>
-void SendPointer(zmq::socket_t* socket, T* pointer, int flags=0) {
-  zmq::message_t msg(sizeof(pointer));
-  memcpy(msg.data(), &pointer, sizeof(T*));
-  socket->send(msg, flags);
-}
-
-template<typename T>
-inline T& InterpretMessage(zmq::message_t& msg) {
+template<typename T, typename Message>
+inline T& InterpretMessage(Message& msg) {
   CHECK_EQ(msg.size(), sizeof(T));
   T &t = *static_cast<T*>(msg.data());
   return t;

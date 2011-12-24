@@ -18,11 +18,9 @@
 #define ZRPC_CONNECTION_MANAGER_H
 
 #include <string>
-#include <vector>
 
 #include "zrpc/event_manager.h"
 #include "zrpc/macros.h"
-#include "zrpc/zmq_utils.h"
 
 namespace zmq {
 class context_t;
@@ -39,6 +37,7 @@ namespace zrpc {
 class Closure;
 class Connection;
 class ConnectionThreadContext;
+class MessageVector;
 class FunctionServer;
 class RemoteResponse;
 class RpcChannel;
@@ -129,22 +128,6 @@ class Connection {
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Connection);
-};
-
-class RemoteResponse {
- public:
-  RemoteResponse();
-
-  ~RemoteResponse();
-
-  enum Status {
-    INACTIVE = 0,
-    ACTIVE = 1,
-    DONE = 2,
-    DEADLINE_EXCEEDED = 3,
-  };
-  Status status;
-  MessageVector reply;
 };
 }  // namespace zrpc
 #endif

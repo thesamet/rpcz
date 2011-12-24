@@ -39,6 +39,7 @@
 #include "zrpc/function_server.h"
 #include "zrpc/macros.h"
 #include "zrpc/reactor.h"
+#include "zrpc/remote_response.h"
 #include "zrpc/rpc_channel.h"
 #include "zrpc/rpc_channel_impl.h"
 #include "zrpc/sync_event.h"
@@ -66,12 +67,6 @@ class EventIdGenerator {
   DISALLOW_COPY_AND_ASSIGN(EventIdGenerator);
 };
 }  // unnamed namespace
-
-RemoteResponse::RemoteResponse()
-  : status(INACTIVE), reply() {}
-
-RemoteResponse::~RemoteResponse() {
-}
 
 struct RemoteResponseWrapper {
   RemoteResponse* remote_response;

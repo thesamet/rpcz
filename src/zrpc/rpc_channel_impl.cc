@@ -20,6 +20,7 @@
 #include "zrpc/rpc_channel_impl.h"
 #include "zrpc/connection_manager.h"
 #include "zrpc/callback.h"
+#include "zrpc/remote_response.h"
 #include "zrpc/rpc.h"
 #include "zrpc/sync_event.h"
 

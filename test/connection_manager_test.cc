@@ -26,6 +26,7 @@
 #include "zrpc/connection_manager.h"
 #include "zrpc/event_manager.h"
 #include "zrpc/macros.h"
+#include "zrpc/remote_response.h"
 #include "zrpc/sync_event.h"
 #include "zrpc/zmq_utils.h"
 

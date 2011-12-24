@@ -85,7 +85,10 @@ class FunctionServer {
   template <typename T>
   inline static void AddFunction(zmq::socket_t* socket, T function) {
     SendEmptyMessage(socket, ZMQ_SNDMORE);
-    SendPointer(socket, new HandlerFunction(function), 0);
+    HandlerFunction* handler = new HandlerFunction(function);
+    zmq::message_t msg(sizeof(handler));
+    memcpy(msg.data(), &handler, sizeof(handler));
+    socket->send(msg, 0);
   }
 
  private:
