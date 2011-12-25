@@ -32,12 +32,14 @@ class Server {
  public:
   Server(zmq::socket_t* socket, EventManager* event_manager);
 
+  ~Server();
+
   void Start();
 
   void RegisterService(Service *service);
 
  private:
-  ServerImpl* server_impl_;
+  scoped_ptr<ServerImpl> server_impl_;
   DISALLOW_COPY_AND_ASSIGN(Server);
 };
 }  // namespace

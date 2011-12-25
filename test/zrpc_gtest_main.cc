@@ -22,10 +22,10 @@
 DECLARE_bool(logtostderr);
 
 int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
   ::google::InstallFailureSignalHandler();
   ::google::ParseCommandLineFlags(&argc, &argv, true);
   ::google::InitGoogleLogging(argv[0]);
-  ::testing::InitGoogleTest(&argc, argv);
   FLAGS_logtostderr = true;
   int retval = RUN_ALL_TESTS();
   ::google::protobuf::ShutdownProtobufLibrary();

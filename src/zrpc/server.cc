@@ -83,8 +83,9 @@ void ReplyWithAppError(FunctionServer::ReplyFunction reply,
 }
 
 void FinalizeResponse(
-    RPCRequestContext *context,
+    RPCRequestContext *context_,
     FunctionServer::ReplyFunction reply) {
+  scoped_ptr<RPCRequestContext> context(context_);
   GenericRPCResponse generic_rpc_response;
   int msg_size = context->response->ByteSize();
   zmq::message_t* payload = NULL;
@@ -105,7 +106,6 @@ void FinalizeResponse(
   SendGenericResponse(*context,
                       generic_rpc_response,
                       payload, reply); 
-  delete context;
 }
 }  // unnamed namespace 
 
@@ -115,7 +115,6 @@ class ServerImpl {
     : socket_(socket), function_server_(function_server) {}
 
   void Start() {
-    InstallSignalHandler();
     // The reactor owns all sockets.
     Reactor reactor;
     zmq::socket_t* fs_socket = function_server_->GetConnectedSocket();
@@ -126,7 +125,7 @@ class ServerImpl {
                           this, &ServerImpl::HandleFunctionResponse,
                           fs_socket));
     reactor.Loop();
-    LOG(INFO) << "Server shutdown.";
+    VLOG(2) << "Server shutdown.";
   }
 
   void RegisterService(Service *service) {
@@ -231,6 +230,9 @@ Server::Server(zmq::socket_t* socket, EventManager* event_manager)
     : server_impl_(new ServerImpl(socket, event_manager->GetFunctionServer())) {
 }
 
+Server::~Server() {
+}
+
 void Server::Start() {
   server_impl_->Start();
 }
@@ -238,5 +240,4 @@ void Server::Start() {
 void Server::RegisterService(zrpc::Service *service) {
   server_impl_->RegisterService(service);
 }
-
 }  // namespace

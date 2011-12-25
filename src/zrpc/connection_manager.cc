@@ -89,12 +89,13 @@ class ConnectionThreadContext {
 
   void HandleClientSocket(zmq::socket_t* socket) {
     MessageVector messages;
-    ReadMessageToVector(socket, &messages);
+    CHECK(ReadMessageToVector(socket, &messages));
     CHECK(messages.size() >= 1);
     CHECK(messages[0].size() == 0);
     EventId event_id(InterpretMessage<EventId>(messages[1]));
     RemoteResponseMap::iterator iter = remote_response_map_.find(event_id);
     if (iter == remote_response_map_.end()) {
+      VLOG(2) << "Received response for unknown event: " << event_id;
       return;
     }
     RemoteResponseWrapper*& remote_response_wrapper = iter->second;

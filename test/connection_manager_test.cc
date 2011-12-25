@@ -64,7 +64,6 @@ void EchoServer(zmq::socket_t *socket) {
   }
   delete socket;
   LOG(INFO) << "Quitting after " << messages << " messages.";
-
 }
 
 boost::thread* StartServer(zmq::context_t* context) {
@@ -176,8 +175,10 @@ TEST_F(ConnectionManagerTest, ManyClientsTest) {
   group.join_all();
   scoped_ptr<MessageVector> request(CreateQuitRequest());
   RemoteResponse response;
-  connection->SendRequest(request.get(), &response, -1, NULL);
-  // response.Wait();
+  SyncEvent event;
+  connection->SendRequest(request.get(), &response, -1,
+                          NewCallback(&event, &SyncEvent::Signal));
+  event.Wait();
   thread->join();
 }
 }  // namespace zrpc
