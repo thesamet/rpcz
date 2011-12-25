@@ -2,6 +2,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 option(zrpc_build_tests "Build zrpc's tests." OFF)
 option(zrpc_build_static "Build static library." OFF)
 
+include(library_suffix)
 include(ExternalProject)
 # Install GFlags
 ExternalProject_Add(
@@ -11,7 +12,7 @@ ExternalProject_Add(
     )
 ExternalProject_Get_Property(GFlagsLib install_dir)
 include_directories(${install_dir}/include)
-set(GFLAGS_LIBRARIES ${install_dir}/lib/libgflags.a)
+set(GFLAGS_LIBRARIES ${install_dir}/lib/libgflags.${link_library_suffix})
 set(GFLAGS_PREFIX ${install_dir})
 
 # Install GLog
@@ -22,7 +23,7 @@ ExternalProject_Add(
     )
 ExternalProject_Get_Property(GLogLib install_dir)
 include_directories(${install_dir}/include)
-set(GLOG_LIBRARIES ${install_dir}/lib/libglog.a)
+set(GLOG_LIBRARIES ${install_dir}/lib/libglog.${link_library_suffix})
 
 find_package(ZeroMQ REQUIRED)
 find_package(ProtobufPlugin REQUIRED)
