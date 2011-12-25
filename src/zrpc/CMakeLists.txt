@@ -14,7 +14,7 @@ set(ZRPC_SOURCES clock.cc function_server.cc remote_response.cc
                  connection_manager.cc rpc_channel_impl.cc rpc.cc server.cc
                  reactor.cc zmq_utils.cc sync_event.cc event_manager.cc
                  ${PROTO_SOURCES})
-set(ZRPC_LIB_DEPS ${ZeroMQ_LIBRARIES}
+set(ZRPC_LIB_DEPS ${ZEROMQ_LIBRARIES}
                       ${GFLAGS_LIBRARIES} ${GLOG_LIBRARIES} ${PROTOBUF_LIBRARY}
                       ${Boost_THREAD_LIBRARIES})
 

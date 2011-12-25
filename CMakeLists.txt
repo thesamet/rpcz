@@ -25,7 +25,16 @@ ExternalProject_Get_Property(GLogLib install_dir)
 include_directories(${install_dir}/include)
 set(GLOG_LIBRARIES ${install_dir}/lib/libglog.${link_library_suffix})
 
-find_package(ZeroMQ REQUIRED)
+# Install ZeroMQ
+ExternalProject_Add(
+    ZeroMQ
+    URL http://download.zeromq.org/zeromq-2.1.11.tar.gz
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> --with-gflags=${GFLAGS_PREFIX}
+    )
+ExternalProject_Get_Property(ZeroMQ install_dir)
+include_directories(${install_dir}/include)
+set(ZEROMQ_LIBRARIES ${install_dir}/lib/libzmq.${link_library_suffix})
+
 find_package(ProtobufPlugin REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread)
 include_directories(${ZeroMQ_INCLUDE_DIRS})
