@@ -91,7 +91,7 @@ void WriteVectorToSocket(zmq::socket_t* socket,
 void WriteVectorsToSocket(zmq::socket_t* socket,
                           MessageVector& routes,
                           MessageVector& data) {
-  CHECK_GE(data.size(), 1);
+  CHECK_GE(data.size(), 1u);
   WriteVectorToSocket(socket, routes, ZMQ_SNDMORE);
   WriteVectorToSocket(socket, data, 0);
 }

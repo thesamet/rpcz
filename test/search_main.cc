@@ -1,11 +1,11 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -77,7 +77,7 @@ class SearchServiceImpl : public SearchService {
 // For handling complex delegated queries.
 class BackendSearchServiceImpl : public SearchService {
   virtual void Search(
-      zrpc::RPC* rpc, const SearchRequest* request,
+      zrpc::RPC*, const SearchRequest*,
       SearchResponse* response, Closure* done) {
     response->add_results("42!");
     done->Run();
@@ -100,7 +100,7 @@ class ServerTest : public ::testing::Test {
       em_(new EventManager(context_.get(), 10)),
       cm_(new ConnectionManager(context_.get(), em_.get(), 1)),
       frontend_connection_(cm_->Connect("inproc://myserver.frontend")),
-      backend_connection_(cm_->Connect("inproc://myserver.backend")) { 
+      backend_connection_(cm_->Connect("inproc://myserver.backend")) {
   }
 
   ~ServerTest() {
@@ -204,7 +204,7 @@ TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
   request.set_query("timeout");
   rpc.SetDeadlineMs(1);
   SyncEvent event;
-  stub.Search(&rpc, &request, &response, 
+  stub.Search(&rpc, &request, &response,
               NewCallback(&event, &SyncEvent::Signal));
   rpc.Wait();
   CHECK_EQ(GenericRPCResponse::DEADLINE_EXCEEDED, rpc.GetStatus());

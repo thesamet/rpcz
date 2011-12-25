@@ -91,7 +91,7 @@ class ConnectionThreadContext {
     MessageVector messages;
     ReadMessageToVector(socket, &messages);
     CHECK(messages.size() >= 1);
-    CHECK_EQ(messages[0].size(), 0);
+    CHECK(messages[0].size() == 0);
     EventId event_id(InterpretMessage<EventId>(messages[1]));
     RemoteResponseMap::iterator iter = remote_response_map_.find(event_id);
     if (iter == remote_response_map_.end()) {
@@ -162,6 +162,7 @@ class ConnectionThreadContext {
         LOG(ERROR) << "Can't run closure: no event manager supplied.";
       }
     }
+    delete remote_response_wrapper;
     remote_response_map_.erase(iter);
   }
 
@@ -223,10 +224,12 @@ void SendRequest(
 class ConnectionImpl : public Connection {
  public:
   ConnectionImpl(ConnectionManager* connection_manager,
-                 std::string endpoint)
+                 const std::string& endpoint)
       : Connection(),
         connection_manager_(connection_manager),
         endpoint_(endpoint) {}
+
+  virtual ~ConnectionImpl() {}
 
   virtual RpcChannel* MakeChannel() {
     return new RpcChannelImpl(this);

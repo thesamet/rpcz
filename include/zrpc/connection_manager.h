@@ -117,6 +117,8 @@ class Connection {
       int64 deadline_ms,
       Closure* closure) = 0;
 
+  virtual ~Connection() {};
+
   // Creates an RpcChannel for this connection.
   virtual RpcChannel* MakeChannel() = 0;
 

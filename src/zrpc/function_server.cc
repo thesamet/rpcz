@@ -217,7 +217,7 @@ class FunctionServerThread {
     MessageVector* routes = new MessageVector;
     MessageVector request;
     CHECK(ReadMessageToVector(thread_context_->app_socket, routes, &request));
-    CHECK_EQ(1, request.size());
+    CHECK(request.size() == 1);
     FunctionServer::ReplyFunction reply_function =
         FunctionServer::ReplyFunction(
             boost::bind(

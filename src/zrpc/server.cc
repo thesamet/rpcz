@@ -153,7 +153,7 @@ class ServerImpl {
     context->request_id.reset(data_->release(0));
 
     scoped_ptr<MessageVector> data(data_);
-    CHECK_EQ(3, data->size());
+    CHECK_EQ(3u, data->size());
     zmq::message_t& request = (*data)[1];
     zmq::message_t& payload = (*data)[2];
 
