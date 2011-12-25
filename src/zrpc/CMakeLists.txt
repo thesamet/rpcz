@@ -14,10 +14,18 @@ set(ZRPC_SOURCES clock.cc function_server.cc remote_response.cc
                  connection_manager.cc rpc_channel_impl.cc rpc.cc server.cc
                  reactor.cc zmq_utils.cc sync_event.cc event_manager.cc
                  ${PROTO_SOURCES})
-add_library(zrpc ${ZRPC_SOURCES})
-target_link_libraries(zrpc ${ZeroMQ_LIBRARIES}
+set(ZRPC_LIB_DEPS ${ZeroMQ_LIBRARIES}
                       ${GFLAGS_LIBRARIES} ${GLOG_LIBRARIES} ${PROTOBUF_LIBRARY}
                       ${Boost_THREAD_LIBRARIES})
+
+if(zrpc_build_static)
+    add_library(zrpc_static STATIC ${ZRPC_SOURCES})
+    target_link_libraries(zrpc_static ${ZRPC_LIB_DEPS})
+    set_target_properties(zrpc_static PROPERTIES OUTPUT_NAME zrpc)
+endif(zrpc_build_static)
+
+add_library(zrpc SHARED ${ZRPC_SOURCES})
+target_link_libraries(zrpc ${ZRPC_LIB_DEPS})
 
 add_executable(zsendrpc zsendrpc.cc)
 target_link_libraries(zsendrpc zrpc)

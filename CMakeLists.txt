@@ -1,5 +1,6 @@
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 option(zrpc_build_tests "Build zrpc's tests." OFF)
+option(zrpc_build_static "Build static library." OFF)
 
 include(ExternalProject)
 # Install GFlags
