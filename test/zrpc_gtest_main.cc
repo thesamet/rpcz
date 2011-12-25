@@ -30,5 +30,6 @@ int main(int argc, char** argv) {
   int retval = RUN_ALL_TESTS();
   ::google::protobuf::ShutdownProtobufLibrary();
   ::google::ShutdownGoogleLogging();
+  ::google::ShutDownCommandLineFlags();
   return retval;
 }
