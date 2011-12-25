@@ -1,21 +1,39 @@
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 option(zrpc_build_tests "Build zrpc's tests." OFF)
 
+include(ExternalProject)
+# Install GFlags
+ExternalProject_Add(
+    GFlagsLib
+    URL http://google-gflags.googlecode.com/files/gflags-1.7.tar.gz
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure  --prefix=<INSTALL_DIR>
+    )
+ExternalProject_Get_Property(GFlagsLib install_dir)
+include_directories(${install_dir}/include)
+set(GFLAGS_LIBRARIES ${install_dir}/lib/libgflags.a)
+set(GFLAGS_PREFIX ${install_dir})
+
+# Install GLog
+ExternalProject_Add(
+    GLogLib
+    URL http://google-glog.googlecode.com/files/glog-0.3.1-1.tar.gz
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> --with-gflags=${GFLAGS_PREFIX}
+    )
+ExternalProject_Get_Property(GLogLib install_dir)
+include_directories(${install_dir}/include)
+set(GLOG_LIBRARIES ${install_dir}/lib/libglog.a)
+
 find_package(ZeroMQ REQUIRED)
 find_package(ProtobufPlugin REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread)
-find_package(Glog REQUIRED)
-find_package(GFlags REQUIRED)
 include_directories(${ZeroMQ_INCLUDE_DIRS})
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
-# include_directories(${GLOG_INCLUDE_DIRS})
-include_directories(${GFlags_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_BINARY_DIR}/src)
 
 cmake_minimum_required (VERSION 2.8.0)
-set(CMAKE_CXX_FLAGS "-Wall -Werror -O3")
+set(CMAKE_CXX_FLAGS "-Werror -O3")
 set(CMAKE_OSX_ARCHITECTURES x86_64)
 
 add_subdirectory(src)
