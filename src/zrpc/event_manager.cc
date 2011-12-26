@@ -17,10 +17,10 @@
 #include "zrpc/event_manager.h"
 #include "boost/thread/thread.hpp"
 #include "boost/thread/tss.hpp"
-#include "glog/logging.h"
 #include "zmq.hpp"
 #include "zrpc/callback.h"
 #include "zrpc/function_server.h"
+#include "zrpc/logging.h"
 #include "zrpc/zmq_utils.h"
 
 namespace zrpc {

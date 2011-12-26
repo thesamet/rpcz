@@ -14,9 +14,9 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "zrpc/rpc.h"
-#include "glog/logging.h"
+#include "zrpc/logging.h"
 #include "zrpc/reactor.h"
+#include "zrpc/rpc.h"
 #include "zrpc/sync_event.h"
 #include "zrpc/zrpc.pb.h"
 

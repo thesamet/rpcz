@@ -15,8 +15,8 @@ set(ZRPC_SOURCES
     function_server.cc reactor.cc remote_response.cc rpc.cc
     rpc_channel_impl.cc server.cc sync_event.cc zmq_utils.cc
     ${PROTO_SOURCES})
-set(ZRPC_LIB_DEPS ${ZEROMQ_LIBRARIES}
-                      ${GFLAGS_LIBRARIES} ${GLOG_LIBRARIES} ${PROTOBUF_LIBRARY}
+set(ZRPC_LIB_DEPS ${ZeroMQ_LIBRARIES}
+                      ${GFLAGS_LIBRARIES} ${PROTOBUF_LIBRARY}
                       ${Boost_THREAD_LIBRARIES})
 
 if(zrpc_build_static)

@@ -14,12 +14,12 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "glog/logging.h"
 #include "google/protobuf/descriptor.h"
 #include "zmq.hpp"
 #include "zrpc/rpc_channel_impl.h"
 #include "zrpc/connection_manager.h"
 #include "zrpc/callback.h"
+#include "zrpc/logging.h"
 #include "zrpc/remote_response.h"
 #include "zrpc/rpc.h"
 #include "zrpc/sync_event.h"

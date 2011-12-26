@@ -31,12 +31,12 @@
 #include "zmq.h"
 #include "zmq.hpp"
 
-#include "glog/logging.h"
 #include "google/protobuf/stubs/common.h"
 #include "zrpc/callback.h"
 #include "zrpc/clock.h"
 #include "zrpc/event_manager.h"
 #include "zrpc/function_server.h"
+#include "zrpc/logging.h"
 #include "zrpc/macros.h"
 #include "zrpc/reactor.h"
 #include "zrpc/remote_response.h"
@@ -93,7 +93,6 @@ class ConnectionThreadContext {
     EventId event_id(InterpretMessage<EventId>(messages[1]));
     RemoteResponseMap::iterator iter = remote_response_map_.find(event_id);
     if (iter == remote_response_map_.end()) {
-      VLOG(2) << "Received response for unknown event: " << event_id;
       return;
     }
     RemoteResponseWrapper*& remote_response_wrapper = iter->second;
@@ -104,7 +103,8 @@ class ConnectionThreadContext {
       if (external_event_manager_) {
         external_event_manager_->Add(remote_response_wrapper->closure);
       } else {
-        LOG(ERROR) << "Can't run closure: no event manager supplied.";
+        LOG(WARNING) << "Can't run closure: no event manager supplied.";
+        delete remote_response_wrapper->closure;
       }
     }
     delete remote_response_wrapper;
@@ -158,7 +158,8 @@ class ConnectionThreadContext {
       if (external_event_manager_) {
         external_event_manager_->Add(remote_response_wrapper->closure);
       } else {
-        LOG(ERROR) << "Can't run closure: no event manager supplied.";
+        LOG(WARNING) << "Can't run closure: no event manager supplied.";
+        delete remote_response_wrapper->closure;
       }
     }
     delete remote_response_wrapper;

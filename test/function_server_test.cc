@@ -66,7 +66,7 @@ TEST_F(FunctionServerTest, HandlesSingleRequestWithResponse) {
   fs_.AddFunction(socket.get(), ReplyingHandlerFunction);
   MessageVector reply;
   ReadMessageToVector(socket.get(), &reply);
-  CHECK_EQ(3, reply.size());
+  GOOGLE_CHECK_EQ(3, reply.size());
   EXPECT_EQ("", MessageToString(reply[0]));
   EXPECT_EQ("reply1", MessageToString(reply[1]));
   EXPECT_EQ("reply2", MessageToString(reply[2]));
@@ -105,9 +105,9 @@ TEST_F(FunctionServerTest, HandlerPropagates) {
                               &fs_, 0, _1));
   MessageVector reply_vector;
   ReadMessageToVector(socket.get(), &reply_vector);
-  CHECK_EQ(9, reply_vector.size());
+  GOOGLE_CHECK_EQ(9, reply_vector.size());
   for (int i = 0; i <= 7; ++i) {
-    CHECK_EQ(boost::lexical_cast<std::string>(7 - i),
+    GOOGLE_CHECK_EQ(boost::lexical_cast<std::string>(7 - i),
              MessageToString(reply_vector[i+1]));
   }
 }
@@ -125,7 +125,7 @@ void DelegatingHandlerFunction(FunctionServer* fs,
     // handler. The reason this pointer remains valid is that we Wait() in
     // this thread.
     MessageVector r;
-    CHECK(ReadMessageToVector(socket.get(), &r));
+    GOOGLE_CHECK(ReadMessageToVector(socket.get(), &r));
   } else if (count >= 1 && count < 7) {
     scoped_ptr<zmq::socket_t> socket(fs->GetConnectedSocket());
     fs->AddFunction(socket.get(),
@@ -133,9 +133,9 @@ void DelegatingHandlerFunction(FunctionServer* fs,
                         DelegatingHandlerFunction, fs, count + 1, delegated,
                         _1));
     MessageVector r;
-    CHECK(ReadMessageToVector(socket.get(), &r));
-    CHECK_EQ(2, r.size());
-    CHECK_EQ("INNER!", MessageToString(r[1]));
+    GOOGLE_CHECK(ReadMessageToVector(socket.get(), &r));
+    GOOGLE_CHECK_EQ(2, r.size());
+    GOOGLE_CHECK_EQ("INNER!", MessageToString(r[1]));
     r.erase_first();
     reply(&r);
   } else if (count == 7) {
@@ -146,7 +146,7 @@ void DelegatingHandlerFunction(FunctionServer* fs,
     r.push_back(StringToMessage("INNER!"));
     reply(&r);
   } else {
-    LOG(FATAL) << "Unexpected to be here";
+    GOOGLE_CHECK(false) << "Unexpected!";
   }
 }
 
@@ -160,7 +160,7 @@ TEST_F(FunctionServerTest, TestDelegatingHandler) {
       DelegatingHandlerFunction, &fs_, 0, &ref, _1));
   MessageVector reply_vector;
   ReadMessageToVector(socket.get(), &reply_vector);
-  CHECK_EQ(2, reply_vector.size());
-  CHECK_EQ("This is it!", MessageToString(reply_vector[1]));
+  GOOGLE_CHECK_EQ(2, reply_vector.size());
+  GOOGLE_CHECK_EQ("This is it!", MessageToString(reply_vector[1]));
 }
 }  // namespace zrpc
