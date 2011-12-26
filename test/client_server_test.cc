@@ -110,9 +110,15 @@ class ServerTest : public ::testing::Test {
   }
 
   ~ServerTest() {
-    // Terminate the context, which will cause the thread to quit.
+    // We have to wait until the servers are up before we tear down the event
+    // managers (since the servers will try to connect to it).
+    // The way we accomplish that here is by sending them a request and
+    // waiting for a response.
+    SendBlockingRequest(frontend_connection_.get(), "simple");
+    SendBlockingRequest(backend_connection_.get(), "simple");
     frontend_connection_.reset(NULL);
     backend_connection_.reset(NULL);
+    // Terminate the context, which will cause the thread to quit.
     em_.reset(NULL);
     cm_.reset(NULL);
     context_.reset(NULL);
@@ -139,6 +145,19 @@ class ServerTest : public ::testing::Test {
                     em_.get()));
   }
 
+  SearchResponse SendBlockingRequest(Connection* connection,
+                                   const std::string& query) {
+    SearchService_Stub stub(RpcChannel::Create(connection), true);
+    SearchRequest request;
+    SearchResponse response;
+    RPC rpc;
+    request.set_query(query);
+    stub.Search(&rpc, &request, &response, NULL);
+    rpc.Wait();
+    CHECK(rpc.OK());
+    return response;
+  }
+
  protected:
   scoped_ptr<zmq::context_t> context_;
   scoped_ptr<EventManager> em_;
@@ -151,14 +170,8 @@ class ServerTest : public ::testing::Test {
 
 TEST_F(ServerTest, SimpleRequest) {
   StartServer();
-  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
-  SearchRequest request;
-  SearchResponse response;
-  RPC rpc;
-  request.set_query("happiness");
-  stub.Search(&rpc, &request, &response, NULL);
-  rpc.Wait();
-  CHECK(rpc.OK());
+  SearchResponse response =
+      SendBlockingRequest(frontend_connection_.get(), "happiness");
   CHECK_EQ(2, response.results_size());
   CHECK_EQ("The search for happiness", response.results(0));
 }
@@ -203,6 +216,14 @@ TEST_F(ServerTest, SimpleRequestWithTimeout) {
   stub.Search(&rpc, &request, &response, NULL);
   rpc.Wait();
   CHECK_EQ(GenericRPCResponse::DEADLINE_EXCEEDED, rpc.GetStatus());
+  // Now we clean up the closure we kept aside.
+  {
+    RPC rpc;
+    request.set_query("delayed");
+    stub.Search(&rpc, &request, &response, NULL);
+    rpc.Wait();
+    CHECK(rpc.OK());
+  }
 }
 
 TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
@@ -220,7 +241,6 @@ TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
     event.Wait();
     CHECK_EQ(GenericRPCResponse::DEADLINE_EXCEEDED, rpc.GetStatus());
   }
-  LOG(INFO) << "Sending a request that will fire the server-side closure.";
   // Now we clean up the closure we kept aside.
   {
     RPC rpc;
