@@ -28,7 +28,6 @@
 #include "zrpc/server.h"
 #include "zrpc/service.h"
 #include "zrpc/sync_event.h"
-#include "zrpc/zmq_utils.h"
 
 // Two include files were intentionally left out since they rely on ZeroMQ
 // headers being around and probably most people will not need this low-level

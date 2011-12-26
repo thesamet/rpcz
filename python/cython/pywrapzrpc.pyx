@@ -2,9 +2,9 @@ from cpython cimport Py_DECREF, Py_INCREF
 from libc.stdlib cimport malloc, free
 
 
-cdef extern from "glog/logging.h" namespace "google":
-    cdef void InstallFailureSignalHandler()
-    cdef void InitGoogleLogging(char*)
+# cdef extern from "glog/logging.h" namespace "google":
+#     cdef void InstallFailureSignalHandler()
+#     cdef void InitGoogleLogging(char*)
 
 
 cdef extern from "zrpc/connection_manager.h" namespace "zrpc":
@@ -15,26 +15,22 @@ cdef extern from "zrpc/callback.h" namespace "zrpc":
 
 def Init():
     import sys
-    InstallFailureSignalHandler()
-    InitGoogleLogging(sys.argv[0])
+    # InstallFailureSignalHandler()
+    # InitGoogleLogging(sys.argv[0])
     InstallSignalHandler()
 
 
-cdef extern from "zrpc/connection_manager.h" namespace "zrpc":
-    cdef cppclass _ConnectionManager "zrpc::ConnectionManager":
-        _ConnectionManager(int)
-        int GetThreadCount()
+cdef extern from "zrpc/zrpc.h" namespace "zrpc":
+    cdef cppclass _Application "zrpc::Application":
+        _Application()
 
 
-cdef class ConnectionManager:
-    cdef _ConnectionManager *thisptr
+cdef class Application:
+    cdef _Application *thisptr
     def __cinit__(self):
-        self.thisptr = new _ConnectionManager(1)
+        self.thisptr = new _Application()
     def __dealloc__(self):
         del self.thisptr
-    property thread_count:
-        def __get__(self):
-            return self.thisptr.GetThreadCount()
 
 
 cdef extern from "string" namespace "std":
@@ -61,7 +57,6 @@ cdef string_to_pystring(string s):
 # cdef extern from "zrpc/rpc.h" namespace "zrpc":
 #     cdef enum Status "zrpc::GeneratedRPCResponse::Status":
 #         APPLICATION_ERROR, OK, DEADLINE_EXCEEDED
-
 
 
 cdef extern from "zrpc/rpc.h" namespace "zrpc":
@@ -161,30 +156,3 @@ cdef class RpcChannel:
                 closure_wrapper.response_str,
                 NewCallback(
                     PythonCallbackBridge, closure_wrapper))
-
-
-cdef extern from "zrpc/connection_manager.h" namespace "zrpc":
-    cdef cppclass _Connection "zrpc::Connection":
-        _RpcChannel* MakeChannel()
-
-    _Connection* _CreateConnection "zrpc::Connection::CreateConnection" (
-            _ConnectionManager*, string)
-
-
-cdef class Connection:
-    cdef _Connection *thisptr
-    def __dealloc__(self):
-        del self.thisptr
-    def __init__(self):
-        raise TypeError("Use CreateConnection() to create a connection "
-                        "object.")
-    def MakeChannel(self):
-        cdef RpcChannel channel = RpcChannel.__new__(RpcChannel)
-        channel.thisptr = self.thisptr.MakeChannel()
-        return channel
-
-
-def CreateConnection(ConnectionManager cm, endpoint):
-    cdef Connection c = Connection.__new__(Connection)
-    c.thisptr = _CreateConnection(cm.thisptr, string(endpoint))
-    return c

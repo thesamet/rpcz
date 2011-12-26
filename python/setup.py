@@ -78,7 +78,6 @@ setup(
     author = "Nadav Samet",
     author_email = "nadavs@google.com",
     description = "An RPC implementation for Protocol Buffer based on ZeroMQ",
-    install_requires = ['protobuf >= 2.4'],
     license = "BSD",
     keywords = "protocol-buffers rpc zeromq 0mq",
     packages=['zrpc', 'tests'],
@@ -94,6 +93,9 @@ setup(
     },
     ext_modules=[
         Extension("zrpc.pywrapzrpc", ["cython/pywrapzrpc.cpp"],
-                  libraries=["zrpc", "protobuf", "glog", "zmq"])
+                  libraries=["zrpc", "protobuf", "glog", "zmq"],
+                  include_dirs=['../include', '../build/src'],
+                  library_dirs=['../build/deps/lib', '../build/src/zrpc'],
+                  language='c++')
     ],
 )
