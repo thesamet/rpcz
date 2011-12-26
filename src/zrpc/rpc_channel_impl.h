@@ -50,9 +50,10 @@ class RpcChannelImpl: public RpcChannel {
     const std::string& service_name,
     const std::string& method_name,
     RPC* rpc,
+    const ::google::protobuf::Message* request_msg,
     const std::string& request,
-    std::string* response_str,
     ::google::protobuf::Message* response_msg,
+    std::string* response_str,
     Closure* done);
 
   Connection* connection_;

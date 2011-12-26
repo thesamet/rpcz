@@ -52,9 +52,10 @@ void RpcChannelImpl::CallMethodFull(
     const std::string& service_name,
     const std::string& method_name,
     RPC* rpc,
+    const ::google::protobuf::Message* request_msg,
     const std::string& request,
-    std::string* response_str,
     ::google::protobuf::Message* response_msg,
+    std::string* response_str,
     Closure* done) {
   CHECK_EQ(rpc->GetStatus(), GenericRPCResponse::INACTIVE);
   GenericRPCRequest generic_request;
@@ -65,8 +66,17 @@ void RpcChannelImpl::CallMethodFull(
   zmq::message_t* msg_out = new zmq::message_t(msg_size);
   CHECK(generic_request.SerializeToArray(msg_out->data(), msg_size));
 
-  zmq::message_t* payload_out = new zmq::message_t(request.size());
-  memcpy(payload_out->data(), request.c_str(), request.size());
+  zmq::message_t* payload_out = NULL;
+  if (request_msg != NULL) {
+    size_t bytes = request_msg->ByteSize();
+    payload_out = new zmq::message_t(bytes);
+    request_msg->SerializeToArray(payload_out->data(),
+                              bytes);
+  }
+  else {
+    payload_out = new zmq::message_t(request.size());
+    memcpy(payload_out->data(), request.c_str(), request.size());
+  }
 
   MessageVector* msg_vector = new MessageVector;
   msg_vector->push_back(msg_out);
@@ -96,9 +106,10 @@ void RpcChannelImpl::CallMethod0(const std::string& service_name,
   CallMethodFull(service_name,
                  method_name,
                  rpc,
-                 request,
-                 response,
                  NULL,
+                 request,
+                 NULL,
+                 response,
                  done);
 }
 
@@ -111,9 +122,10 @@ void RpcChannelImpl::CallMethod(
   CallMethodFull(method->service()->name(),
                  method->name(),
                  rpc,
-                 request->SerializeAsString(),
-                 NULL,
+                 request,
+                 "",
                  response,
+                 NULL,
                  done);
 }
 

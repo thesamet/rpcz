@@ -250,6 +250,8 @@ class ConnectionImpl : public Connection {
 
   virtual zmq::socket_t* CreateConnectedSocket(zmq::context_t* context) {
     zmq::socket_t* socket = new zmq::socket_t(*context, ZMQ_DEALER);
+    int linger_ms = 0;
+    socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
     socket->connect(endpoint_.c_str());
     return socket;
   }
