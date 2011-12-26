@@ -17,8 +17,8 @@
 #include <ostream>
 #include "zrpc/zrpc.h"
 #include "glog/logging.h"
-#include "search.pb.h"
-#include "search.zrpc.h"
+#include "cpp/search.pb.h"
+#include "cpp/search.zrpc.h"
 
 int main() {
   zrpc::Application application;

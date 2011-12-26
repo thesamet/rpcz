@@ -16,8 +16,8 @@
 
 #include <iostream>
 #include "zrpc/zrpc.h"
-#include "search.pb.h"
-#include "search.zrpc.h"
+#include "cpp/search.pb.h"
+#include "cpp/search.zrpc.h"
 
 namespace examples {
 class SearchServiceImpl : public SearchService {
