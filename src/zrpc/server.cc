@@ -111,8 +111,10 @@ void FinalizeResponse(
 
 class ServerImpl {
  public:
-  ServerImpl(zmq::socket_t* socket, FunctionServer* function_server)
-    : socket_(socket), function_server_(function_server) {}
+  ServerImpl(zmq::socket_t* socket, FunctionServer* function_server,
+             bool owns_socket)
+    : socket_(socket), function_server_(function_server),
+      owns_socket_(owns_socket) {}
 
   void Start() {
     // The reactor owns all sockets.
@@ -125,6 +127,9 @@ class ServerImpl {
                           this, &ServerImpl::HandleFunctionResponse,
                           fs_socket));
     reactor.Loop();
+    if (owns_socket_) {
+      delete socket_;
+    }
     VLOG(2) << "Server shutdown.";
   }
 
@@ -221,13 +226,16 @@ class ServerImpl {
 
   zmq::socket_t* socket_;
   FunctionServer* function_server_;
+  bool owns_socket_;
   typedef std::map<std::string, zrpc::Service*> ServiceMap;
   ServiceMap service_map_;
   DISALLOW_COPY_AND_ASSIGN(ServerImpl);
 };
 
-Server::Server(zmq::socket_t* socket, EventManager* event_manager)
-    : server_impl_(new ServerImpl(socket, event_manager->GetFunctionServer())) {
+Server::Server(zmq::socket_t* socket, EventManager* event_manager,
+               bool owns_socket)
+    : server_impl_(new ServerImpl(socket, event_manager->GetFunctionServer(),
+                                  owns_socket)) {
 }
 
 Server::~Server() {

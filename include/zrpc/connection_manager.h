@@ -39,7 +39,6 @@ class Connection;
 class ConnectionThreadContext;
 class MessageVector;
 class RemoteResponse;
-class RpcChannel;
 
 namespace internal {
 struct ThreadContext;
@@ -62,9 +61,9 @@ class ConnectionManager {
  public:
   // Constructs an EventManager that uses the provided ZeroMQ context and
   // has nthreads worker threads. The ConnectionManager does not take ownership
-  // of the given ZeroMQ context. The provided event_manager is used for
-  // executing user-supplied closures. If the event_manager is NULL then the
-  // closure parameter supplied to SendRequest must be NULL.
+  // of the given ZeroMQ context and event manager. The provided event_manager
+  // is used for executing user-supplied closures. If the event_manager is NULL
+  // then the closure parameter supplied to SendRequest must be NULL.
   ConnectionManager(zmq::context_t* context, EventManager* event_manager,
                     int nthreads=1);
 
@@ -118,9 +117,6 @@ class Connection {
       Closure* closure) = 0;
 
   virtual ~Connection() {};
-
-  // Creates an RpcChannel for this connection.
-  virtual RpcChannel* MakeChannel() = 0;
 
   virtual zmq::socket_t* CreateConnectedSocket(zmq::context_t* context) = 0;
 

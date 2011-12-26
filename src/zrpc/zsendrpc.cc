@@ -20,11 +20,10 @@
 #include <google/protobuf/compiler/importer.h>
 #include <google/protobuf/dynamic_message.h>
 #include <google/protobuf/text_format.h>
-#include "zrpc/connection_manager.h"
+#include "zrpc/application.h"
 #include "zrpc/rpc_channel.h"
 #include "zrpc/service.h"
 #include "zrpc/rpc.h"
-#include <zmq.hpp>
 
 
 static bool ValidateNotEmpty(const char* flagname, const std::string& value) {
@@ -96,10 +95,8 @@ void RunCall(const std::string& endpoint,
     return;
   }
 
-  zmq::context_t context(1);
-  zrpc::ConnectionManager cm(&context, NULL, 1);
-  scoped_ptr<Connection> connection(cm.Connect(endpoint));
-  scoped_ptr<RpcChannel> channel(connection->MakeChannel());
+  Application app;
+  scoped_ptr<RpcChannel> channel(app.CreateRpcChannel(endpoint));
   RPC rpc;
   ::google::protobuf::Message *reply = factory.GetPrototype(
       method_desc->output_type())->New();

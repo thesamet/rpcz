@@ -28,7 +28,7 @@ struct RpcResponseContext;
 
 class RpcChannelImpl: public RpcChannel {
  public:
-  RpcChannelImpl(Connection* connection);
+  RpcChannelImpl(Connection* connection, bool owns_connection=false);
 
   virtual ~RpcChannelImpl();
 
@@ -56,6 +56,7 @@ class RpcChannelImpl: public RpcChannel {
     Closure* done);
 
   Connection* connection_;
+  bool owns_connection_;
 };
 } // namespace zrpc
 #endif /* ZRPC_SIMPLE_RPC_CHANNEL_IMPL_H_ */

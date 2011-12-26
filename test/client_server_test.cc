@@ -132,8 +132,10 @@ class ServerTest : public ::testing::Test {
     backend_thread_ = boost::thread(
         boost::bind(ServerThread,
                     frontend_socket,
-                    new SearchServiceImpl(new SearchService_Stub(
-                            backend_connection_->MakeChannel(), true)),
+                    new SearchServiceImpl(
+                        new SearchService_Stub(
+                            RpcChannel::Create(backend_connection_.get()),
+                        true)),
                     em_.get()));
   }
 
@@ -149,7 +151,7 @@ class ServerTest : public ::testing::Test {
 
 TEST_F(ServerTest, SimpleRequest) {
   StartServer();
-  SearchService_Stub stub(frontend_connection_->MakeChannel(), true);
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
   SearchRequest request;
   SearchResponse response;
   RPC rpc;
@@ -163,7 +165,7 @@ TEST_F(ServerTest, SimpleRequest) {
 
 TEST_F(ServerTest, SimpleRequestAsync) {
   StartServer();
-  SearchService_Stub stub(frontend_connection_->MakeChannel(), true);
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
   SearchRequest request;
   SearchResponse response;
   RPC rpc;
@@ -179,7 +181,7 @@ TEST_F(ServerTest, SimpleRequestAsync) {
 
 TEST_F(ServerTest, SimpleRequestWithError) {
   StartServer();
-  SearchService_Stub stub(frontend_connection_->MakeChannel(), true);
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
   SearchRequest request;
   SearchResponse response;
   RPC rpc;
@@ -192,7 +194,7 @@ TEST_F(ServerTest, SimpleRequestWithError) {
 
 TEST_F(ServerTest, SimpleRequestWithTimeout) {
   StartServer();
-  SearchService_Stub stub(frontend_connection_->MakeChannel(), true);
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
   SearchRequest request;
   SearchResponse response;
   RPC rpc;
@@ -205,7 +207,7 @@ TEST_F(ServerTest, SimpleRequestWithTimeout) {
 
 TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
   StartServer();
-  SearchService_Stub stub(frontend_connection_->MakeChannel(), true);
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
   SearchRequest request;
   SearchResponse response;
   {
@@ -231,7 +233,7 @@ TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
 
 TEST_F(ServerTest, DelegatedRequest) {
   StartServer();
-  SearchService_Stub stub(frontend_connection_->MakeChannel(), true);
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
   SearchRequest request;
   SearchResponse response;
   RPC rpc;

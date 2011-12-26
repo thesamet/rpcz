@@ -26,11 +26,18 @@
 
 namespace zrpc {
 
-RpcChannelImpl::RpcChannelImpl(Connection* connection)
-    : connection_(connection) {
+RpcChannel* RpcChannel::Create(Connection* connection, bool owns_connection) {
+  return new RpcChannelImpl(connection, owns_connection);
+}
+
+RpcChannelImpl::RpcChannelImpl(Connection* connection, bool owns_connection)
+    : connection_(connection), owns_connection_(owns_connection) {
 }
 
 RpcChannelImpl::~RpcChannelImpl() {
+  if (owns_connection_) {
+    delete connection_;
+  }
 }
 
 struct RpcResponseContext {

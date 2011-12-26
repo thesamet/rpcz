@@ -10,10 +10,11 @@ protobuf_generate_cpp(ZRPC_PB_SRCS ZRPC_PB_HDRS proto/zrpc.proto)
 set(PROTO_SOURCES ${ZRPC_PB_SRCS} ${ZRPC_PB_HDRS})
 
 include_directories(${PROJECT_BINARY_DIR})
-set(ZRPC_SOURCES clock.cc function_server.cc remote_response.cc
-                 connection_manager.cc rpc_channel_impl.cc rpc.cc server.cc
-                 reactor.cc zmq_utils.cc sync_event.cc event_manager.cc
-                 ${PROTO_SOURCES})
+set(ZRPC_SOURCES
+    application.cc clock.cc connection_manager.cc event_manager.cc
+    function_server.cc reactor.cc remote_response.cc rpc.cc
+    rpc_channel_impl.cc server.cc sync_event.cc zmq_utils.cc
+    ${PROTO_SOURCES})
 set(ZRPC_LIB_DEPS ${ZEROMQ_LIBRARIES}
                       ${GFLAGS_LIBRARIES} ${GLOG_LIBRARIES} ${PROTOBUF_LIBRARY}
                       ${Boost_THREAD_LIBRARIES})

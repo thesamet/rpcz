@@ -32,6 +32,7 @@ class MethodDescriptor;
 
 namespace zrpc {
 class Closure;
+class Connection;
 class RPC;
 
 class RpcChannel {
@@ -50,6 +51,8 @@ class RpcChannel {
                            const std::string& request,
                            std::string* response,
                            Closure* done) = 0;
+
+  static RpcChannel* Create(Connection* connection, bool owns_connection=false);
 
   virtual ~RpcChannel() {};
 };
