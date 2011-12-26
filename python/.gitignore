@@ -1,1 +1,4 @@
 zrpc.egg-info
+cython/pywrapzrpc.cpp
+zrpc/compiler.py
+zrpc/pywrapzrpc.*

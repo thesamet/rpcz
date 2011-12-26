@@ -27,4 +27,3 @@ endif(zrpc_build_tests)
 if(zrpc_build_examples)
   add_subdirectory(examples/cpp)
 endif(zrpc_build_examples)
-

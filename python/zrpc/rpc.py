@@ -1,6 +1,7 @@
 import pywrapzrpc
 from zrpc import zrpc_pb2
 
+
 class RpcException(Exception):
   pass
 
@@ -29,6 +30,7 @@ def RaiseRpcException(rpc):
   else:
     if rpc.status == zrpc_pb2.GenericRPCResponse.DEADLINE_EXCEEDED:
       raise RpcDeadlineExceeded()
+
 
 class RPC(pywrapzrpc.WrappedRPC):
   def wait(self):

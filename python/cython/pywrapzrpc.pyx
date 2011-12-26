@@ -7,6 +7,14 @@ from libc.stdlib cimport malloc, free
 #     cdef void InitGoogleLogging(char*)
 
 
+cdef extern from "Python.h":
+    ctypedef int PyGILState_STATE
+    PyGILState_STATE    PyGILState_Ensure               ()   nogil
+    void                PyGILState_Release              (PyGILState_STATE) nogil
+    void PyEval_InitThreads()
+
+PyEval_InitThreads()
+
 cdef extern from "zrpc/connection_manager.h" namespace "zrpc":
     cdef void InstallSignalHandler()
 
@@ -18,19 +26,6 @@ def Init():
     # InstallFailureSignalHandler()
     # InitGoogleLogging(sys.argv[0])
     InstallSignalHandler()
-
-
-cdef extern from "zrpc/zrpc.h" namespace "zrpc":
-    cdef cppclass _Application "zrpc::Application":
-        _Application()
-
-
-cdef class Application:
-    cdef _Application *thisptr
-    def __cinit__(self):
-        self.thisptr = new _Application()
-    def __dealloc__(self):
-        del self.thisptr
 
 
 cdef extern from "string" namespace "std":
@@ -112,8 +107,9 @@ cdef extern from "zrpc/macros.h" namespace "zrpc":
 
     Closure* NewCallback(void(ClosureWrapper*) nogil, ClosureWrapper*)
 
-
 cdef void PythonCallbackBridge(ClosureWrapper *closure_wrapper) with gil:
+    # We don't really have the GIL when this function is called, and it is
+    # ran from a non-python thread.
     (<object>closure_wrapper.response_obj).ParseFromString(
             ptr_string_to_pystring(closure_wrapper.response_str))
     callback = <object>closure_wrapper.callback
@@ -137,7 +133,7 @@ cdef class RpcChannel:
     def __dealloc__(self):
         del self.thisptr
     def __init__(self):
-        raise TypeError("Use a connection's MakeChannel to create a "
+        raise TypeError("Use Application.CreateRpcChannel to create a "
                         "RpcChannel.")
     def CallMethod(self, service_name, method_name,
                    WrappedRPC rpc, request, response, callback):
@@ -156,3 +152,22 @@ cdef class RpcChannel:
                 closure_wrapper.response_str,
                 NewCallback(
                     PythonCallbackBridge, closure_wrapper))
+
+
+cdef extern from "zrpc/zrpc.h" namespace "zrpc":
+    cdef cppclass _Application "zrpc::Application":
+        _Application()
+        _RpcChannel* CreateRpcChannel(string)
+
+
+cdef class Application:
+    cdef _Application *thisptr
+    def __cinit__(self):
+        self.thisptr = new _Application()
+    def __dealloc__(self):
+        del self.thisptr
+
+    def CreateRpcChannel(self, endpoint):
+        cdef RpcChannel channel = RpcChannel.__new__(RpcChannel)
+        channel.thisptr = self.thisptr.CreateRpcChannel(make_string(endpoint))
+        return channel
