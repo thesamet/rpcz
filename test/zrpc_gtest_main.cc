@@ -14,7 +14,6 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "gflags/gflags.h"
 #include "gtest/gtest.h"
 #include "glog/logging.h"
 #include "google/protobuf/stubs/common.h"
@@ -24,12 +23,9 @@ DECLARE_bool(logtostderr);
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   ::google::InstallFailureSignalHandler();
-  ::google::ParseCommandLineFlags(&argc, &argv, true);
   ::google::InitGoogleLogging(argv[0]);
-  FLAGS_logtostderr = true;
   int retval = RUN_ALL_TESTS();
   ::google::protobuf::ShutdownProtobufLibrary();
   ::google::ShutdownGoogleLogging();
-  ::google::ShutDownCommandLineFlags();
   return retval;
 }

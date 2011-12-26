@@ -23,7 +23,6 @@
 #include <utility>
 
 #include "boost/bind.hpp"
-#include "glog/logging.h"
 #include "google/protobuf/descriptor.h"
 #include "google/protobuf/message.h"
 #include "google/protobuf/stubs/common.h"
@@ -32,6 +31,7 @@
 #include "zrpc/callback.h"
 #include "zrpc/connection_manager.h"
 #include "zrpc/function_server.h"
+#include "zrpc/logging.h"
 #include "zrpc/macros.h"
 #include "zrpc/rpc.h"
 #include "zrpc/reactor.h"
@@ -130,12 +130,10 @@ class ServerImpl {
     if (owns_socket_) {
       delete socket_;
     }
-    VLOG(2) << "Server shutdown.";
+    DLOG(INFO) << "Server shutdown.";
   }
 
   void RegisterService(Service *service) {
-    VLOG(2) << "Registering service '" << service->GetDescriptor()->name()
-            << "'";
     service_map_[service->GetDescriptor()->name()] = service;
   }
 
@@ -162,10 +160,9 @@ class ServerImpl {
     zmq::message_t& payload = (*data)[2];
 
     GenericRPCRequest generic_rpc_request;
-    VLOG(2) << "Received request of size " << request.size();
     if (!generic_rpc_request.ParseFromArray(request.data(), request.size())) {
       // Handle bad RPC.
-      VLOG(2) << "Received corrupt message.";
+      DLOG(INFO) << "Received corrupt message.";
       ReplyWithAppError(reply, *context,
                         GenericRPCResponse::INVALID_GENERIC_WRAPPER);
       return;
@@ -174,7 +171,7 @@ class ServerImpl {
         generic_rpc_request.service());
     if (service_it == service_map_.end()) {
       // Handle invalid service.
-      VLOG(2) << "Invalid service: " << generic_rpc_request.service();
+      DLOG(INFO) << "Invalid service: " << generic_rpc_request.service();
       ReplyWithAppError(
           reply, *context, GenericRPCResponse::UNKNOWN_SERVICE);
       return;
@@ -185,7 +182,7 @@ class ServerImpl {
             generic_rpc_request.method());
     if (descriptor == NULL) {
       // Invalid method name
-      VLOG(2) << "Invalid method name: " << generic_rpc_request.method();
+      DLOG(INFO) << "Invalid method name: " << generic_rpc_request.method();
       ReplyWithAppError(reply, *context, GenericRPCResponse::UNKNOWN_METHOD);
       return;
     }
@@ -194,7 +191,7 @@ class ServerImpl {
     context->response.reset(CHECK_NOTNULL(
         service->GetResponsePrototype(descriptor).New()));
     if (!context->request->ParseFromArray(payload.data(), payload.size())) {
-      VLOG(2) << "Failed to parse payload.";
+      DLOG(INFO) << "Failed to parse payload.";
       // Invalid proto;
       ReplyWithAppError(reply, *context,
                         GenericRPCResponse::INVALID_MESSAGE);
@@ -215,7 +212,7 @@ class ServerImpl {
     scoped_ptr<MessageVector> data(new MessageVector());
     ReadMessageToVector(socket_, routes.get(), data.get());
     if (data->size() != 3) {
-      VLOG(2) << "Dropping invalid requests.";
+      DLOG(INFO) << "Dropping invalid requests.";
       return;
     }
     FunctionServer::AddFunction(

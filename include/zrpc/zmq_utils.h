@@ -19,9 +19,8 @@
 
 #include <string>
 #include "boost/ptr_container/ptr_vector.hpp"
-#include "glog/logging.h"
-#include "google/protobuf/stubs/common.h"
 #include "zmq.hpp"
+#include "zrpc/macros.h"
 
 namespace zmq {
 class socket_t;
@@ -91,7 +90,7 @@ void SendString(zmq::socket_t* socket,
                 int flags=0);
 
 void SendUint64(zmq::socket_t* socket,
-                google::protobuf::uint64 value,
+                uint64 value,
                 int flags=0);
 
 bool ForwardMessage(zmq::socket_t &socket_in,
@@ -99,7 +98,7 @@ bool ForwardMessage(zmq::socket_t &socket_in,
 
 template<typename T, typename Message>
 inline T& InterpretMessage(Message& msg) {
-  CHECK_EQ(msg.size(), sizeof(T));
+  assert(msg.size() == sizeof(T));
   T &t = *static_cast<T*>(msg.data());
   return t;
 }

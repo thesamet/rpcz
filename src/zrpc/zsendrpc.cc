@@ -15,12 +15,12 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include <iostream>
-#include <glog/logging.h>
 #include <google/gflags.h>
 #include <google/protobuf/compiler/importer.h>
 #include <google/protobuf/dynamic_message.h>
 #include <google/protobuf/text_format.h>
 #include "zrpc/application.h"
+#include "zrpc/logging.h"
 #include "zrpc/rpc_channel.h"
 #include "zrpc/service.h"
 #include "zrpc/rpc.h"
@@ -140,10 +140,8 @@ int Run(int argc, char *argv[]) {
 }  // namespace zrpc
 
 int main(int argc, char *argv[]) {
-  ::google::InitGoogleLogging(argv[0]);
   ::google::SetUsageMessage("Sends RPCs");
   ::google::ParseCommandLineFlags(&argc, &argv, true);
-  ::google::InstallFailureSignalHandler();
 
   int retval = zrpc::Run(argc, argv);
   if (retval == -1) {
@@ -151,6 +149,5 @@ int main(int argc, char *argv[]) {
   }
 
   ::google::protobuf::ShutdownProtobufLibrary();
-  ::google::ShutdownGoogleLogging();
   return retval;
 }

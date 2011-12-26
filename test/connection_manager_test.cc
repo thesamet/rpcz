@@ -20,7 +20,6 @@
 #include <boost/thread/thread.hpp>
 #include <stdio.h>
 #include <zmq.hpp>
-#include "glog/logging.h"
 #include "gtest/gtest.h"
 #include "zrpc/callback.h"
 #include "zrpc/connection_manager.h"
@@ -50,20 +49,19 @@ void EchoServer(zmq::socket_t *socket) {
   int messages = 0;
   while (!should_quit) {
     MessageVector v;
-    CHECK(ReadMessageToVector(socket, &v));
+    GOOGLE_CHECK(ReadMessageToVector(socket, &v));
     ++messages;
-    CHECK_EQ(4, v.size());
+    ASSERT_EQ(4, v.size());
     if (MessageToString(v[2]) == "hello") {
-      CHECK_EQ("there", MessageToString(v[3]).substr(0, 5));
+      ASSERT_EQ("there", MessageToString(v[3]).substr(0, 5));
     } else if (MessageToString(v[2]) == "QUIT") {
       should_quit = true;
     } else {
-      CHECK(false) << "Unknown command: " << MessageToString(v[2]);
+      GOOGLE_CHECK(false) << "Unknown command: " << MessageToString(v[2]);
     }
     WriteVectorToSocket(socket, v);
   }
   delete socket;
-  LOG(INFO) << "Quitting after " << messages << " messages.";
 }
 
 boost::thread* StartServer(zmq::context_t* context) {
@@ -89,16 +87,16 @@ MessageVector* CreateQuitRequest() {
 }
 
 void CheckResponse(RemoteResponse* response, SyncEvent* sync) {
-  CHECK_EQ(RemoteResponse::DONE, response->status);
-  CHECK_EQ(2, response->reply.size());
-  CHECK_EQ("hello", MessageToString(response->reply[0]));
-  CHECK_EQ("there_0", MessageToString(response->reply[1]));
+  ASSERT_EQ(RemoteResponse::DONE, response->status);
+  ASSERT_EQ(2, response->reply.size());
+  ASSERT_EQ("hello", MessageToString(response->reply[0]));
+  ASSERT_EQ("there_0", MessageToString(response->reply[1]));
   sync->Signal();
 }
 
 void ExpectTimeout(RemoteResponse* response, SyncEvent* sync) {
-  CHECK_EQ(RemoteResponse::DEADLINE_EXCEEDED, response->status);
-  CHECK_EQ(0, response->reply.size());
+  ASSERT_EQ(RemoteResponse::DEADLINE_EXCEEDED, response->status);
+  ASSERT_EQ(0, response->reply.size());
   sync->Signal();
 }
 
@@ -116,8 +114,8 @@ TEST_F(ConnectionManagerTest, TestTimeoutAsync) {
   connection->SendRequest(request.get(), &response, 0,
                           NewCallback(ExpectTimeout, &response, &event));
   event.Wait();
-  CHECK_EQ(RemoteResponse::DEADLINE_EXCEEDED, response.status);
-  CHECK_EQ(0, response.reply.size());
+  ASSERT_EQ(RemoteResponse::DEADLINE_EXCEEDED, response.status);
+  ASSERT_EQ(0, response.reply.size());
 }
 
 class BarrierClosure : public Closure {

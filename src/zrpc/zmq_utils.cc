@@ -22,9 +22,9 @@
 #include <string>
 #include <vector>
 
-#include "glog/logging.h"
 #include "google/protobuf/stubs/common.h"
 #include "zmq.hpp"
+#include "zrpc/logging.h"
 #include "zrpc/macros.h"
 
 namespace zrpc {

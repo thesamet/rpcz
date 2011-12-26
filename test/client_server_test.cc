@@ -15,13 +15,10 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include <iostream>
-#include <boost/thread/thread.hpp>
-#include <glog/logging.h>
-#include <gtest/gtest.h>
-#include <zmq.hpp>
+#include "boost/thread/thread.hpp"
+#include "gtest/gtest.h"
+#include "zmq.hpp"
 
-#include "proto/search.pb.h"
-#include "proto/search.zrpc.h"
 #include "zrpc/callback.h"
 #include "zrpc/connection_manager.h"
 #include "zrpc/event_manager.h"
@@ -29,6 +26,9 @@
 #include "zrpc/rpc.h"
 #include "zrpc/server.h"
 #include "zrpc/sync_event.h"
+
+#include "proto/search.pb.h"
+#include "proto/search.zrpc.h"
 
 using namespace std;
 
@@ -63,7 +63,7 @@ class SearchServiceImpl : public SearchService {
       delayed_closure_ = done;
       return;
     } else if (request->query() == "delayed") {
-      CHECK_NOTNULL(delayed_closure_);
+      ASSERT_TRUE(NULL != delayed_closure_);
       delayed_closure_->Run();
     } else {
       response->add_results("The search for " + request->query());
@@ -90,13 +90,10 @@ class BackendSearchServiceImpl : public SearchService {
 void ServerThread(zmq::socket_t* socket,
                   SearchService *service,
                   EventManager* em) {
-  VLOG(2) << "Server thread up.";
   Server server(socket, em);
   server.RegisterService(service);
   server.Start();
-  VLOG(2) << "Deleting service.";
   delete service;
-  VLOG(2) << "Server thread done.";
 }
 
 class ServerTest : public ::testing::Test {
@@ -154,7 +151,7 @@ class ServerTest : public ::testing::Test {
     request.set_query(query);
     stub.Search(&rpc, &request, &response, NULL);
     rpc.Wait();
-    CHECK(rpc.OK());
+    EXPECT_TRUE(rpc.OK());
     return response;
   }
 
@@ -172,8 +169,8 @@ TEST_F(ServerTest, SimpleRequest) {
   StartServer();
   SearchResponse response =
       SendBlockingRequest(frontend_connection_.get(), "happiness");
-  CHECK_EQ(2, response.results_size());
-  CHECK_EQ("The search for happiness", response.results(0));
+  ASSERT_EQ(2, response.results_size());
+  ASSERT_EQ("The search for happiness", response.results(0));
 }
 
 TEST_F(ServerTest, SimpleRequestAsync) {
@@ -187,9 +184,9 @@ TEST_F(ServerTest, SimpleRequestAsync) {
   stub.Search(&rpc, &request, &response, NewCallback(
           &sync, &SyncEvent::Signal));
   sync.Wait();
-  CHECK(rpc.OK());
-  CHECK_EQ(2, response.results_size());
-  CHECK_EQ("The search for happiness", response.results(0));
+  ASSERT_TRUE(rpc.OK());
+  ASSERT_EQ(2, response.results_size());
+  ASSERT_EQ("The search for happiness", response.results(0));
 }
 
 TEST_F(ServerTest, SimpleRequestWithError) {
@@ -201,8 +198,8 @@ TEST_F(ServerTest, SimpleRequestWithError) {
   request.set_query("foo");
   stub.Search(&rpc, &request, &response, NULL);
   rpc.Wait();
-  CHECK_EQ(GenericRPCResponse::APPLICATION_ERROR, rpc.GetStatus());
-  CHECK_EQ("I don't like foo.", rpc.GetErrorMessage());
+  ASSERT_EQ(GenericRPCResponse::APPLICATION_ERROR, rpc.GetStatus());
+  ASSERT_EQ("I don't like foo.", rpc.GetErrorMessage());
 }
 
 TEST_F(ServerTest, SimpleRequestWithTimeout) {
@@ -215,14 +212,14 @@ TEST_F(ServerTest, SimpleRequestWithTimeout) {
   rpc.SetDeadlineMs(1);
   stub.Search(&rpc, &request, &response, NULL);
   rpc.Wait();
-  CHECK_EQ(GenericRPCResponse::DEADLINE_EXCEEDED, rpc.GetStatus());
+  ASSERT_EQ(GenericRPCResponse::DEADLINE_EXCEEDED, rpc.GetStatus());
   // Now we clean up the closure we kept aside.
   {
     RPC rpc;
     request.set_query("delayed");
     stub.Search(&rpc, &request, &response, NULL);
     rpc.Wait();
-    CHECK(rpc.OK());
+    ASSERT_TRUE(rpc.OK());
   }
 }
 
@@ -239,7 +236,7 @@ TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
     stub.Search(&rpc, &request, &response,
                 NewCallback(&event, &SyncEvent::Signal));
     event.Wait();
-    CHECK_EQ(GenericRPCResponse::DEADLINE_EXCEEDED, rpc.GetStatus());
+    ASSERT_EQ(GenericRPCResponse::DEADLINE_EXCEEDED, rpc.GetStatus());
   }
   // Now we clean up the closure we kept aside.
   {
@@ -247,7 +244,7 @@ TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
     request.set_query("delayed");
     stub.Search(&rpc, &request, &response, NULL);
     rpc.Wait();
-    CHECK(rpc.OK());
+    ASSERT_TRUE(rpc.OK());
   }
 }
 
@@ -260,7 +257,7 @@ TEST_F(ServerTest, DelegatedRequest) {
   request.set_query("delegate");
   stub.Search(&rpc, &request, &response, NULL);
   rpc.Wait();
-  CHECK_EQ(GenericRPCResponse::OK, rpc.GetStatus());
-  CHECK_EQ("42!", response.results(0));
+  ASSERT_EQ(GenericRPCResponse::OK, rpc.GetStatus());
+  ASSERT_EQ("42!", response.results(0));
 }
 }  // namespace

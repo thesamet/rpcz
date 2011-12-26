@@ -19,11 +19,11 @@
 #include "boost/lexical_cast.hpp"
 #include "boost/thread/thread.hpp"
 #include "boost/thread/tss.hpp"
-#include "glog/logging.h"
 #include "zmq.hpp"
 
 #include <string>
 #include "zrpc/callback.h"
+#include "zrpc/logging.h"
 #include "zrpc/reactor.h"
 #include "zrpc/zmq_utils.h"
 
@@ -80,9 +80,7 @@ FunctionServer::FunctionServer(
 
 FunctionServer::~FunctionServer() {
   Quit();
-  VLOG(2) << "Waiting for FunctionServerThreads to quit.";
   worker_threads_->join_all();
-  VLOG(2) << "FunctionServerThreads finished.";
 }
 
 zmq::socket_t* FunctionServer::GetConnectedSocket() const {
@@ -148,7 +146,6 @@ void FunctionServer::Init(
   for (int i = 0; i < nthreads_; ++i) {
     ready_sync.recv(&msg);
   }
-  VLOG(2) << "FunctionServer is up.";
 }
 
 void FunctionServer::Reply(MessageVector* routes,
@@ -203,7 +200,6 @@ class FunctionServerThread {
     MessageVector data;
     CHECK(ReadMessageToVector(thread_context_->sub_socket, &data));
     std::string command(MessageToString(data[0]));
-    VLOG(2)<<"  Got PUBSUB command: " << command;
     if (command == kQuit) {
       thread_context_->reactor->SetShouldQuit();
     } else if (command == kCall) {

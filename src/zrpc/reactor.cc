@@ -17,9 +17,9 @@
 #include "zrpc/reactor.h"
 #include <signal.h>
 #include <vector>
-#include "glog/logging.h"
 #include "zrpc/callback.h"
 #include "zrpc/clock.h"
+#include "zrpc/logging.h"
 #include "zrpc/macros.h"
 #include "zmq.hpp"
 
@@ -27,9 +27,6 @@ namespace zrpc {
 namespace {
 static bool g_interrupted = false;
 void SignalHandler(int signal_value) {
-  LOG(INFO) << "Caught "
-      << ((signal_value == SIGTERM) ? "SIGTERM" :
-          (signal_value == SIGINT) ? "SIGINT" : "signal") << ".";
   g_interrupted = true;
 }
 }  // unnamed namespace
