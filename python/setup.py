@@ -15,8 +15,9 @@ def _build_test_protos():
     compiler.generate_proto('../test/proto/search.proto', 'tests')
     compiler.generate_proto(
             '../test/proto/search.proto', 'tests',
-            with_plugin='pyzrpc', suffix='_zrpc.py',
-            plugin_binary='../build/src/zrpc/plugin/python/zrpc_python_plugin')
+            with_plugin='python_zrpc', suffix='_zrpc.py',
+            plugin_binary=
+                '../build/src/zrpc/plugin/python/protoc-gen-python_zrpc')
 
 
 class build(build_module.build):
