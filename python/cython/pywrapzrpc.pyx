@@ -99,6 +99,7 @@ cdef struct ClosureWrapper:
     string* response_str
     void* response_obj
     void* callback
+    void* rpc
 
 
 cdef extern from "zrpc/macros.h" namespace "zrpc":
@@ -112,11 +113,14 @@ cdef void PythonCallbackBridge(ClosureWrapper *closure_wrapper) with gil:
     # ran from a non-python thread.
     (<object>closure_wrapper.response_obj).ParseFromString(
             ptr_string_to_pystring(closure_wrapper.response_str))
+    response = <object>closure_wrapper.response_obj;
     callback = <object>closure_wrapper.callback
+    rpc = <object>closure_wrapper.rpc
     if callback is not None:
-      callback()
+        callback(response, rpc)
     Py_DECREF(<object>closure_wrapper.response_obj)
     Py_DECREF(<object>closure_wrapper.callback)
+    Py_DECREF(<object>closure_wrapper.rpc)
     del closure_wrapper.response_str
     free(closure_wrapper)
 
@@ -124,7 +128,7 @@ cdef void PythonCallbackBridge(ClosureWrapper *closure_wrapper) with gil:
 cdef extern from "zrpc/rpc_channel.h" namespace "zrpc":
     cdef cppclass _RpcChannel "zrpc::RpcChannel":
         void CallMethod0(string service_name, string method_name,
-                         _RPC* rpc, string request, string* response,
+                         string request, string* response, _RPC* rpc, 
                          Closure* callback) except +
 
 
@@ -136,20 +140,22 @@ cdef class RpcChannel:
         raise TypeError("Use Application.CreateRpcChannel to create a "
                         "RpcChannel.")
     def CallMethod(self, service_name, method_name,
-                   WrappedRPC rpc, request, response, callback):
+                   request, response, WrappedRPC rpc, callback):
         cdef ClosureWrapper* closure_wrapper = <ClosureWrapper*>malloc(
                 sizeof(ClosureWrapper))
         closure_wrapper.response_str = new string()
         closure_wrapper.response_obj = <void*>response
         closure_wrapper.callback = <void*>callback
+        closure_wrapper.rpc = <void*>rpc
         Py_INCREF(response)
         Py_INCREF(callback)
+        Py_INCREF(rpc)
         self.thisptr.CallMethod0(
                 make_string(service_name),
                 make_string(method_name),
-                rpc.thisptr,
                 make_string(request.SerializeToString()),
                 closure_wrapper.response_str,
+                rpc.thisptr,
                 NewCallback(
                     PythonCallbackBridge, closure_wrapper))
 
