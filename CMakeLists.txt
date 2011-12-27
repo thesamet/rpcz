@@ -11,7 +11,7 @@ BuildDependency(
     libgflags)
 
 find_package(ProtobufPlugin REQUIRED)
-find_package(Boost REQUIRED COMPONENTS thread)
+find_package(Boost REQUIRED COMPONENTS thread program_options)
 find_package(ZeroMQ REQUIRED)
 
 include_directories(${ZeroMQ_INCLUDE_DIRS})

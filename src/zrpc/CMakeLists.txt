@@ -29,4 +29,4 @@ add_library(zrpc SHARED ${ZRPC_SOURCES})
 target_link_libraries(zrpc ${ZRPC_LIB_DEPS})
 
 add_executable(zsendrpc zsendrpc.cc)
-target_link_libraries(zsendrpc zrpc)
+target_link_libraries(zsendrpc zrpc ${Boost_PROGRAM_OPTIONS_LIBRARIES})

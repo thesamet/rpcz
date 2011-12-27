@@ -130,7 +130,6 @@ class ServerImpl {
     if (owns_socket_) {
       delete socket_;
     }
-    DLOG(INFO) << "Server shutdown.";
   }
 
   void RegisterService(Service *service) {

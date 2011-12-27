@@ -15,139 +15,199 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include <iostream>
-#include <google/gflags.h>
-#include <google/protobuf/compiler/importer.h>
-#include <google/protobuf/dynamic_message.h>
-#include <google/protobuf/text_format.h>
+#include <vector>
+#include "boost/bind.hpp"
+#include "boost/program_options.hpp"
+#include "google/protobuf/compiler/importer.h"
+#include "google/protobuf/dynamic_message.h"
+#include "google/protobuf/text_format.h"
 #include "zrpc/application.h"
-#include "zrpc/logging.h"
 #include "zrpc/rpc_channel.h"
 #include "zrpc/service.h"
 #include "zrpc/rpc.h"
 
+using google::protobuf::DynamicMessageFactory;
+using google::protobuf::FileDescriptor;
+using google::protobuf::Message;
+using google::protobuf::MethodDescriptor;
+using google::protobuf::ServiceDescriptor;
+using google::protobuf::ShutdownProtobufLibrary;
+using google::protobuf::TextFormat;
+using google::protobuf::compiler::DiskSourceTree;
+using google::protobuf::compiler::Importer;
+using google::protobuf::compiler::MultiFileErrorCollector;
+using std::endl;
+using std::cout;
+using std::cerr;
 
-static bool ValidateNotEmpty(const char* flagname, const std::string& value) {
-  if (value.empty()) {
-    std::cerr << "Value for --" << flagname << " is required." << std::endl;
-    return false;
-  }
-  return true;
-}
-DEFINE_string(proto, "", "Service proto to use.");
+namespace po = boost::program_options;
 
-static const bool proto_dummy = ::google::RegisterFlagValidator(
-    &FLAGS_proto, &ValidateNotEmpty);
+std::string FLAGS_proto;
+std::vector<std::string> FLAGS_proto_path;
 
-DEFINE_string(proto_path, "", "list of directories to search.");
+static const char *PNAME = "zsendrpc";
 
 namespace zrpc {
-class ErrorCollector :
-    public ::google::protobuf::compiler::MultiFileErrorCollector {
+class ErrorCollector : public MultiFileErrorCollector {
   void AddError(
       const std::string& filename, int line, int /* column */ ,
       const std::string& message) {
-    std::cerr << filename << ":" << line << ":" << message << std::endl;
+    cerr << filename << ":" << line << ":" << message << endl;
   }
 };
 
-void RunCall(const std::string& endpoint,
-             const std::string& method,
-             const std::string& payload) {
-  ::google::protobuf::compiler::DiskSourceTree disk_source_tree;
+int RunCall(const std::string& endpoint,
+            const std::string& method,
+            const std::string& payload) {
+  DiskSourceTree disk_source_tree;
   ErrorCollector error_collector;
-  disk_source_tree.MapPath(FLAGS_proto_path, FLAGS_proto_path);
-  ::google::protobuf::compiler::Importer imp(
-      &disk_source_tree, &error_collector);
+  for_each(FLAGS_proto_path.begin(), FLAGS_proto_path.end(),
+      boost::bind(&DiskSourceTree::MapPath,
+          &disk_source_tree, _1, _1));
+  Importer imp(&disk_source_tree, &error_collector);
 
-  const ::google::protobuf::FileDescriptor* file_desc = imp.Import(
-      FLAGS_proto);
+  const FileDescriptor* file_desc = imp.Import(FLAGS_proto);
+
   if (file_desc == NULL) {
-    return;
+    cerr << "Could not load proto '" << FLAGS_proto
+         << "'" << endl;
+    return -1;
   }
   if (method.find('.') == method.npos) {
-    std::cerr << "<service.method> must contain a dot: '" << method << "'"
-              << std::endl;
-    return;
+    cerr << "<service.method> must contain a dot: '" << method << "'"
+              << endl;
+    return -1;
   }
   std::string service_name(method, 0, method.find_last_of('.'));
   std::string method_name(method, method.find_last_of('.') + 1);
-  const ::google::protobuf::ServiceDescriptor* service_desc =
+  const ::ServiceDescriptor* service_desc =
       file_desc->FindServiceByName(service_name);
   if (service_desc == NULL) {
-    std::cerr << "Could not find service '" << service_name
-              << "' in proto definition.";
-    return;
+    cerr << "Could not find service '" << service_name
+              << "' in proto definition." << endl;
+    return -1;
   }
-  const ::google::protobuf::MethodDescriptor* method_desc =
+  const ::MethodDescriptor* method_desc =
       service_desc->FindMethodByName(method_name);
   if (method_desc == NULL) {
-    std::cerr << "Could not find method '" << method_name
-              << "' in proto definition (but service was found).";
-    return;
+    cerr << "Could not find method '" << method_name
+              << "' in proto definition (but service was found)." << endl;
+    return -1;
   }
 
-  ::google::protobuf::DynamicMessageFactory factory;
-  ::google::protobuf::Message *request = factory.GetPrototype(
+  DynamicMessageFactory factory;
+  Message *request = factory.GetPrototype(
       method_desc->input_type())->New();
-  CHECK_NOTNULL(request);
-  if (!::google::protobuf::TextFormat::ParseFromString(payload, request)) {
-    std::cerr << "Could not parse the given ASCII message." << std::endl;
-    return;
+  if (request == NULL) {
+    cerr << "Could not allocate request.";
+    return -1;
+  }
+  if (!TextFormat::ParseFromString(payload, request)) {
+    cerr << "Could not parse the given ASCII message." << endl;
+    return -1;
   }
 
   Application app;
   scoped_ptr<RpcChannel> channel(app.CreateRpcChannel(endpoint));
   RPC rpc;
-  ::google::protobuf::Message *reply = factory.GetPrototype(
+  ::Message *reply = factory.GetPrototype(
       method_desc->output_type())->New();
   channel->CallMethod(method_desc, &rpc, request, reply, NULL);
   rpc.Wait();
 
   if (rpc.GetStatus() != GenericRPCResponse::OK) {
-    std::cerr << "Status: " << rpc.GetStatus() << std::endl;
-    std::cerr << "Error " << rpc.GetApplicationError() << ": "
-        << rpc.GetErrorMessage() << std::endl;
+    cerr << "Status: " << rpc.GetStatus() << endl;
+    cerr << "Error " << rpc.GetApplicationError() << ": "
+        << rpc.GetErrorMessage() << endl;
   } else {
     std::string out;
-    ::google::protobuf::TextFormat::PrintToString(*reply, &out);
-    std::cerr << out << std::endl;
+    ::TextFormat::PrintToString(*reply, &out);
+    cerr << out << endl;
   }
   delete request;
   delete reply;
+  return 0;
 }
 
-int Run(int argc, char *argv[]) {
-  if (argc == 1) {
-    std::cerr << "Expecting at least one command" << std::endl;
-    return -1;
+#define ARGV_ERROR -2
+
+int Run(std::vector<std::string> args) {
+  if (args.empty()) {
+    cerr << "Expecting a command." << endl;
+    return ARGV_ERROR;
   }
-  std::string command(argv[1]);
+  std::string command(args[0]);
   if (command != "call") {
-    std::cerr << "Only the call command is supported" << std::endl;
-    return -1;
+    cerr << "Only the call command is supported" << endl;
+    return ARGV_ERROR;
   } else {
-    if (argc != 5) {
-      std::cerr << "call <endpoint> <service.method> <payload>" << std::endl;
-      return -1;
+    if (args.size() != 4) {
+      cerr << "call needs 3 arguments:" <<
+          "call <endpoint> <service.method> <payload>" 
+          << endl << endl;
+      return ARGV_ERROR;
     }
-    std::string endpoint(argv[2]);
-    std::string method(argv[3]);
-    std::string payload(argv[4]);
-    RunCall(endpoint, method, payload);
+    std::string endpoint(args[1]);
+    std::string method(args[2]);
+    std::string payload(args[3]);
+    return RunCall(endpoint, method, payload);
   }
   return 0;
 }
 }  // namespace zrpc
 
-int main(int argc, char *argv[]) {
-  ::google::SetUsageMessage("Sends RPCs");
-  ::google::ParseCommandLineFlags(&argc, &argv, true);
+void ShowUsage(const char* pname, const po::options_description& desc) {
+  cout << pname << " Usage Instructions" << endl
+       << endl
+       << pname << " --proto=file.proto <command> [args]" << endl
+       << endl
+       << "Where <command> is one of the following: " << endl
+       << "  call" << endl
+       << endl;
+  // cout << desc;
+}
 
-  int retval = zrpc::Run(argc, argv);
-  if (retval == -1) {
-    ::google::ShowUsageWithFlagsRestrict(argv[0], "zrpc");
+int main(int argc, char *argv[]) {
+  po::options_description desc("Allowed options");
+  po::variables_map vm;
+
+  desc.add_options()
+      ("help", "produce help message")
+      ("proto", po::value<std::string>(&FLAGS_proto)->required(),
+       "Protocol Buffer file to use")
+      ("proto_path", po::value<std::vector<std::string> >(&FLAGS_proto_path),
+       "List of directories to search");
+
+  po::positional_options_description p;
+  po::parsed_options parsed = po::command_line_parser(argc, argv).
+        options(desc).allow_unregistered().run();
+
+  try {
+    po::store(parsed, vm);
+  } catch (po::error &e) {
+    cerr << "Command line error: " << e.what() << endl;
+    ShowUsage(PNAME, desc);
+    return 1;
   }
 
-  ::google::protobuf::ShutdownProtobufLibrary();
+  if (vm.count("help")) {
+    ShowUsage(PNAME, desc);
+    return 1;
+  }
+
+  try {
+    po::notify(vm);
+  } catch (po::error &e) {
+    cerr << "Command line error: " << e.what() << endl;
+    ShowUsage(PNAME, desc);
+    return 1;
+  }
+  std::vector<std::string> positional = po::collect_unrecognized(
+      parsed.options, po::include_positional);
+  int retval = zrpc::Run(positional);
+  if (retval == ARGV_ERROR) {
+    retval = 1;
+    ShowUsage(PNAME, desc);
+  }
   return retval;
 }
