@@ -19,6 +19,8 @@
 #include "cpp/search.pb.h"
 #include "cpp/search.zrpc.h"
 
+using namespace std;
+
 int main() {
   zrpc::Application application;
   examples::SearchService_Stub search_stub(application.CreateRpcChannel(
@@ -27,16 +29,11 @@ int main() {
   examples::SearchResponse response;
   request.set_query("gold");
 
-  zrpc::RPC rpc;
-  rpc.SetDeadlineMs(1000);   // 1 second
-  std::cout << "Sending request." << std::endl;
-  search_stub.Search(request, &response, &rpc, NULL);
-
-  rpc.Wait();
-  std::cout << "Response status: "
-            << zrpc::GenericRPCResponse::Status_Name(rpc.GetStatus())
-            << std::endl;
-  if (rpc.OK()) {
-    std::cout << response.DebugString() << std::endl;
+  cout << "Sending request." << endl;
+  try {
+    search_stub.Search(request, &response, 1000);
+    cout << response.DebugString() << endl;
+  } catch (zrpc::RpcError &e) {
+    cout << "Error: " << e.what() << endl;;
   }
 }
