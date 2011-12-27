@@ -36,9 +36,15 @@ def generate_proto(source, output_dir,
     protoc_command = protoc + ' -I "%s" --%s_out="%s" "%s"' % (
             os.path.dirname(source), with_plugin, output_dir, source)
     if plugin_binary:
-        protoc_command += ' --plugin=protoc-gen-%s=%s' % (with_plugin,
-                                                          plugin_binary)
-
+        if os.path.exists(plugin_binary):
+            protoc_command += ' --plugin=protoc-gen-%s=%s' % (with_plugin,
+                                                              plugin_binary)
+        else:
+            print ("Plugin not found at '%s'. We are going to run protoc "
+                   "anyway, and perhaps it will be able to find it in its "
+                   "search path." % plugin_binary)
     if os.system(protoc_command) != 0:
         raise CompilerException(
             "Error occurred while running protoc.")
+    else:
+        print "Generated source successfully."
