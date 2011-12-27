@@ -1,4 +1,10 @@
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
+
+if (NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release")
+endif()
+message("-- Build type: ${CMAKE_BUILD_TYPE}")
+
 option(zrpc_build_tests "Build zrpc's tests." OFF)
 option(zrpc_build_static "Build static library." OFF)
 option(zrpc_build_examples "Build zrpc's examples." OFF)
@@ -14,7 +20,8 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_BINARY_DIR}/src)
 
 cmake_minimum_required (VERSION 2.8.0)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-sign-compare -Wno-unused-parameter -Werror")
+set(CMAKE_CXX_FLAGS
+  "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-sign-compare -Wno-unused-parameter -Werror")
 set(CMAKE_OSX_ARCHITECTURES x86_64)
 
 add_subdirectory(src)
