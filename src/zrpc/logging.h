@@ -34,7 +34,12 @@
 // Logs a debugging message to stderr. Does not have eny effect when compiling
 // with -DNDEBUG
 #define LOG GOOGLE_LOG
-#define DLOG GOOGLE_DLOG
+
+#ifndef NDEBUG
+  #define DLOG GOOGLE_DLOG
+#else
+  #define DLOG true ? (void)0 : LOG
+#endif
 
 namespace zrpc {
 namespace internal {

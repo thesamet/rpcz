@@ -14,7 +14,7 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include <ostream>
+#include <iostream>
 #include "zrpc/zrpc.h"
 #include "cpp/search.pb.h"
 #include "cpp/search.zrpc.h"
