@@ -18,8 +18,6 @@
 #include "glog/logging.h"
 #include "google/protobuf/stubs/common.h"
 
-DECLARE_bool(logtostderr);
-
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   ::google::InstallFailureSignalHandler();
