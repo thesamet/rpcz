@@ -23,7 +23,7 @@ message GenericRPCResponse {
     UNKNOWN_SERVICE = -2;
     UNKNOWN_METHOD = -3;
     INVALID_MESSAGE = -4;
-    UNKNOWN_APPLICATION_ERROR = -5;
+    METHOD_NOT_IMPLEMENTED = -5;
   }
   optional Status status = 1 [default = OK];
   optional int32 application_error = 2;

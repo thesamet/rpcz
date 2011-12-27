@@ -14,6 +14,7 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
+#include "boost/lexical_cast.hpp"
 #include "zrpc/logging.h"
 #include "zrpc/reactor.h"
 #include "zrpc/rpc.h"
@@ -31,18 +32,14 @@ RPC::RPC()
 
 RPC::~RPC() {}
 
-void RPC::SetFailed(const std::string& error_message) {
-  SetFailed(GenericRPCResponse::UNKNOWN_APPLICATION_ERROR, error_message);
-}
-
-void RPC::SetStatus(GenericRPCResponse::Status status) {
-  status_ = status;
-}
-
 void RPC::SetFailed(int application_error, const std::string& error_message) {
   SetStatus(GenericRPCResponse::APPLICATION_ERROR);
   error_message_ = error_message;
   application_error_ = application_error;
+}
+
+void RPC::SetStatus(GenericRPCResponse::Status status) {
+  status_ = status;
 }
 
 int RPC::Wait() {
@@ -54,5 +51,19 @@ int RPC::Wait() {
   }
   sync_event_->Wait();
   return 0;
+}
+
+std::string RPC::ToString() const {
+  std::string result =
+      "status: " + GenericRPCResponse::Status_Name(GetStatus());
+  if (GetStatus() == GenericRPCResponse::APPLICATION_ERROR) {
+    result += "(" + boost::lexical_cast<std::string>(GetApplicationError())
+           + ")";
+  }
+  std::string error_message = GetErrorMessage();
+  if (!error_message.empty()) {
+    result += ": " + error_message;
+  }
+  return result;
 }
 }  // namespace zrpc

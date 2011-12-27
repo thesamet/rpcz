@@ -49,7 +49,7 @@ class SearchServiceImpl : public SearchService {
       const SearchRequest& request,
       SearchResponse* response, zrpc::RPC* rpc, Closure* done) {
     if (request.query() == "foo") {
-      rpc->SetFailed("I don't like foo.");
+      rpc->SetFailed(-4, "I don't like foo.");
     } else if (request.query() == "bar") {
       rpc->SetFailed(17, "I don't like bar.");
     } else if (request.query() == "delegate") {
@@ -263,18 +263,23 @@ TEST_F(ServerTest, DelegatedRequest) {
   ASSERT_EQ("42!", response.results(0));
 }
 
-/*
-TEST_F(ServerTest, EasyBlockingRequest) {
+TEST_F(ServerTest, EasyBlockingRequestUsingDelegate) {
   StartServer();
   SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
   SearchRequest request;
   SearchResponse response;
-  RPC rpc;
   request.set_query("delegate");
-  stub.Search(request, &response, NULL);
-  rpc.Wait();
-  ASSERT_EQ(GenericRPCResponse::OK, rpc.GetStatus());
+  stub.Search(request, &response);
   ASSERT_EQ("42!", response.results(0));
 }
-  */
+
+TEST_F(ServerTest, EasyBlockingRequestRaisesExceptions) {
+  StartServer();
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
+  SearchRequest request;
+  SearchResponse response;
+  request.set_query("foo");
+  EXPECT_THROW(stub.Search(request, &response),
+               RpcError);
+}
 }  // namespace

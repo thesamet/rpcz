@@ -70,7 +70,7 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
     "static const ::google::protobuf::ServiceDescriptor* descriptor();\n"
     "\n");
 
-  GenerateMethodSignatures(VIRTUAL, printer);
+  GenerateMethodSignatures(VIRTUAL, printer, false);
 
   printer->Print(
     "\n"
@@ -112,7 +112,7 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
     "// implements $classname$ ------------------------------------------\n"
     "\n");
 
-  GenerateMethodSignatures(NON_VIRTUAL, printer);
+  GenerateMethodSignatures(NON_VIRTUAL, printer, true);
 
   printer->Outdent();
   printer->Print(vars_,
@@ -125,7 +125,7 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
 }
 
 void ServiceGenerator::GenerateMethodSignatures(
-    VirtualOrNon virtual_or_non, io::Printer* printer) {
+    VirtualOrNon virtual_or_non, io::Printer* printer, bool stub) {
   for (int i = 0; i < descriptor_->method_count(); i++) {
     const MethodDescriptor* method = descriptor_->method(i);
     map<string, string> sub_vars;
@@ -139,6 +139,12 @@ void ServiceGenerator::GenerateMethodSignatures(
       "                     $output_type$* response,\n"
       "                     ::zrpc::RPC* rpc,\n"
       "                     ::zrpc::Closure* done);\n");
+    if (stub) {
+      printer->Print(sub_vars,
+                     "$virtual$void $name$(const $input_type$& request,\n"
+                     "                     $output_type$* response,\n"
+                     "                     long deadline_ms = -1);\n");
+    }
   }
 }
 
@@ -204,7 +210,8 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
       "                         $output_type$*,\n"
       "                         ::zrpc::RPC* rpc,\n"
       "                         ::zrpc::Closure* done) {\n"
-      "  rpc->SetFailed(\"Method $name$() not implemented.\");\n"
+      "  rpc->SetFailed(::zrpc::GenericRPCResponse::METHOD_NOT_IMPLEMENTED,\n"
+      "                 \"Method $name$() not implemented.\");\n"
       "  done->Run();\n"
       "}\n"
       "\n");
@@ -219,7 +226,6 @@ void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
     "                             ::zrpc::RPC* rpc,\n"
     "                             ::zrpc::Closure* done) {\n"
     "  GOOGLE_DCHECK_EQ(method->service(), $classname$_descriptor_);\n"
-    "  GOOGLE_DLOG(INFO) << \"\", request.DebugString();\n"
     "  switch(method->index()) {\n");
 
   for (int i = 0; i < descriptor_->method_count(); i++) {
@@ -306,6 +312,19 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
       "                              ::zrpc::Closure* done) {\n"
       "  channel_->CallMethod(descriptor()->method($index$),\n"
       "                       request, response, rpc, done);\n"
+      "}\n");
+    printer->Print(sub_vars,
+      "void $classname$_Stub::$name$(const $input_type$& request,\n"
+      "                              $output_type$* response,\n"
+      "                              long deadline_ms) {\n"
+      "  ::zrpc::RPC rpc;\n"
+      "  rpc.SetDeadlineMs(deadline_ms);\n"
+      "  channel_->CallMethod(descriptor()->method($index$),\n"
+      "                       request, response, &rpc, NULL);\n"
+      "  rpc.Wait();\n"
+      "  if (!rpc.OK()) {\n"
+      "    throw ::zrpc::RpcError(rpc);\n"
+      "  }\n"
       "}\n");
   }
 }

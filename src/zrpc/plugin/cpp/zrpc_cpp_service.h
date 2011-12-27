@@ -78,7 +78,8 @@ class ServiceGenerator {
 
   // Prints signatures for all methods in the
   void GenerateMethodSignatures(VirtualOrNon virtual_or_non,
-                                google::protobuf::io::Printer* printer);
+                                google::protobuf::io::Printer* printer,
+                                bool stub);
 
   // Source file stuff.
 

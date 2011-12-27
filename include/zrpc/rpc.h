@@ -17,7 +17,9 @@
 #ifndef ZRPC_RPC_H
 #define ZRPC_RPC_H
 
+#include <stdexcept>
 #include <string>
+
 #include "zrpc/macros.h"
 #include "zrpc/zrpc.pb.h"
 
@@ -54,11 +56,11 @@ class RPC {
     deadline_ms_ = deadline_ms;
   }
 
-  void SetFailed(const std::string& message);
-
   void SetFailed(int application_error, const std::string& message);
 
   int Wait();
+
+  std::string ToString() const;
 
  private:
   void SetStatus(GenericRPCResponse::Status status);
@@ -71,6 +73,11 @@ class RPC {
 
   friend class RpcChannelImpl;
   friend class ServerImpl;
+};
+
+class RpcError : public std::runtime_error {
+ public:
+  explicit RpcError(const RPC& rpc_) : std::runtime_error(rpc_.ToString()) {}
 };
 }  // namespace
 #endif
