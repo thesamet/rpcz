@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include "boost/thread/thread.hpp"
+#include "glog/logging.h"
 #include "gtest/gtest.h"
 #include "zmq.hpp"
 
@@ -45,28 +46,28 @@ class SearchServiceImpl : public SearchService {
       : backend_(backend), delayed_closure_(NULL) {};
 
   virtual void Search(
-      zrpc::RPC* rpc, const SearchRequest* request,
-      SearchResponse* response, Closure* done) {
-    if (request->query() == "foo") {
+      const SearchRequest& request,
+      SearchResponse* response, zrpc::RPC* rpc, Closure* done) {
+    if (request.query() == "foo") {
       rpc->SetFailed("I don't like foo.");
-    } else if (request->query() == "bar") {
+    } else if (request.query() == "bar") {
       rpc->SetFailed(17, "I don't like bar.");
-    } else if (request->query() == "delegate") {
+    } else if (request.query() == "delegate") {
       RPC* newrpc = new RPC;
-      backend_->Search(newrpc, request, response, NewCallback(SuperDone,
+      backend_->Search(request, response, newrpc, NewCallback(SuperDone,
                                                               newrpc,
                                                               done));
       return;
-    } else if (request->query() == "timeout") {
+    } else if (request.query() == "timeout") {
       // We lose the request. We are going to reply only when we get a request
       // for the query "delayed".
       delayed_closure_ = done;
       return;
-    } else if (request->query() == "delayed") {
+    } else if (request.query() == "delayed") {
       ASSERT_TRUE(NULL != delayed_closure_);
       delayed_closure_->Run();
     } else {
-      response->add_results("The search for " + request->query());
+      response->add_results("The search for " + request.query());
       response->add_results("is great");
     }
     done->Run();
@@ -79,9 +80,10 @@ class SearchServiceImpl : public SearchService {
 
 // For handling complex delegated queries.
 class BackendSearchServiceImpl : public SearchService {
+ public:
   virtual void Search(
-      zrpc::RPC*, const SearchRequest*,
-      SearchResponse* response, Closure* done) {
+      const SearchRequest&,
+      SearchResponse* response, zrpc::RPC*, Closure* done) {
     response->add_results("42!");
     done->Run();
   }
@@ -149,7 +151,7 @@ class ServerTest : public ::testing::Test {
     SearchResponse response;
     RPC rpc;
     request.set_query(query);
-    stub.Search(&rpc, &request, &response, NULL);
+    stub.Search(request, &response, &rpc, NULL);
     rpc.Wait();
     EXPECT_TRUE(rpc.OK());
     return response;
@@ -181,7 +183,7 @@ TEST_F(ServerTest, SimpleRequestAsync) {
   RPC rpc;
   request.set_query("happiness");
   SyncEvent sync;
-  stub.Search(&rpc, &request, &response, NewCallback(
+  stub.Search(request, &response, &rpc, NewCallback(
           &sync, &SyncEvent::Signal));
   sync.Wait();
   ASSERT_TRUE(rpc.OK());
@@ -196,7 +198,7 @@ TEST_F(ServerTest, SimpleRequestWithError) {
   SearchResponse response;
   RPC rpc;
   request.set_query("foo");
-  stub.Search(&rpc, &request, &response, NULL);
+  stub.Search(request, &response, &rpc, NULL);
   rpc.Wait();
   ASSERT_EQ(GenericRPCResponse::APPLICATION_ERROR, rpc.GetStatus());
   ASSERT_EQ("I don't like foo.", rpc.GetErrorMessage());
@@ -210,14 +212,14 @@ TEST_F(ServerTest, SimpleRequestWithTimeout) {
   RPC rpc;
   request.set_query("timeout");
   rpc.SetDeadlineMs(1);
-  stub.Search(&rpc, &request, &response, NULL);
+  stub.Search(request, &response, &rpc, NULL);
   rpc.Wait();
   ASSERT_EQ(GenericRPCResponse::DEADLINE_EXCEEDED, rpc.GetStatus());
   // Now we clean up the closure we kept aside.
   {
     RPC rpc;
     request.set_query("delayed");
-    stub.Search(&rpc, &request, &response, NULL);
+    stub.Search(request, &response, &rpc, NULL);
     rpc.Wait();
     ASSERT_TRUE(rpc.OK());
   }
@@ -233,7 +235,7 @@ TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
     request.set_query("timeout");
     rpc.SetDeadlineMs(1);
     SyncEvent event;
-    stub.Search(&rpc, &request, &response,
+    stub.Search(request, &response, &rpc,
                 NewCallback(&event, &SyncEvent::Signal));
     event.Wait();
     ASSERT_EQ(GenericRPCResponse::DEADLINE_EXCEEDED, rpc.GetStatus());
@@ -242,7 +244,7 @@ TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
   {
     RPC rpc;
     request.set_query("delayed");
-    stub.Search(&rpc, &request, &response, NULL);
+    stub.Search(request, &response, &rpc, NULL);
     rpc.Wait();
     ASSERT_TRUE(rpc.OK());
   }
@@ -255,9 +257,24 @@ TEST_F(ServerTest, DelegatedRequest) {
   SearchResponse response;
   RPC rpc;
   request.set_query("delegate");
-  stub.Search(&rpc, &request, &response, NULL);
+  stub.Search(request, &response, &rpc, NULL);
   rpc.Wait();
   ASSERT_EQ(GenericRPCResponse::OK, rpc.GetStatus());
   ASSERT_EQ("42!", response.results(0));
 }
+
+/*
+TEST_F(ServerTest, EasyBlockingRequest) {
+  StartServer();
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
+  SearchRequest request;
+  SearchResponse response;
+  RPC rpc;
+  request.set_query("delegate");
+  stub.Search(request, &response, NULL);
+  rpc.Wait();
+  ASSERT_EQ(GenericRPCResponse::OK, rpc.GetStatus());
+  ASSERT_EQ("42!", response.results(0));
+}
+  */
 }  // namespace

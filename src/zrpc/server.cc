@@ -200,9 +200,9 @@ class ServerImpl {
     Closure *closure = NewCallback(
         &FinalizeResponse, context.get(), reply);
     context->rpc.SetStatus(GenericRPCResponse::OK);
-    service->CallMethod(descriptor, &context->rpc,
-                        context->request.get(),
-                        context->response.get(), closure);
+    service->CallMethod(descriptor,
+                        *context->request,
+                        context->response.get(), &context->rpc, closure);
     context.release();
   }
 

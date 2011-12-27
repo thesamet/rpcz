@@ -38,18 +38,18 @@ class RPC;
 class RpcChannel {
  public:
   virtual void CallMethod(const google::protobuf::MethodDescriptor* method,
-                          RPC* rpc,
-                          const google::protobuf::Message* request,
+                          const google::protobuf::Message& request,
                           google::protobuf::Message* response,
+                          RPC* rpc,
                           Closure* done) = 0;
 
   // DO NOT USE: this method exists only for language bindings and may be
   // removed.
   virtual void CallMethod0(const std::string& service_name,
                            const std::string& method_name,
-                           RPC* rpc,
                            const std::string& request,
                            std::string* response,
+                           RPC* rpc,
                            Closure* done) = 0;
 
   static RpcChannel* Create(Connection* connection, bool owns_connection=false);

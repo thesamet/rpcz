@@ -78,9 +78,9 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
     "\n"
     "const ::google::protobuf::ServiceDescriptor* GetDescriptor();\n"
     "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
-    "                ::zrpc::RPC* rpc,\n"
-    "                const ::google::protobuf::Message* request,\n"
+    "                const ::google::protobuf::Message& request,\n"
     "                ::google::protobuf::Message* response,\n"
+    "                ::zrpc::RPC* rpc,\n"
     "                ::zrpc::Closure* done);\n"
     "const ::google::protobuf::Message& GetRequestPrototype(\n"
     "  const ::google::protobuf::MethodDescriptor* method) const;\n"
@@ -135,9 +135,9 @@ void ServiceGenerator::GenerateMethodSignatures(
     sub_vars["virtual"] = virtual_or_non == VIRTUAL ? "virtual " : "";
 
     printer->Print(sub_vars,
-      "$virtual$void $name$(::zrpc::RPC* rpc,\n"
-      "                     const $input_type$* request,\n"
+      "$virtual$void $name$(const $input_type$& request,\n"
       "                     $output_type$* response,\n"
+      "                     ::zrpc::RPC* rpc,\n"
       "                     ::zrpc::Closure* done);\n");
   }
 }
@@ -200,9 +200,9 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
     sub_vars["output_type"] = ClassName(method->output_type(), true);
 
     printer->Print(sub_vars,
-      "void $classname$::$name$(::zrpc::RPC* rpc,\n"
-      "                         const $input_type$*,\n"
+      "void $classname$::$name$(const $input_type$&,\n"
       "                         $output_type$*,\n"
+      "                         ::zrpc::RPC* rpc,\n"
       "                         ::zrpc::Closure* done) {\n"
       "  rpc->SetFailed(\"Method $name$() not implemented.\");\n"
       "  done->Run();\n"
@@ -214,11 +214,12 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
 void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
   printer->Print(vars_,
     "void $classname$::CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
-    "                             ::zrpc::RPC* rpc,\n"
-    "                             const ::google::protobuf::Message* request,\n"
+    "                             const ::google::protobuf::Message& request,\n"
     "                             ::google::protobuf::Message* response,\n"
+    "                             ::zrpc::RPC* rpc,\n"
     "                             ::zrpc::Closure* done) {\n"
     "  GOOGLE_DCHECK_EQ(method->service(), $classname$_descriptor_);\n"
+    "  GOOGLE_DLOG(INFO) << \"\", request.DebugString();\n"
     "  switch(method->index()) {\n");
 
   for (int i = 0; i < descriptor_->method_count(); i++) {
@@ -233,10 +234,11 @@ void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
     //   not references.
     printer->Print(sub_vars,
       "    case $index$:\n"
-      "      $name$(rpc,\n"
-      "             ::google::protobuf::down_cast<const $input_type$*>(request),\n"
-      "             ::google::protobuf::down_cast< $output_type$*>(response),\n"
-      "             done);\n"
+      "      $name$(\n"
+      "          *::google::protobuf::down_cast<const $input_type$*>(&request),\n"
+      "          ::google::protobuf::down_cast< $output_type$*>(response),\n"
+      "          rpc,\n"
+      "          done);\n"
       "      break;\n");
   }
 
@@ -298,12 +300,12 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
     sub_vars["output_type"] = ClassName(method->output_type(), true);
 
     printer->Print(sub_vars,
-      "void $classname$_Stub::$name$(::zrpc::RPC* rpc,\n"
-      "                              const $input_type$* request,\n"
+      "void $classname$_Stub::$name$(const $input_type$& request,\n"
       "                              $output_type$* response,\n"
+      "                              ::zrpc::RPC* rpc,\n"
       "                              ::zrpc::Closure* done) {\n"
       "  channel_->CallMethod(descriptor()->method($index$),\n"
-      "                       rpc, request, response, done);\n"
+      "                       request, response, rpc, done);\n"
       "}\n");
   }
 }

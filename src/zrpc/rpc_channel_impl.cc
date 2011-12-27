@@ -51,11 +51,11 @@ struct RpcResponseContext {
 void RpcChannelImpl::CallMethodFull(
     const std::string& service_name,
     const std::string& method_name,
-    RPC* rpc,
     const ::google::protobuf::Message* request_msg,
     const std::string& request,
     ::google::protobuf::Message* response_msg,
     std::string* response_str,
+    RPC* rpc,
     Closure* done) {
   CHECK_EQ(rpc->GetStatus(), GenericRPCResponse::INACTIVE);
   GenericRPCRequest generic_request;
@@ -70,10 +70,9 @@ void RpcChannelImpl::CallMethodFull(
   if (request_msg != NULL) {
     size_t bytes = request_msg->ByteSize();
     payload_out = new zmq::message_t(bytes);
-    request_msg->SerializeToArray(payload_out->data(),
-                              bytes);
-  }
-  else {
+    GOOGLE_DCHECK(request_msg->SerializeToArray(payload_out->data(),
+                                                bytes));
+  } else {
     payload_out = new zmq::message_t(request.size());
     memcpy(payload_out->data(), request.c_str(), request.size());
   }
@@ -99,33 +98,33 @@ void RpcChannelImpl::CallMethodFull(
 
 void RpcChannelImpl::CallMethod0(const std::string& service_name,
                                 const std::string& method_name,
-                                RPC* rpc,
                                 const std::string& request,
                                 std::string* response,
+                                RPC* rpc,
                                 Closure* done) {
   CallMethodFull(service_name,
                  method_name,
-                 rpc,
                  NULL,
                  request,
                  NULL,
                  response,
+                 rpc,
                  done);
 }
 
 void RpcChannelImpl::CallMethod(
     const google::protobuf::MethodDescriptor* method,
-    RPC* rpc,
-    const google::protobuf::Message* request,
+    const google::protobuf::Message& request,
     google::protobuf::Message* response,
+    RPC* rpc,
     Closure* done) {
   CallMethodFull(method->service()->name(),
                  method->name(),
-                 rpc,
-                 request,
+                 &request,
                  "",
                  response,
                  NULL,
+                 rpc,
                  done);
 }
 

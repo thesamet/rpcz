@@ -112,7 +112,7 @@ int RunCall(const std::string& endpoint,
   RPC rpc;
   ::Message *reply = factory.GetPrototype(
       method_desc->output_type())->New();
-  channel->CallMethod(method_desc, &rpc, request, reply, NULL);
+  channel->CallMethod(method_desc, *request, reply, &rpc, NULL);
   rpc.Wait();
 
   if (rpc.GetStatus() != GenericRPCResponse::OK) {

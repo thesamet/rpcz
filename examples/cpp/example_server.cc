@@ -23,10 +23,10 @@ namespace examples {
 class SearchServiceImpl : public SearchService {
 
   virtual void Search(
-      zrpc::RPC* rpc, const SearchRequest* request,
-      SearchResponse* response, zrpc::Closure* done) {
-    std::cout << "Got request for '" << request->query() << "'" << std::endl;
-    response->add_results("result1 for " + request->query());
+      const SearchRequest& request,
+      SearchResponse* response, zrpc::RPC* rpc, zrpc::Closure* done) {
+    std::cout << "Got request for '" << request.query() << "'" << std::endl;
+    response->add_results("result1 for " + request.query());
     response->add_results("this is result2");
     done->Run();
   }

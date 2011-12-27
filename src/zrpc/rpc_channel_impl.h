@@ -33,14 +33,15 @@ class RpcChannelImpl: public RpcChannel {
   virtual ~RpcChannelImpl();
 
   virtual void CallMethod(const google::protobuf::MethodDescriptor* method,
-                          RPC* rpc, const google::protobuf::Message* request,
-                          google::protobuf::Message* response, Closure* done);
+                          const google::protobuf::Message& request,
+                          google::protobuf::Message* response, RPC* rpc,
+                          Closure* done);
 
   virtual void CallMethod0(
       const std::string& service_name,
-      const std::string& method_name, RPC* rpc,
+      const std::string& method_name,
       const std::string& request,
-      std::string* response, Closure* done);
+      std::string* response, RPC* rpc, Closure* done);
 
  private:
   virtual void HandleClientResponse(MessageVector* request,
@@ -49,11 +50,11 @@ class RpcChannelImpl: public RpcChannel {
   void CallMethodFull(
     const std::string& service_name,
     const std::string& method_name,
-    RPC* rpc,
     const ::google::protobuf::Message* request_msg,
     const std::string& request,
     ::google::protobuf::Message* response_msg,
     std::string* response_str,
+    RPC* rpc,
     Closure* done);
 
   Connection* connection_;

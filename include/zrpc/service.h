@@ -41,9 +41,9 @@ class Service {
       const google::protobuf::MethodDescriptor*) const = 0;
 
   virtual void CallMethod(const google::protobuf::MethodDescriptor* method,
-                          RPC* rpc,
-                          const google::protobuf::Message* request,
+                          const google::protobuf::Message& request,
                           google::protobuf::Message* response,
+                          RPC* rpc,
                           Closure* done) = 0;
 };
 }  // namespace

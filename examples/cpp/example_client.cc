@@ -30,7 +30,7 @@ int main() {
   zrpc::RPC rpc;
   rpc.SetDeadlineMs(1000);   // 1 second
   std::cout << "Sending request." << std::endl;
-  search_stub.Search(&rpc, &request, &response, NULL);
+  search_stub.Search(request, &response, &rpc, NULL);
 
   rpc.Wait();
   std::cout << "Response status: "
