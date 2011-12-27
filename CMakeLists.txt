@@ -3,13 +3,6 @@ option(zrpc_build_tests "Build zrpc's tests." OFF)
 option(zrpc_build_static "Build static library." OFF)
 option(zrpc_build_examples "Build zrpc's examples." OFF)
 
-include(build_deps)
-BuildDependency(
-    GFlags
-    http://google-gflags.googlecode.com/files/gflags-1.7.tar.gz
-    GFLAGS
-    libgflags)
-
 find_package(ProtobufPlugin REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread program_options)
 find_package(ZeroMQ REQUIRED)

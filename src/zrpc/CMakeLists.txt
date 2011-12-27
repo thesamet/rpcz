@@ -16,7 +16,7 @@ set(ZRPC_SOURCES
     rpc_channel_impl.cc server.cc sync_event.cc zmq_utils.cc
     ${PROTO_SOURCES})
 set(ZRPC_LIB_DEPS ${ZeroMQ_LIBRARIES}
-                      ${GFLAGS_LIBRARIES} ${PROTOBUF_LIBRARY}
+                      ${PROTOBUF_LIBRARY}
                       ${Boost_THREAD_LIBRARIES})
 
 if(zrpc_build_static)

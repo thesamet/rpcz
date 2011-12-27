@@ -16,7 +16,6 @@
 
 #include <ostream>
 #include "zrpc/zrpc.h"
-#include "glog/logging.h"
 #include "cpp/search.pb.h"
 #include "cpp/search.zrpc.h"
 

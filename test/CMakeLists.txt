@@ -1,9 +1,6 @@
 add_subdirectory(proto)
 set(CTEST_OUTPUT_ON_FAILURE 1)
 
-find_package(GTest REQUIRED)
-
-include_directories(${GTEST_INCLUDE_DIRS})
 include_directories(${PROJECT_BINARY_DIR}/test)
 include_directories(${PROJECT_SOURCE_DIR}/src)
 add_library(zrpc_gtest_main zrpc_gtest_main.cc)
@@ -15,12 +12,21 @@ BuildDependency(
     GLOG
     libglog)
 
+ExternalProject_Add(
+    GTest
+    URL http://googletest.googlecode.com/files/gtest-1.6.0.zip
+    INSTALL_COMMAND ""
+)
+ExternalProject_Get_Property(GTest binary_dir)
+ExternalProject_Get_Property(GTest source_dir)
+include_directories(${source_dir}/include)    
+link_directories(${binary_dir})
 
 function(zrpc_test TESTNAME)
   CMAKE_PARSE_ARGUMENTS(OPTIONS "" "" "SRCS;LIBS" ${ARGN})
   add_executable(${TESTNAME} ${OPTIONS_SRCS})
   set(LIBS zrpc zrpc_gtest_main
-      ${GTEST_LIBRARIES} ${GLOG_LIBRARIES}
+      gtest ${GLOG_LIBRARIES}
   )
   list(APPEND LIBS ${OPTIONS_LIBS})
   target_link_libraries(${TESTNAME} ${LIBS})
