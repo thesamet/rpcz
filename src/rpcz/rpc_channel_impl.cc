@@ -63,23 +63,25 @@ void RpcChannelImpl::CallMethodFull(
   generic_request.set_method(method_name);
 
   size_t msg_size = generic_request.ByteSize();
-  zmq::message_t* msg_out = new zmq::message_t(msg_size);
+  scoped_ptr<zmq::message_t> msg_out(new zmq::message_t(msg_size));
   CHECK(generic_request.SerializeToArray(msg_out->data(), msg_size));
 
-  zmq::message_t* payload_out = NULL;
+  scoped_ptr<zmq::message_t> payload_out;
   if (request_msg != NULL) {
     size_t bytes = request_msg->ByteSize();
-    payload_out = new zmq::message_t(bytes);
-    GOOGLE_DCHECK(request_msg->SerializeToArray(payload_out->data(),
-                                                bytes));
+    payload_out.reset(new zmq::message_t(bytes));
+    if (!request_msg->SerializeToArray(payload_out->data(),
+                                       bytes)) {
+      throw new InvalidMessageError("Request serialization failed.");
+    }
   } else {
-    payload_out = new zmq::message_t(request.size());
+    payload_out.reset(new zmq::message_t(request.size()));
     memcpy(payload_out->data(), request.c_str(), request.size());
   }
 
   MessageVector* msg_vector = new MessageVector;
-  msg_vector->push_back(msg_out);
-  msg_vector->push_back(payload_out);
+  msg_vector->push_back(msg_out.release());
+  msg_vector->push_back(payload_out.release());
 
   RpcResponseContext *response_context = new RpcResponseContext;
   response_context->rpc = rpc;

@@ -79,5 +79,11 @@ class RpcError : public std::runtime_error {
  public:
   explicit RpcError(const RPC& rpc_) : std::runtime_error(rpc_.ToString()) {}
 };
+
+class InvalidMessageError : public std::runtime_error {
+ public:
+  explicit InvalidMessageError(const std::string& message)
+      : std::runtime_error(message) {}
+};
 }  // namespace
 #endif
