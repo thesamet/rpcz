@@ -2,30 +2,19 @@ from cpython cimport Py_DECREF, Py_INCREF
 from libc.stdlib cimport malloc, free
 
 
-# cdef extern from "glog/logging.h" namespace "google":
-#     cdef void InstallFailureSignalHandler()
-#     cdef void InitGoogleLogging(char*)
-
-
 cdef extern from "Python.h":
-    ctypedef int PyGILState_STATE
-    PyGILState_STATE    PyGILState_Ensure               ()   nogil
-    void                PyGILState_Release              (PyGILState_STATE) nogil
     void PyEval_InitThreads()
 
+
 PyEval_InitThreads()
+
 
 cdef extern from "zrpc/connection_manager.h" namespace "zrpc":
     cdef void InstallSignalHandler()
 
+
 cdef extern from "zrpc/callback.h" namespace "zrpc":
   pass
-
-def Init():
-    import sys
-    # InstallFailureSignalHandler()
-    # InitGoogleLogging(sys.argv[0])
-    InstallSignalHandler()
 
 
 cdef extern from "string" namespace "std":
