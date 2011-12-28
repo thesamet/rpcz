@@ -1,13 +1,13 @@
 package rpcz;
 
-message GenericRPCRequest {
+message RpcRequestHeader {
   optional int64 event_id = 1;
   optional int32 deadline = 2;
   optional string service = 3;
   optional string method = 4;
 }
 
-message GenericRPCResponse {
+message RpcResponseHeader {
   enum Status {
     INACTIVE = 0;
     INFLIGHT = 1;

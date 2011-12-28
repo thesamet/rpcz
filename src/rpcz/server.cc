@@ -53,7 +53,7 @@ namespace {
 // Sends the response back to a function server through the reply function.
 // Takes ownership of the provided payload message.
 void SendGenericResponse(RpcRequestContext& context,
-                         const GenericRPCResponse& generic_rpc_response,
+                         const RpcResponseHeader& generic_rpc_response,
                          zmq::message_t* payload) {
   size_t msg_size = generic_rpc_response.ByteSize();
   zmq::message_t* zmq_response_message = new zmq::message_t(msg_size);
@@ -70,8 +70,8 @@ void SendGenericResponse(RpcRequestContext& context,
 void ReplyWithAppError(RpcRequestContext& context,
                        int application_error,
                        const std::string& error="") {
-  GenericRPCResponse response;
-  response.set_status(GenericRPCResponse::APPLICATION_ERROR);
+  RpcResponseHeader response;
+  response.set_status(RpcResponseHeader::APPLICATION_ERROR);
   response.set_application_error(application_error);
   if (!error.empty()) {
     response.set_error(error);
@@ -83,7 +83,7 @@ void ReplyWithAppError(RpcRequestContext& context,
 
 void FinalizeResponse(RpcRequestContext* context,
                       const google::protobuf::Message& response) {
-  GenericRPCResponse generic_rpc_response;
+  RpcResponseHeader generic_rpc_response;
   int msg_size = response.ByteSize();
   scoped_ptr<zmq::message_t> payload(new zmq::message_t(msg_size));
   if (!response.SerializeToArray(payload->data(), msg_size)) {
@@ -98,9 +98,9 @@ void FinalizeResponse(RpcRequestContext* context,
 void FinalizeResponseWithError(RpcRequestContext* context,
                                int application_error,
                                const std::string& error_message) {
-  GenericRPCResponse generic_rpc_response;
+  RpcResponseHeader generic_rpc_response;
   zmq::message_t* payload = new zmq::message_t();
-  generic_rpc_response.set_status(GenericRPCResponse::APPLICATION_ERROR);
+  generic_rpc_response.set_status(RpcResponseHeader::APPLICATION_ERROR);
   generic_rpc_response.set_application_error(application_error);
   if (!error_message.empty()) {
     generic_rpc_response.set_error(error_message);
@@ -161,12 +161,12 @@ class ServerImpl {
     zmq::message_t& request = (*data)[1];
     zmq::message_t& payload = (*data)[2];
 
-    GenericRPCRequest generic_rpc_request;
+    RpcRequestHeader generic_rpc_request;
     if (!generic_rpc_request.ParseFromArray(request.data(), request.size())) {
       // Handle bad RPC.
       DLOG(INFO) << "Received corrupt message.";
       ReplyWithAppError(*context,
-                        GenericRPCResponse::INVALID_GENERIC_WRAPPER);
+                        RpcResponseHeader::INVALID_GENERIC_WRAPPER);
       return;
     };
     ServiceMap::const_iterator service_it = service_map_.find(
@@ -174,7 +174,7 @@ class ServerImpl {
     if (service_it == service_map_.end()) {
       // Handle invalid service.
       DLOG(INFO) << "Invalid service: " << generic_rpc_request.service();
-      ReplyWithAppError(*context, GenericRPCResponse::UNKNOWN_SERVICE);
+      ReplyWithAppError(*context, RpcResponseHeader::UNKNOWN_SERVICE);
       return;
     }
     rpcz::Service* service = service_it->second;
@@ -184,7 +184,7 @@ class ServerImpl {
     if (descriptor == NULL) {
       // Invalid method name
       DLOG(INFO) << "Invalid method name: " << generic_rpc_request.method();
-      ReplyWithAppError(*context, GenericRPCResponse::UNKNOWN_METHOD);
+      ReplyWithAppError(*context, RpcResponseHeader::UNKNOWN_METHOD);
       return;
     }
     context->request.reset(CHECK_NOTNULL(
@@ -193,11 +193,11 @@ class ServerImpl {
       DLOG(INFO) << "Failed to parse request.";
       // Invalid proto;
       ReplyWithAppError(*context,
-                        GenericRPCResponse::INVALID_MESSAGE);
+                        RpcResponseHeader::INVALID_MESSAGE);
       return;
     }
 
-    context->rpc.SetStatus(GenericRPCResponse::OK);
+    context->rpc.SetStatus(RpcResponseHeader::OK);
     service->CallMethod(descriptor,
                         *context->request,
                         context.release());

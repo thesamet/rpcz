@@ -57,8 +57,8 @@ void RpcChannelImpl::CallMethodFull(
     std::string* response_str,
     RPC* rpc,
     Closure* done) {
-  CHECK_EQ(rpc->GetStatus(), GenericRPCResponse::INACTIVE);
-  GenericRPCRequest generic_request;
+  CHECK_EQ(rpc->GetStatus(), RpcResponseHeader::INACTIVE);
+  RpcRequestHeader generic_request;
   generic_request.set_service(service_name);
   generic_request.set_method(method_name);
 
@@ -88,7 +88,7 @@ void RpcChannelImpl::CallMethodFull(
   response_context->user_closure = done;
   response_context->response_str = response_str;
   response_context->response_msg = response_msg;
-  rpc->SetStatus(GenericRPCResponse::INFLIGHT);
+  rpc->SetStatus(RpcResponseHeader::INFLIGHT);
 
   connection_->SendRequest(msg_vector,
                            &response_context->remote_response,
@@ -138,22 +138,22 @@ void RpcChannelImpl::HandleClientResponse(
   switch (remote_response.status) {
     case RemoteResponse::DEADLINE_EXCEEDED:
       response_context->rpc->SetStatus(
-          GenericRPCResponse::DEADLINE_EXCEEDED);
+          RpcResponseHeader::DEADLINE_EXCEEDED);
       break;
     case RemoteResponse::DONE: {
         if (remote_response.reply.size() != 2) {
-          response_context->rpc->SetFailed(GenericRPCResponse::INVALID_MESSAGE,
+          response_context->rpc->SetFailed(RpcResponseHeader::INVALID_MESSAGE,
                                            "");
           break;
         }
-        GenericRPCResponse generic_response;
+        RpcResponseHeader generic_response;
         zmq::message_t& msg_in = response_context->remote_response.reply[0];
         CHECK(generic_response.ParseFromArray(msg_in.data(), msg_in.size()));
-        if (generic_response.status() != GenericRPCResponse::OK) {
+        if (generic_response.status() != RpcResponseHeader::OK) {
           response_context->rpc->SetFailed(generic_response.application_error(),
                                            generic_response.error());
         } else {
-          response_context->rpc->SetStatus(GenericRPCResponse::OK);
+          response_context->rpc->SetStatus(RpcResponseHeader::OK);
           if (response_context->response_msg) {
             CHECK(response_context->response_msg->ParseFromArray(
                     response_context->remote_response.reply[1].data(),

@@ -206,7 +206,7 @@ TEST_F(ServerTest, SimpleRequestWithError) {
   request.set_query("foo");
   stub.Search(request, &response, &rpc, NULL);
   rpc.Wait();
-  ASSERT_EQ(GenericRPCResponse::APPLICATION_ERROR, rpc.GetStatus());
+  ASSERT_EQ(RpcResponseHeader::APPLICATION_ERROR, rpc.GetStatus());
   ASSERT_EQ("I don't like foo.", rpc.GetErrorMessage());
 }
 
@@ -220,7 +220,7 @@ TEST_F(ServerTest, SimpleRequestWithTimeout) {
   rpc.SetDeadlineMs(1);
   stub.Search(request, &response, &rpc, NULL);
   rpc.Wait();
-  ASSERT_EQ(GenericRPCResponse::DEADLINE_EXCEEDED, rpc.GetStatus());
+  ASSERT_EQ(RpcResponseHeader::DEADLINE_EXCEEDED, rpc.GetStatus());
   // Now we clean up the closure we kept aside.
   {
     RPC rpc;
@@ -244,7 +244,7 @@ TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
     stub.Search(request, &response, &rpc,
                 NewCallback(&event, &SyncEvent::Signal));
     event.Wait();
-    ASSERT_EQ(GenericRPCResponse::DEADLINE_EXCEEDED, rpc.GetStatus());
+    ASSERT_EQ(RpcResponseHeader::DEADLINE_EXCEEDED, rpc.GetStatus());
   }
   // Now we clean up the closure we kept aside.
   {
@@ -265,7 +265,7 @@ TEST_F(ServerTest, DelegatedRequest) {
   request.set_query("delegate");
   stub.Search(request, &response, &rpc, NULL);
   rpc.Wait();
-  ASSERT_EQ(GenericRPCResponse::OK, rpc.GetStatus());
+  ASSERT_EQ(RpcResponseHeader::OK, rpc.GetStatus());
   ASSERT_EQ("42!", response.results(0));
 }
 

@@ -24,7 +24,7 @@
 namespace rpcz {
 
 RPC::RPC()
-    : status_(GenericRPCResponse::INACTIVE),
+    : status_(status::INACTIVE),
       application_error_(0),
       deadline_ms_(-1),
       sync_event_(new SyncEvent()) {
@@ -33,20 +33,20 @@ RPC::RPC()
 RPC::~RPC() {}
 
 void RPC::SetFailed(int application_error, const std::string& error_message) {
-  SetStatus(GenericRPCResponse::APPLICATION_ERROR);
+  SetStatus(status::APPLICATION_ERROR);
   error_message_ = error_message;
   application_error_ = application_error;
 }
 
-void RPC::SetStatus(GenericRPCResponse::Status status) {
+void RPC::SetStatus(Status status) {
   status_ = status;
 }
 
 int RPC::Wait() {
-  GenericRPCResponse::Status status = GetStatus();
-  CHECK_NE(status, GenericRPCResponse::INACTIVE)
+  Status status = GetStatus();
+  CHECK_NE(status, status::INACTIVE)
       << "Request must be sent before calling Wait()";
-  if (status != GenericRPCResponse::INFLIGHT) {
+  if (status != status::INFLIGHT) {
     return GetStatus();
   }
   sync_event_->Wait();
@@ -55,8 +55,8 @@ int RPC::Wait() {
 
 std::string RPC::ToString() const {
   std::string result =
-      "status: " + GenericRPCResponse::Status_Name(GetStatus());
-  if (GetStatus() == GenericRPCResponse::APPLICATION_ERROR) {
+      "status: " + RpcResponseHeader_Status_Name(GetStatus());
+  if (GetStatus() == status::APPLICATION_ERROR) {
     result += "(" + boost::lexical_cast<std::string>(GetApplicationError())
            + ")";
   }

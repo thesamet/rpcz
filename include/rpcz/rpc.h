@@ -24,8 +24,20 @@
 #include "rpcz/rpcz.pb.h"
 
 namespace rpcz {
-class SyncEvent;
 
+typedef RpcResponseHeader::Status Status;
+
+namespace status {
+static const Status INACTIVE = RpcResponseHeader::INACTIVE;
+static const Status INFLIGHT = RpcResponseHeader::INFLIGHT;
+static const Status OK = RpcResponseHeader::OK;
+static const Status CANCELLED = RpcResponseHeader::CANCELLED;
+static const Status APPLICATION_ERROR = RpcResponseHeader::APPLICATION_ERROR;
+static const Status DEADLINE_EXCEEDED = RpcResponseHeader::DEADLINE_EXCEEDED;
+static const Status TERMINATED = RpcResponseHeader::TERMINATED;
+}  // namespace status
+
+class SyncEvent;
 class RPC {
  public:
   RPC();
@@ -33,10 +45,10 @@ class RPC {
   ~RPC();
 
   inline bool OK() const {
-    return GetStatus() == GenericRPCResponse::OK;
+    return GetStatus() == status::OK;
   }
 
-  GenericRPCResponse::Status GetStatus() const {
+  Status GetStatus() const {
     return status_;
   }
 
@@ -63,9 +75,9 @@ class RPC {
   std::string ToString() const;
 
  private:
-  void SetStatus(GenericRPCResponse::Status status);
+  void SetStatus(Status status);
 
-  GenericRPCResponse::Status status_;
+  Status status_;
   std::string error_message_;
   int application_error_;
   int64 deadline_ms_;

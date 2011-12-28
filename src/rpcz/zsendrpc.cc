@@ -115,7 +115,7 @@ int RunCall(const std::string& endpoint,
   channel->CallMethod(method_desc, *request, reply, &rpc, NULL);
   rpc.Wait();
 
-  if (rpc.GetStatus() != GenericRPCResponse::OK) {
+  if (rpc.GetStatus() != RpcResponseHeader::OK) {
     cerr << "Status: " << rpc.GetStatus() << endl;
     cerr << "Error " << rpc.GetApplicationError() << ": "
         << rpc.GetErrorMessage() << endl;

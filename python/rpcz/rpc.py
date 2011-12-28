@@ -25,10 +25,10 @@ class RpcDeadlineExceeded(RpcError):
 
 
 def RaiseRpcError(rpc):
-  if rpc.status == rpcz_pb2.GenericRPCResponse.APPLICATION_ERROR:
+  if rpc.status == rpcz_pb2.RpcResponseHeader.APPLICATION_ERROR:
     raise RpcApplicationError(rpc.application_error, rpc.error_message)
   else:
-    if rpc.status == rpcz_pb2.GenericRPCResponse.DEADLINE_EXCEEDED:
+    if rpc.status == rpcz_pb2.RpcResponseHeader.DEADLINE_EXCEEDED:
       raise RpcDeadlineExceeded()
 
 
