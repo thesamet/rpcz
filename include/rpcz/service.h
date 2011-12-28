@@ -17,6 +17,8 @@
 #ifndef RPCZ_SERVICE_H
 #define RPCZ_SERVICE_H
 
+#include <string>
+
 namespace google {
 namespace protobuf {
 class Message;
@@ -28,6 +30,41 @@ class ServiceDescriptor;
 namespace rpcz {
 class Closure;
 class RPC;
+struct RpcRequestContext;
+
+void FinalizeResponse(RpcRequestContext* context,
+                      const google::protobuf::Message& response);
+
+void FinalizeResponseWithError(RpcRequestContext* context,
+                               int application_error,
+                               const std::string& error_message);
+
+template <typename T>
+class Reply {
+ public:
+  explicit Reply(RpcRequestContext* context) :
+      context_(context), replied_(false) {
+  }
+
+  ~Reply() {}
+  
+  void operator()(const T& reply) {
+    assert(!replied_);
+    FinalizeResponse(context_, reply);
+    replied_ = true;
+  }
+
+  void Error(int application_error, const std::string& error_message="") {
+    assert(!replied_);
+    FinalizeResponseWithError(context_, application_error,
+                              error_message);
+    replied_ = true;
+  }
+
+ private:
+  RpcRequestContext* context_;
+  bool replied_;
+};
 
 class Service {
  public:
@@ -42,9 +79,7 @@ class Service {
 
   virtual void CallMethod(const google::protobuf::MethodDescriptor* method,
                           const google::protobuf::Message& request,
-                          google::protobuf::Message* response,
-                          RPC* rpc,
-                          Closure* done) = 0;
+                          RpcRequestContext* rpc_request_context) = 0;
 };
 }  // namespace
 #endif

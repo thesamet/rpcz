@@ -19,17 +19,22 @@
 #include "cpp/search.pb.h"
 #include "cpp/search.rpcz.h"
 
+using namespace std;
+
 namespace examples {
+
 class SearchServiceImpl : public SearchService {
 
   virtual void Search(
       const SearchRequest& request,
-      SearchResponse* response, rpcz::RPC* rpc, rpcz::Closure* done) {
-    std::cout << "Got request for '" << request.query() << "'" << std::endl;
-    response->add_results("result1 for " + request.query());
-    response->add_results("this is result2");
-    done->Run();
+      rpcz::Reply<SearchResponse> reply) {
+    cout << "Got request for '" << request.query() << "'" << endl;
+    SearchResponse response;
+    response.add_results("result1 for " + request.query());
+    response.add_results("this is result2");
+    reply(response);
   }
+
 };
 }  // namespace examples
 
@@ -38,8 +43,8 @@ int main() {
   rpcz::Server* server = application.CreateServer("tcp://*:5555");
   examples::SearchServiceImpl search_service;
   server->RegisterService(&search_service);
-  std::cout << "Serving requests on port 5555." << std::endl;
+  cout << "Serving requests on port 5555." << endl;
   server->Start();
   delete server;
-  std::cout << "Terminating!" << std::endl;
+  cout << "Terminating!" << endl;
 }

@@ -40,22 +40,21 @@
 #include "rpcz/rpcz.pb.h"
 
 namespace rpcz {
-namespace {
-struct RPCRequestContext {
+struct RpcRequestContext {
   RPC rpc;
   scoped_ptr<MessageVector> routes;
   scoped_ptr<zmq::message_t> request_id;
 
   scoped_ptr<google::protobuf::Message> request;
-  scoped_ptr<google::protobuf::Message> response;
+  FunctionServer::ReplyFunction reply;
 };
 
+namespace {
 // Sends the response back to a function server through the reply function.
 // Takes ownership of the provided payload message.
-void SendGenericResponse(RPCRequestContext& context,
+void SendGenericResponse(RpcRequestContext& context,
                          const GenericRPCResponse& generic_rpc_response,
-                         zmq::message_t* payload,
-                         FunctionServer::ReplyFunction reply) {
+                         zmq::message_t* payload) {
   size_t msg_size = generic_rpc_response.ByteSize();
   zmq::message_t* zmq_response_message = new zmq::message_t(msg_size);
   CHECK(generic_rpc_response.SerializeToArray(
@@ -65,11 +64,10 @@ void SendGenericResponse(RPCRequestContext& context,
   context.routes->push_back(context.request_id.release());
   context.routes->push_back(zmq_response_message);
   context.routes->push_back(payload);
-  reply(context.routes.get());
+  context.reply(context.routes.get());
 }
 
-void ReplyWithAppError(FunctionServer::ReplyFunction reply,
-                       RPCRequestContext& context,
+void ReplyWithAppError(RpcRequestContext& context,
                        int application_error,
                        const std::string& error="") {
   GenericRPCResponse response;
@@ -79,35 +77,39 @@ void ReplyWithAppError(FunctionServer::ReplyFunction reply,
     response.set_error(error);
   }
   SendGenericResponse(context,
-                      response, new zmq::message_t(), reply);
+                      response, new zmq::message_t());
 }
+}  // unnamed namespace 
 
-void FinalizeResponse(
-    RPCRequestContext *context_,
-    FunctionServer::ReplyFunction reply) {
-  scoped_ptr<RPCRequestContext> context(context_);
+void FinalizeResponse(RpcRequestContext* context,
+                      const google::protobuf::Message& response) {
   GenericRPCResponse generic_rpc_response;
-  int msg_size = context->response->ByteSize();
-  zmq::message_t* payload = NULL;
-  if (context->rpc.OK()) {
-    payload = new zmq::message_t(msg_size);
-    CHECK(context->response->SerializeToArray(payload->data(), msg_size));
-  } else {
-    generic_rpc_response.set_status(
-        context->rpc.GetStatus());
-    generic_rpc_response.set_application_error(
-        context->rpc.GetApplicationError());
-    std::string error_message(context->rpc.GetErrorMessage());
-    if (!error_message.empty()) {
-      generic_rpc_response.set_error(error_message);
-    }
-    payload = new zmq::message_t;
+  int msg_size = response.ByteSize();
+  scoped_ptr<zmq::message_t> payload(new zmq::message_t(msg_size));
+  if (!response.SerializeToArray(payload->data(), msg_size)) {
+    throw InvalidMessageError("Invalid response message");
   }
   SendGenericResponse(*context,
                       generic_rpc_response,
-                      payload, reply); 
+                      payload.release());
+  delete context;
 }
-}  // unnamed namespace 
+
+void FinalizeResponseWithError(RpcRequestContext* context,
+                               int application_error,
+                               const std::string& error_message) {
+  GenericRPCResponse generic_rpc_response;
+  zmq::message_t* payload = new zmq::message_t();
+  generic_rpc_response.set_status(GenericRPCResponse::APPLICATION_ERROR);
+  generic_rpc_response.set_application_error(application_error);
+  if (!error_message.empty()) {
+    generic_rpc_response.set_error(error_message);
+  }
+  SendGenericResponse(*context,
+                      generic_rpc_response,
+                      payload);
+  delete context;
+}
 
 class ServerImpl {
  public:
@@ -149,9 +151,10 @@ class ServerImpl {
                            FunctionServer::ReplyFunction reply) {
     // We are responsible to delete routes and data (and the pointers they
     // contain, so first wrap them in scoped_ptr's.
-    scoped_ptr<RPCRequestContext> context(CHECK_NOTNULL(new RPCRequestContext));
+    scoped_ptr<RpcRequestContext> context(CHECK_NOTNULL(new RpcRequestContext));
     context->routes.reset(routes_);
     context->request_id.reset(data_->release(0));
+    context->reply = reply;
 
     scoped_ptr<MessageVector> data(data_);
     CHECK_EQ(3u, data->size());
@@ -162,7 +165,7 @@ class ServerImpl {
     if (!generic_rpc_request.ParseFromArray(request.data(), request.size())) {
       // Handle bad RPC.
       DLOG(INFO) << "Received corrupt message.";
-      ReplyWithAppError(reply, *context,
+      ReplyWithAppError(*context,
                         GenericRPCResponse::INVALID_GENERIC_WRAPPER);
       return;
     };
@@ -171,8 +174,7 @@ class ServerImpl {
     if (service_it == service_map_.end()) {
       // Handle invalid service.
       DLOG(INFO) << "Invalid service: " << generic_rpc_request.service();
-      ReplyWithAppError(
-          reply, *context, GenericRPCResponse::UNKNOWN_SERVICE);
+      ReplyWithAppError(*context, GenericRPCResponse::UNKNOWN_SERVICE);
       return;
     }
     rpcz::Service* service = service_it->second;
@@ -182,28 +184,23 @@ class ServerImpl {
     if (descriptor == NULL) {
       // Invalid method name
       DLOG(INFO) << "Invalid method name: " << generic_rpc_request.method();
-      ReplyWithAppError(reply, *context, GenericRPCResponse::UNKNOWN_METHOD);
+      ReplyWithAppError(*context, GenericRPCResponse::UNKNOWN_METHOD);
       return;
     }
     context->request.reset(CHECK_NOTNULL(
         service->GetRequestPrototype(descriptor).New()));
-    context->response.reset(CHECK_NOTNULL(
-        service->GetResponsePrototype(descriptor).New()));
     if (!context->request->ParseFromArray(payload.data(), payload.size())) {
-      DLOG(INFO) << "Failed to parse payload.";
+      DLOG(INFO) << "Failed to parse request.";
       // Invalid proto;
-      ReplyWithAppError(reply, *context,
+      ReplyWithAppError(*context,
                         GenericRPCResponse::INVALID_MESSAGE);
       return;
     }
 
-    Closure *closure = NewCallback(
-        &FinalizeResponse, context.get(), reply);
     context->rpc.SetStatus(GenericRPCResponse::OK);
     service->CallMethod(descriptor,
                         *context->request,
-                        context->response.get(), &context->rpc, closure);
-    context.release();
+                        context.release());
   }
 
   void HandleRequest(zmq::socket_t* fs_socket) {

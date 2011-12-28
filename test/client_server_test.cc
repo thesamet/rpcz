@@ -35,47 +35,52 @@ using namespace std;
 
 namespace rpcz {
 
-void SuperDone(RPC* newrpc, Closure* done) {
+void SuperDone(SearchResponse *response,
+               RPC* newrpc, Reply<SearchResponse> reply) {
   delete newrpc;
-  done->Run();
+  reply(*response);
+  delete response;
 }
 
 class SearchServiceImpl : public SearchService {
  public:
   SearchServiceImpl(SearchService_Stub* backend)
-      : backend_(backend), delayed_closure_(NULL) {};
+      : backend_(backend), delayed_reply_(NULL) {};
 
   virtual void Search(
       const SearchRequest& request,
-      SearchResponse* response, rpcz::RPC* rpc, Closure* done) {
+      Reply<SearchResponse> reply) {
     if (request.query() == "foo") {
-      rpc->SetFailed(-4, "I don't like foo.");
+      reply.Error(-4, "I don't like foo.");
     } else if (request.query() == "bar") {
-      rpc->SetFailed(17, "I don't like bar.");
+      reply.Error(17, "I don't like bar.");
     } else if (request.query() == "delegate") {
       RPC* newrpc = new RPC;
+      SearchResponse* response = new SearchResponse;
       backend_->Search(request, response, newrpc, NewCallback(SuperDone,
+                                                              response,
                                                               newrpc,
-                                                              done));
+                                                              reply));
       return;
     } else if (request.query() == "timeout") {
       // We lose the request. We are going to reply only when we get a request
       // for the query "delayed".
-      delayed_closure_ = done;
+      delayed_reply_ = reply;
       return;
     } else if (request.query() == "delayed") {
-      ASSERT_TRUE(NULL != delayed_closure_);
-      delayed_closure_->Run();
+      delayed_reply_(SearchResponse());
+      reply(SearchResponse());
     } else {
-      response->add_results("The search for " + request.query());
-      response->add_results("is great");
+      SearchResponse response;
+      response.add_results("The search for " + request.query());
+      response.add_results("is great");
+      reply(response);
     }
-    done->Run();
   }
 
  private:
   scoped_ptr<SearchService_Stub> backend_;
-  Closure* delayed_closure_;
+  Reply<SearchResponse> delayed_reply_;
 };
 
 // For handling complex delegated queries.
@@ -83,9 +88,10 @@ class BackendSearchServiceImpl : public SearchService {
  public:
   virtual void Search(
       const SearchRequest&,
-      SearchResponse* response, rpcz::RPC*, Closure* done) {
-    response->add_results("42!");
-    done->Run();
+      Reply<SearchResponse> reply) {
+    SearchResponse response;
+    response.add_results("42!");
+    reply(response);
   }
 };
 

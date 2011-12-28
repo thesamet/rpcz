@@ -79,9 +79,7 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
     "const ::google::protobuf::ServiceDescriptor* GetDescriptor();\n"
     "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
     "                const ::google::protobuf::Message& request,\n"
-    "                ::google::protobuf::Message* response,\n"
-    "                ::rpcz::RPC* rpc,\n"
-    "                ::rpcz::Closure* done);\n"
+    "                ::rpcz::RpcRequestContext* RpcRequestContext);\n"
     "const ::google::protobuf::Message& GetRequestPrototype(\n"
     "  const ::google::protobuf::MethodDescriptor* method) const;\n"
     "const ::google::protobuf::Message& GetResponsePrototype(\n"
@@ -98,7 +96,7 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
 
 void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
   printer->Print(vars_,
-    "class $dllexport$$classname$_Stub : public $classname$ {\n"
+    "class $dllexport$$classname$_Stub {\n"
     " public:\n");
 
   printer->Indent();
@@ -134,16 +132,21 @@ void ServiceGenerator::GenerateMethodSignatures(
     sub_vars["output_type"] = ClassName(method->output_type(), true);
     sub_vars["virtual"] = virtual_or_non == VIRTUAL ? "virtual " : "";
 
-    printer->Print(sub_vars,
-      "$virtual$void $name$(const $input_type$& request,\n"
-      "                     $output_type$* response,\n"
-      "                     ::rpcz::RPC* rpc,\n"
-      "                     ::rpcz::Closure* done);\n");
     if (stub) {
       printer->Print(sub_vars,
                      "$virtual$void $name$(const $input_type$& request,\n"
                      "                     $output_type$* response,\n"
+                     "                     ::rpcz::RPC* rpc,"
+                     "                     ::rpcz::Closure* done);\n");
+      printer->Print(sub_vars,
+                     "$virtual$void $name$(const $input_type$& request,\n"
+                     "                     $output_type$* response,\n"
                      "                     long deadline_ms = -1);\n");
+    } else {
+      printer->Print(
+          sub_vars,
+          "$virtual$void $name$(const $input_type$& request,\n"
+          "                     ::rpcz::Reply< $output_type$> response);\n");
     }
   }
 }
@@ -207,12 +210,9 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
 
     printer->Print(sub_vars,
       "void $classname$::$name$(const $input_type$&,\n"
-      "                         $output_type$*,\n"
-      "                         ::rpcz::RPC* rpc,\n"
-      "                         ::rpcz::Closure* done) {\n"
-      "  rpc->SetFailed(::rpcz::GenericRPCResponse::METHOD_NOT_IMPLEMENTED,\n"
-      "                 \"Method $name$() not implemented.\");\n"
-      "  done->Run();\n"
+      "                         ::rpcz::Reply< $output_type$> reply) {\n"
+      "  reply.Error(::rpcz::GenericRPCResponse::METHOD_NOT_IMPLEMENTED,\n"
+      "              \"Method $name$() not implemented.\");\n"
       "}\n"
       "\n");
   }
@@ -222,9 +222,7 @@ void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
   printer->Print(vars_,
     "void $classname$::CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
     "                             const ::google::protobuf::Message& request,\n"
-    "                             ::google::protobuf::Message* response,\n"
-    "                             ::rpcz::RPC* rpc,\n"
-    "                             ::rpcz::Closure* done) {\n"
+    "                             ::rpcz::RpcRequestContext* context) {\n"
     "  GOOGLE_DCHECK_EQ(method->service(), $classname$_descriptor_);\n"
     "  switch(method->index()) {\n");
 
@@ -242,9 +240,7 @@ void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
       "    case $index$:\n"
       "      $name$(\n"
       "          *::google::protobuf::down_cast<const $input_type$*>(&request),\n"
-      "          ::google::protobuf::down_cast< $output_type$*>(response),\n"
-      "          rpc,\n"
-      "          done);\n"
+      "          ::rpcz::Reply< $output_type$>(context));\n"
       "      break;\n");
   }
 
@@ -310,7 +306,7 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
       "                              $output_type$* response,\n"
       "                              ::rpcz::RPC* rpc,\n"
       "                              ::rpcz::Closure* done) {\n"
-      "  channel_->CallMethod(descriptor()->method($index$),\n"
+      "  channel_->CallMethod($classname$::descriptor()->method($index$),\n"
       "                       request, response, rpc, done);\n"
       "}\n");
     printer->Print(sub_vars,
@@ -319,7 +315,7 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
       "                              long deadline_ms) {\n"
       "  ::rpcz::RPC rpc;\n"
       "  rpc.SetDeadlineMs(deadline_ms);\n"
-      "  channel_->CallMethod(descriptor()->method($index$),\n"
+      "  channel_->CallMethod($classname$::descriptor()->method($index$),\n"
       "                       request, response, &rpc, NULL);\n"
       "  rpc.Wait();\n"
       "  if (!rpc.OK()) {\n"
