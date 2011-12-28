@@ -122,6 +122,7 @@ cdef void PythonCallbackBridge(ClosureWrapper *closure_wrapper) with gil:
     Py_DECREF(<object>closure_wrapper.callback)
     Py_DECREF(<object>closure_wrapper.rpc)
     del closure_wrapper.response_str
+    print "bridge returnung"
     free(closure_wrapper)
 
 

@@ -2,11 +2,11 @@ import pywrapzrpc
 from zrpc import zrpc_pb2
 
 
-class RpcException(Exception):
+class RpcError(Exception):
   pass
 
 
-class RpcApplicationError(RpcException):
+class RpcApplicationError(RpcError):
   def __init__(self, application_error, message):
     self.application_error = application_error
     self.message = message
@@ -20,11 +20,11 @@ class RpcApplicationError(RpcException):
                              self.message)
 
 
-class RpcDeadlineExceeded(RpcException):
+class RpcDeadlineExceeded(RpcError):
   pass
 
 
-def RaiseRpcException(rpc):
+def RaiseRpcError(rpc):
   if rpc.status == zrpc_pb2.GenericRPCResponse.APPLICATION_ERROR:
     raise RpcApplicationError(rpc.application_error, rpc.error_message)
   else:
@@ -36,4 +36,4 @@ class RPC(pywrapzrpc.WrappedRPC):
   def wait(self):
     super(RPC, self).wait()
     if not self.ok():
-      RaiseRpcException(self)
+      RaiseRpcError(self)

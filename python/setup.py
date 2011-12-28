@@ -39,19 +39,20 @@ class gen_pyext(Command):
 
 
 setup(
-    name = "zrpc",
+    name = "rpcz",
     version = "0.9",
     author = "Nadav Samet",
     author_email = "nadavs@google.com",
     description = "An RPC implementation for Protocol Buffer based on ZeroMQ",
     license = "BSD",
     keywords = "protocol-buffers rpc zeromq 0mq",
-    packages=['zrpc', 'tests'],
+    packages=['rpcz', 'tests'],
+    url='http://code.google.com/p/rpcz/',
     long_description='',
     classifiers=[
         "Development Status :: 3 - Alpha",
-        "Topic :: Software Development :: Libraries :: Python Modules"
-        "License :: OSI Approved :: BSD License",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        "License :: OSI Approved :: Apache Software License",
     ],
     cmdclass = {
         'build': build,
