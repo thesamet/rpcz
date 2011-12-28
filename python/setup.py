@@ -60,7 +60,7 @@ setup(
     },
     ext_modules=[
         Extension("rpcz.pywraprpcz", ["cython/pywraprpcz.cpp"],
-                  libraries=["rpcz", "protobuf", "glog", "zmq"],
+                  libraries=["rpcz"],
                   include_dirs=['../include', '../build/src'],
                   library_dirs=['../build/deps/lib', '../build/src/rpcz'],
                   language='c++')

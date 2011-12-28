@@ -13,8 +13,6 @@ cdef extern from "Python.h":
     void                PyGILState_Release              (PyGILState_STATE) nogil
     void PyEval_InitThreads()
 
-PyEval_InitThreads()
-
 cdef extern from "rpcz/connection_manager.h" namespace "rpcz":
     cdef void InstallSignalHandler()
 
@@ -26,6 +24,10 @@ def Init():
     # InstallFailureSignalHandler()
     # InitGoogleLogging(sys.argv[0])
     InstallSignalHandler()
+    PyEval_InitThreads()
+
+
+Init()
 
 
 cdef extern from "string" namespace "std":
@@ -122,7 +124,6 @@ cdef void PythonCallbackBridge(ClosureWrapper *closure_wrapper) with gil:
     Py_DECREF(<object>closure_wrapper.callback)
     Py_DECREF(<object>closure_wrapper.rpc)
     del closure_wrapper.response_str
-    print "bridge returnung"
     free(closure_wrapper)
 
 

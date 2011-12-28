@@ -13,7 +13,4 @@ stub = search_rpcz.SearchService_Stub(
 
 request = search_pb2.SearchRequest()
 request.query = 'gold'
-rpc = rpcz.RPC()
-stub.Search(request, deadline_ms = 1000, rpc=rpc)
-rpc.wait()
-print "here"
+print stub.Search(request, deadline_ms=1000)
