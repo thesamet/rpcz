@@ -20,20 +20,20 @@
 #include "gtest/gtest.h"
 #include "zmq.hpp"
 
-#include "zrpc/callback.h"
-#include "zrpc/connection_manager.h"
-#include "zrpc/event_manager.h"
-#include "zrpc/rpc_channel.h"
-#include "zrpc/rpc.h"
-#include "zrpc/server.h"
-#include "zrpc/sync_event.h"
+#include "rpcz/callback.h"
+#include "rpcz/connection_manager.h"
+#include "rpcz/event_manager.h"
+#include "rpcz/rpc_channel.h"
+#include "rpcz/rpc.h"
+#include "rpcz/server.h"
+#include "rpcz/sync_event.h"
 
 #include "proto/search.pb.h"
-#include "proto/search.zrpc.h"
+#include "proto/search.rpcz.h"
 
 using namespace std;
 
-namespace zrpc {
+namespace rpcz {
 
 void SuperDone(RPC* newrpc, Closure* done) {
   delete newrpc;
@@ -47,7 +47,7 @@ class SearchServiceImpl : public SearchService {
 
   virtual void Search(
       const SearchRequest& request,
-      SearchResponse* response, zrpc::RPC* rpc, Closure* done) {
+      SearchResponse* response, rpcz::RPC* rpc, Closure* done) {
     if (request.query() == "foo") {
       rpc->SetFailed(-4, "I don't like foo.");
     } else if (request.query() == "bar") {
@@ -83,7 +83,7 @@ class BackendSearchServiceImpl : public SearchService {
  public:
   virtual void Search(
       const SearchRequest&,
-      SearchResponse* response, zrpc::RPC*, Closure* done) {
+      SearchResponse* response, rpcz::RPC*, Closure* done) {
     response->add_results("42!");
     done->Run();
   }

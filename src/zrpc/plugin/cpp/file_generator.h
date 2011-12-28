@@ -14,21 +14,21 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_FILE_GENERATOR_H
-#define ZRPC_FILE_GENERATOR_H
+#ifndef RPCZ_FILE_GENERATOR_H
+#define RPCZ_FILE_GENERATOR_H
 
 #include <string>
 #include <vector>
 
-#include "zrpc/plugin/cpp/zrpc_cpp_service.h"
+#include "rpcz/plugin/cpp/rpcz_cpp_service.h"
 
-namespace zrpc {
+namespace rpcz {
 namespace plugin {
 namespace cpp {
 class ServiceGenerator;
 }  // namespace cpp
 }  // namespace plugin
-}  // namespace zrpc
+}  // namespace rpcz
 
 namespace google {
 namespace protobuf {
@@ -41,7 +41,7 @@ class Printer;
 }
 }
 
-namespace zrpc {
+namespace rpcz {
 namespace plugin {
 namespace cpp {
 
@@ -71,5 +71,5 @@ class FileGenerator {
 
 }  // namespace cpp
 }  // namespace plugin
-}  // namespace zrpc
+}  // namespace rpcz
 #endif

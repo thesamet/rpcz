@@ -15,11 +15,11 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include "zmq.hpp"
-#include "zrpc/application.h"
-#include "zrpc/macros.h"
+#include "rpcz/application.h"
+#include "rpcz/macros.h"
 #include "gtest/gtest.h"
 
-namespace zrpc {
+namespace rpcz {
 
 class ApplicationTest : public ::testing::Test {
  protected:
@@ -43,4 +43,4 @@ TEST_F(ApplicationTest, InitializesWithProvidedZeroMQContext) {
   delete context;
 }
 
-}  // namespace zrpc
+}  // namespace rpcz

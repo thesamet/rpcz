@@ -14,16 +14,16 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_SERVER_H
-#define ZRPC_SERVER_H
+#ifndef RPCZ_SERVER_H
+#define RPCZ_SERVER_H
 
-#include "zrpc/macros.h"
+#include "rpcz/macros.h"
 
 namespace zmq {
 class socket_t;
 };
 
-namespace zrpc {
+namespace rpcz {
 class EventManager;
 class ServerImpl;
 class Service;

@@ -14,8 +14,8 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_LOGGING_H
-#define ZRPC_LOGGING_H
+#ifndef RPCZ_LOGGING_H
+#define RPCZ_LOGGING_H
 
 // Internal logging and checks. We piggyback on the facilities that come
 // from the protobuf library.
@@ -28,7 +28,7 @@
 #define CHECK_EQ GOOGLE_CHECK_EQ
 #define CHECK GOOGLE_CHECK
 #define CHECK_NOTNULL(val) \
-      ::zrpc::internal::CheckNotNull( \
+      ::rpcz::internal::CheckNotNull( \
           __FILE__, __LINE__, "'" #val "' Must be non NULL", (val))
 
 // Logs a debugging message to stderr. Does not have eny effect when compiling
@@ -41,7 +41,7 @@
   #define DLOG true ? (void)0 : LOG
 #endif
 
-namespace zrpc {
+namespace rpcz {
 namespace internal {
 // A small helper for CHECK_NOTNULL().
 template <typename T>
@@ -50,6 +50,6 @@ T* CheckNotNull(const char *file, int line, const char *names, T* t) {
   return t;
 }
 }  // namespace internal
-}  // namespace zrpc
+}  // namespace rpcz
 
 #endif

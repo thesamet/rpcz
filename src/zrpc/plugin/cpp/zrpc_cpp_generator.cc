@@ -22,10 +22,10 @@
 #include <utility>
 #include <vector>
 
-#include "zrpc/plugin/cpp/file_generator.h"
-#include "zrpc/plugin/cpp/zrpc_cpp_generator.h"
+#include "rpcz/plugin/cpp/file_generator.h"
+#include "rpcz/plugin/cpp/rpcz_cpp_generator.h"
 
-namespace zrpc {
+namespace rpcz {
 namespace plugin {
 namespace cpp {
 
@@ -33,8 +33,8 @@ using std::pair;
 using std::string;
 using std::vector;
 
-ZRpcCppGenerator::ZRpcCppGenerator() {}
-ZRpcCppGenerator::~ZRpcCppGenerator() {}
+RpczCppGenerator::RpczCppGenerator() {}
+RpczCppGenerator::~RpczCppGenerator() {}
 
 namespace {
 inline bool HasSuffixString(const string& str,
@@ -52,7 +52,7 @@ inline string StripSuffixString(const string& str, const string& suffix) {
 }
 }
 
-bool ZRpcCppGenerator::Generate(
+bool RpczCppGenerator::Generate(
     const ::google::protobuf::FileDescriptor* file,
     const string& parameter,
     ::google::protobuf::compiler::GeneratorContext* generator_context,
@@ -86,7 +86,7 @@ bool ZRpcCppGenerator::Generate(
 
 
   string basename = StripSuffixString(file->name(), ".proto");
-  basename.append(".zrpc");
+  basename.append(".rpcz");
 
   FileGenerator file_generator(file, dllexport_decl);
 
@@ -110,4 +110,4 @@ bool ZRpcCppGenerator::Generate(
 }
 }  // namespace cpp
 }  // namespace plugin
-}  // namespace zrpc
+}  // namespace rpcz

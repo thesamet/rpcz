@@ -18,12 +18,12 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_CALLBACK_H
-#define ZRPC_CALLBACK_H
+#ifndef RPCZ_CALLBACK_H
+#define RPCZ_CALLBACK_H
 
-#include "zrpc/macros.h"
+#include "rpcz/macros.h"
 
-namespace zrpc {
+namespace rpcz {
 
 class Closure {
  public:
@@ -707,5 +707,5 @@ inline Closure* NewPermanentCallback(Class* object, void (Class::*method)(Arg1,
       arg7);
 }
 
-} //namespace zrpc
+} //namespace rpcz
 #endif

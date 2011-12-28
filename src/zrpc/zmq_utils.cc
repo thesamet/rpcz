@@ -14,7 +14,7 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "zrpc/zmq_utils.h"
+#include "rpcz/zmq_utils.h"
 #include <stddef.h>
 #include <string.h>
 #include <zmq.h>
@@ -24,10 +24,10 @@
 
 #include "google/protobuf/stubs/common.h"
 #include "zmq.hpp"
-#include "zrpc/logging.h"
-#include "zrpc/macros.h"
+#include "rpcz/logging.h"
+#include "rpcz/macros.h"
 
-namespace zrpc {
+namespace rpcz {
 std::string MessageToString(zmq::message_t& msg) {
   return std::string((char*)msg.data(), msg.size());
 }

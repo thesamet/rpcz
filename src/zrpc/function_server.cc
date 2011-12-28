@@ -14,7 +14,7 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "zrpc/function_server.h"
+#include "rpcz/function_server.h"
 #include "boost/bind.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/thread/thread.hpp"
@@ -22,12 +22,12 @@
 #include "zmq.hpp"
 
 #include <string>
-#include "zrpc/callback.h"
-#include "zrpc/logging.h"
-#include "zrpc/reactor.h"
-#include "zrpc/zmq_utils.h"
+#include "rpcz/callback.h"
+#include "rpcz/logging.h"
+#include "rpcz/reactor.h"
+#include "rpcz/zmq_utils.h"
 
-namespace zrpc {
+namespace rpcz {
 
 namespace {
 const static char *kQuit = "QUIT";
@@ -253,4 +253,4 @@ void FunctionServerThreadEntryPoint(
   fst.Start();
 }
 }  // unnamed namespace
-}  // namespace zrpc
+}  // namespace rpcz

@@ -1,4 +1,4 @@
-package zrpc;
+package rpcz;
 
 message SearchRequest {
   required string query = 1;

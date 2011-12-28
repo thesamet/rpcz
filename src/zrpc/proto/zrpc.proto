@@ -1,4 +1,4 @@
-package zrpc;
+package rpcz;
 
 message GenericRPCRequest {
   optional int64 event_id = 1;

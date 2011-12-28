@@ -18,8 +18,8 @@
 //
 // Generates Python code for a given .proto file.
 
-#ifndef ZRPC_PLUGIN_PYTHON_ZRPC_PYTHON_GENERATOR_H
-#define ZRPC_PLUGIN_PYTHON_ZRPC_PYTHON_GENERATOR_H
+#ifndef RPCZ_PLUGIN_PYTHON_RPCZ_PYTHON_GENERATOR_H
+#define RPCZ_PLUGIN_PYTHON_RPCZ_PYTHON_GENERATOR_H
 
 #include <google/protobuf/compiler/code_generator.h>
 #include <google/protobuf/stubs/common.h>
@@ -39,7 +39,7 @@ class Printer;
 }  // namespace protobuf
 }  // namespace google
 
-namespace zrpc {
+namespace rpcz {
 namespace plugin {
 namespace python {
 
@@ -100,5 +100,5 @@ class FileGenerator {
 };
 }  // namespace python
 }  // namespace plugin
-}  // namespace zrpc
-#endif  // ZRPC_PLUGIN_PYTHON_ZRPC_PYTHON_GENERATOR_H
+}  // namespace rpcz
+#endif  // RPCZ_PLUGIN_PYTHON_RPCZ_PYTHON_GENERATOR_H

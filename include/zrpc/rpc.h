@@ -14,16 +14,16 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_RPC_H
-#define ZRPC_RPC_H
+#ifndef RPCZ_RPC_H
+#define RPCZ_RPC_H
 
 #include <stdexcept>
 #include <string>
 
-#include "zrpc/macros.h"
-#include "zrpc/zrpc.pb.h"
+#include "rpcz/macros.h"
+#include "rpcz/rpcz.pb.h"
 
-namespace zrpc {
+namespace rpcz {
 class SyncEvent;
 
 class RPC {

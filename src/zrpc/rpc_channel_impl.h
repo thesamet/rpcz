@@ -14,12 +14,12 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_RPC_CHANNEL_IMPL_H
-#define ZRPC_RPC_CHANNEL_IMPL_H
+#ifndef RPCZ_RPC_CHANNEL_IMPL_H
+#define RPCZ_RPC_CHANNEL_IMPL_H
 
-#include "zrpc/rpc_channel.h"
+#include "rpcz/rpc_channel.h"
 
-namespace zrpc {
+namespace rpcz {
 
 class Connection;
 class Closure;
@@ -60,5 +60,5 @@ class RpcChannelImpl: public RpcChannel {
   Connection* connection_;
   bool owns_connection_;
 };
-} // namespace zrpc
-#endif /* ZRPC_SIMPLE_RPC_CHANNEL_IMPL_H_ */
+} // namespace rpcz
+#endif /* RPCZ_SIMPLE_RPC_CHANNEL_IMPL_H_ */

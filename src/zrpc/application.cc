@@ -16,13 +16,13 @@
 
 #include <string>
 #include "zmq.hpp"
-#include "zrpc/application.h"
-#include "zrpc/event_manager.h"
-#include "zrpc/connection_manager.h"
-#include "zrpc/rpc_channel.h"
-#include "zrpc/server.h"
+#include "rpcz/application.h"
+#include "rpcz/event_manager.h"
+#include "rpcz/connection_manager.h"
+#include "rpcz/rpc_channel.h"
+#include "rpcz/server.h"
 
-namespace zrpc {
+namespace rpcz {
 
 Application::Application() {
   Init(Options());
@@ -67,4 +67,4 @@ Server* Application::CreateServer(const std::string& endpoint) {
   Server* server = new Server(socket, event_manager_.get(), true);
   return server;
 }
-}  // namespace zrpc
+}  // namespace rpcz

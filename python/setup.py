@@ -7,24 +7,24 @@ from distutils.extension import Extension
 from distutils.core import setup
 
 
-def _build_zrpc_proto():
-    compiler.generate_proto('../src/zrpc/proto/zrpc.proto', 'zrpc')
+def _build_rpcz_proto():
+    compiler.generate_proto('../src/rpcz/proto/rpcz.proto', 'rpcz')
 
 
 def _build_test_protos():
     compiler.generate_proto('../test/proto/search.proto', 'tests')
     compiler.generate_proto(
             '../test/proto/search.proto', 'tests',
-            with_plugin='python_zrpc', suffix='_zrpc.py',
+            with_plugin='python_rpcz', suffix='_rpcz.py',
             plugin_binary=
-                '../build/src/zrpc/plugin/python/protoc-gen-python_zrpc')
+                '../build/src/rpcz/plugin/python/protoc-gen-python_rpcz')
 
 
 class build(build_module.build):
     def run(self):
-        _build_zrpc_proto()
+        _build_rpcz_proto()
         _build_test_protos()
-        shutil.copy('compiler.py', 'zrpc')
+        shutil.copy('compiler.py', 'rpcz')
         build_module.build.run(self)
 
 
@@ -35,7 +35,7 @@ class gen_pyext(Command):
     def finalize_options(self):
         pass
     def run(self):
-        os.system('cython --cplus cython/pywrapzrpc.pyx')
+        os.system('cython --cplus cython/pywraprpcz.pyx')
 
 
 setup(
@@ -59,10 +59,10 @@ setup(
         'gen_pyext': gen_pyext,
     },
     ext_modules=[
-        Extension("zrpc.pywrapzrpc", ["cython/pywrapzrpc.cpp"],
-                  libraries=["zrpc", "protobuf", "glog", "zmq"],
+        Extension("rpcz.pywraprpcz", ["cython/pywraprpcz.cpp"],
+                  libraries=["rpcz", "protobuf", "glog", "zmq"],
                   include_dirs=['../include', '../build/src'],
-                  library_dirs=['../build/deps/lib', '../build/src/zrpc'],
+                  library_dirs=['../build/deps/lib', '../build/src/rpcz'],
                   language='c++')
     ],
 )

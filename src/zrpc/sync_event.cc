@@ -14,9 +14,9 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "zrpc/sync_event.h"
+#include "rpcz/sync_event.h"
 
-namespace zrpc {
+namespace rpcz {
 
 SyncEvent::SyncEvent() : ready_(false) {
 }
@@ -33,4 +33,4 @@ void SyncEvent::Signal() {
   ready_ = true;
   cond_.notify_all();
 }
-}  // namespace zrpc
+}  // namespace rpcz

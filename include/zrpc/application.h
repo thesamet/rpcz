@@ -14,24 +14,24 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_APPLICATION_H
-#define ZRPC_APPLICATION_H
+#ifndef RPCZ_APPLICATION_H
+#define RPCZ_APPLICATION_H
 
 #include <string>
-#include "zrpc/macros.h"
+#include "rpcz/macros.h"
 
 namespace zmq {
 class context_t; 
 }  // namespace zmq
 
-namespace zrpc {
+namespace rpcz {
 class ConnectionManager;
 class EventManager;
 class RpcChannel;
 class Server;
 
-// zrpc::Application is a simple interface that helps setting up a common
-// ZRPC client or server application.
+// rpcz::Application is a simple interface that helps setting up a common
+// RPCZ client or server application.
 class Application {
  public:
   class Options {
@@ -87,5 +87,5 @@ class Application {
   scoped_ptr<ConnectionManager> connection_manager_;
   scoped_ptr<EventManager> event_manager_;
 };
-}  // namespace zrpc
+}  // namespace rpcz
 #endif

@@ -14,7 +14,7 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "zrpc/server.h"
+#include "rpcz/server.h"
 #include <signal.h>
 #include <string.h>
 #include <sys/errno.h>
@@ -28,18 +28,18 @@
 #include "google/protobuf/stubs/common.h"
 #include "zmq.hpp"
 
-#include "zrpc/callback.h"
-#include "zrpc/connection_manager.h"
-#include "zrpc/function_server.h"
-#include "zrpc/logging.h"
-#include "zrpc/macros.h"
-#include "zrpc/rpc.h"
-#include "zrpc/reactor.h"
-#include "zrpc/service.h"
-#include "zrpc/zmq_utils.h"
-#include "zrpc/zrpc.pb.h"
+#include "rpcz/callback.h"
+#include "rpcz/connection_manager.h"
+#include "rpcz/function_server.h"
+#include "rpcz/logging.h"
+#include "rpcz/macros.h"
+#include "rpcz/rpc.h"
+#include "rpcz/reactor.h"
+#include "rpcz/service.h"
+#include "rpcz/zmq_utils.h"
+#include "rpcz/rpcz.pb.h"
 
-namespace zrpc {
+namespace rpcz {
 namespace {
 struct RPCRequestContext {
   RPC rpc;
@@ -175,7 +175,7 @@ class ServerImpl {
           reply, *context, GenericRPCResponse::UNKNOWN_SERVICE);
       return;
     }
-    zrpc::Service* service = service_it->second;
+    rpcz::Service* service = service_it->second;
     const ::google::protobuf::MethodDescriptor* descriptor =
         service->GetDescriptor()->FindMethodByName(
             generic_rpc_request.method());
@@ -223,7 +223,7 @@ class ServerImpl {
   zmq::socket_t* socket_;
   FunctionServer* function_server_;
   bool owns_socket_;
-  typedef std::map<std::string, zrpc::Service*> ServiceMap;
+  typedef std::map<std::string, rpcz::Service*> ServiceMap;
   ServiceMap service_map_;
   DISALLOW_COPY_AND_ASSIGN(ServerImpl);
 };
@@ -241,7 +241,7 @@ void Server::Start() {
   server_impl_->Start();
 }
 
-void Server::RegisterService(zrpc::Service *service) {
+void Server::RegisterService(rpcz::Service *service) {
   server_impl_->RegisterService(service);
 }
 }  // namespace

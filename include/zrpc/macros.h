@@ -14,12 +14,12 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_BASE_H
-#define ZRPC_BASE_H
+#ifndef RPCZ_BASE_H
+#define RPCZ_BASE_H
 
 #include "google/protobuf/stubs/common.h"
 
-namespace zrpc {
+namespace rpcz {
 using google::protobuf::scoped_ptr; 
 using google::protobuf::uint64;
 using google::protobuf::int64;
@@ -48,5 +48,5 @@ void DeleteContainerPairPointers(const IteratorType& begin,
     delete i->second;
   }
 }
-}  // namespace zrpc
+}  // namespace rpcz
 #endif

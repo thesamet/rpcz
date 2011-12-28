@@ -1,5 +1,5 @@
-import pywrapzrpc
-from zrpc import zrpc_pb2
+import pywraprpcz
+from rpcz import rpcz_pb2
 
 
 class RpcError(Exception):
@@ -25,14 +25,14 @@ class RpcDeadlineExceeded(RpcError):
 
 
 def RaiseRpcError(rpc):
-  if rpc.status == zrpc_pb2.GenericRPCResponse.APPLICATION_ERROR:
+  if rpc.status == rpcz_pb2.GenericRPCResponse.APPLICATION_ERROR:
     raise RpcApplicationError(rpc.application_error, rpc.error_message)
   else:
-    if rpc.status == zrpc_pb2.GenericRPCResponse.DEADLINE_EXCEEDED:
+    if rpc.status == rpcz_pb2.GenericRPCResponse.DEADLINE_EXCEEDED:
       raise RpcDeadlineExceeded()
 
 
-class RPC(pywrapzrpc.WrappedRPC):
+class RPC(pywraprpcz.WrappedRPC):
   def wait(self):
     super(RPC, self).wait()
     if not self.ok():

@@ -15,9 +15,9 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include <google/protobuf/compiler/plugin.h>
-#include "zrpc_cpp_generator.h"
+#include "rpcz_cpp_generator.h"
 
 int main(int argc, char* argv[]) {
-  zrpc::plugin::cpp::ZRpcCppGenerator generator;
+  rpcz::plugin::cpp::RpczCppGenerator generator;
   return google::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

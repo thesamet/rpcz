@@ -15,13 +15,13 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include "boost/lexical_cast.hpp"
-#include "zrpc/logging.h"
-#include "zrpc/reactor.h"
-#include "zrpc/rpc.h"
-#include "zrpc/sync_event.h"
-#include "zrpc/zrpc.pb.h"
+#include "rpcz/logging.h"
+#include "rpcz/reactor.h"
+#include "rpcz/rpc.h"
+#include "rpcz/sync_event.h"
+#include "rpcz/rpcz.pb.h"
 
-namespace zrpc {
+namespace rpcz {
 
 RPC::RPC()
     : status_(GenericRPCResponse::INACTIVE),
@@ -66,4 +66,4 @@ std::string RPC::ToString() const {
   }
   return result;
 }
-}  // namespace zrpc
+}  // namespace rpcz

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-from zrpc import compiler
+from rpcz import compiler
 
 compiler.generate_proto('../common/search.proto', '.')
 compiler.generate_proto(
         '../common/search.proto', '.',
-        with_plugin='python_zrpc', suffix='_zrpc.py',
+        with_plugin='python_rpcz', suffix='_rpcz.py',
         plugin_binary=
-            '../../build/src/zrpc/plugin/python/protoc-gen-python_zrpc')
+            '../../build/src/rpcz/plugin/python/protoc-gen-python_rpcz')

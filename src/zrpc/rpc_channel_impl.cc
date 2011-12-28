@@ -16,15 +16,15 @@
 
 #include "google/protobuf/descriptor.h"
 #include "zmq.hpp"
-#include "zrpc/rpc_channel_impl.h"
-#include "zrpc/connection_manager.h"
-#include "zrpc/callback.h"
-#include "zrpc/logging.h"
-#include "zrpc/remote_response.h"
-#include "zrpc/rpc.h"
-#include "zrpc/sync_event.h"
+#include "rpcz/rpc_channel_impl.h"
+#include "rpcz/connection_manager.h"
+#include "rpcz/callback.h"
+#include "rpcz/logging.h"
+#include "rpcz/remote_response.h"
+#include "rpcz/rpc.h"
+#include "rpcz/sync_event.h"
 
-namespace zrpc {
+namespace rpcz {
 
 RpcChannel* RpcChannel::Create(Connection* connection, bool owns_connection) {
   return new RpcChannelImpl(connection, owns_connection);
@@ -179,4 +179,4 @@ void RpcChannelImpl::HandleClientResponse(
   }
   delete response_context;
 }
-}  // namespace zrpc
+}  // namespace rpcz

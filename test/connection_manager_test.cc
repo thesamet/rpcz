@@ -21,16 +21,16 @@
 #include <stdio.h>
 #include <zmq.hpp>
 #include "gtest/gtest.h"
-#include "zrpc/callback.h"
-#include "zrpc/connection_manager.h"
-#include "zrpc/event_manager.h"
-#include "zrpc/macros.h"
-#include "zrpc/remote_response.h"
-#include "zrpc/sync_event.h"
-#include "zrpc/zmq_utils.h"
+#include "rpcz/callback.h"
+#include "rpcz/connection_manager.h"
+#include "rpcz/event_manager.h"
+#include "rpcz/macros.h"
+#include "rpcz/remote_response.h"
+#include "rpcz/sync_event.h"
+#include "rpcz/zmq_utils.h"
 
 
-namespace zrpc {
+namespace rpcz {
 
 class ConnectionManagerTest : public ::testing::Test {
  public:
@@ -179,4 +179,4 @@ TEST_F(ConnectionManagerTest, ManyClientsTest) {
   event.Wait();
   thread->join();
 }
-}  // namespace zrpc
+}  // namespace rpcz

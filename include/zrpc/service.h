@@ -14,8 +14,8 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_SERVICE_H
-#define ZRPC_SERVICE_H
+#ifndef RPCZ_SERVICE_H
+#define RPCZ_SERVICE_H
 
 namespace google {
 namespace protobuf {
@@ -25,7 +25,7 @@ class ServiceDescriptor;
 }  // namespace protobuf
 }  // namespace google
 
-namespace zrpc {
+namespace rpcz {
 class Closure;
 class RPC;
 

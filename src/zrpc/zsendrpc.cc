@@ -21,10 +21,10 @@
 #include "google/protobuf/compiler/importer.h"
 #include "google/protobuf/dynamic_message.h"
 #include "google/protobuf/text_format.h"
-#include "zrpc/application.h"
-#include "zrpc/rpc_channel.h"
-#include "zrpc/service.h"
-#include "zrpc/rpc.h"
+#include "rpcz/application.h"
+#include "rpcz/rpc_channel.h"
+#include "rpcz/service.h"
+#include "rpcz/rpc.h"
 
 using google::protobuf::DynamicMessageFactory;
 using google::protobuf::FileDescriptor;
@@ -47,7 +47,7 @@ std::vector<std::string> FLAGS_proto_path;
 
 static const char *PNAME = "zsendrpc";
 
-namespace zrpc {
+namespace rpcz {
 class ErrorCollector : public MultiFileErrorCollector {
   void AddError(
       const std::string& filename, int line, int /* column */ ,
@@ -154,7 +154,7 @@ int Run(std::vector<std::string> args) {
   }
   return 0;
 }
-}  // namespace zrpc
+}  // namespace rpcz
 
 void ShowUsage(const char* pname, const po::options_description& desc) {
   cout << pname << " Usage Instructions" << endl
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
   }
   std::vector<std::string> positional = po::collect_unrecognized(
       parsed.options, po::include_positional);
-  int retval = zrpc::Run(positional);
+  int retval = rpcz::Run(positional);
   if (retval == ARGV_ERROR) {
     retval = 1;
     ShowUsage(PNAME, desc);

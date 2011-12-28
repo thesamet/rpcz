@@ -14,20 +14,20 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_ZMQ_UTILS_H
-#define ZRPC_ZMQ_UTILS_H
+#ifndef RPCZ_ZMQ_UTILS_H
+#define RPCZ_ZMQ_UTILS_H
 
 #include <string>
 #include "boost/ptr_container/ptr_vector.hpp"
 #include "zmq.hpp"
-#include "zrpc/macros.h"
+#include "rpcz/macros.h"
 
 namespace zmq {
 class socket_t;
 class message_t;
 }
 
-namespace zrpc {
+namespace rpcz {
 
 class MessageVector {
  public:
@@ -102,5 +102,5 @@ inline T& InterpretMessage(Message& msg) {
   T &t = *static_cast<T*>(msg.data());
   return t;
 }
-}  // namespace zrpc
+}  // namespace rpcz
 #endif

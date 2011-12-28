@@ -3,7 +3,7 @@ set(CTEST_OUTPUT_ON_FAILURE 1)
 
 include_directories(${PROJECT_BINARY_DIR}/test)
 include_directories(${PROJECT_SOURCE_DIR}/src)
-add_library(zrpc_gtest_main zrpc_gtest_main.cc)
+add_library(rpcz_gtest_main rpcz_gtest_main.cc)
 
 include(build_deps)
 BuildDependency(
@@ -22,10 +22,10 @@ ExternalProject_Get_Property(GTest source_dir)
 include_directories(${source_dir}/include)    
 link_directories(${binary_dir})
 
-function(zrpc_test TESTNAME)
+function(rpcz_test TESTNAME)
   CMAKE_PARSE_ARGUMENTS(OPTIONS "" "" "SRCS;LIBS" ${ARGN})
   add_executable(${TESTNAME} ${OPTIONS_SRCS})
-  set(LIBS zrpc zrpc_gtest_main
+  set(LIBS rpcz rpcz_gtest_main
       gtest ${GLOG_LIBRARIES}
   )
   list(APPEND LIBS ${OPTIONS_LIBS})
@@ -33,9 +33,9 @@ function(zrpc_test TESTNAME)
   add_test(${TESTNAME} ${TESTNAME})
 endfunction()
 
-zrpc_test(function_server_test SRCS function_server_test.cc)
-zrpc_test(callback_test SRCS callback_test.cc)
-zrpc_test(connection_manager_test SRCS connection_manager_test.cc)
-zrpc_test(event_manager_test SRCS event_manager_test.cc)
-zrpc_test(client_server_test SRCS client_server_test.cc LIBS search_pb)
-zrpc_test(application_test SRCS application_test.cc LIBS search_pb)
+rpcz_test(function_server_test SRCS function_server_test.cc)
+rpcz_test(callback_test SRCS callback_test.cc)
+rpcz_test(connection_manager_test SRCS connection_manager_test.cc)
+rpcz_test(event_manager_test SRCS event_manager_test.cc)
+rpcz_test(client_server_test SRCS client_server_test.cc LIBS search_pb)
+rpcz_test(application_test SRCS application_test.cc LIBS search_pb)

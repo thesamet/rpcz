@@ -14,12 +14,12 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_REMOTE_RESPONSE_H
-#define ZRPC_REMOTE_RESPONSE_H
+#ifndef RPCZ_REMOTE_RESPONSE_H
+#define RPCZ_REMOTE_RESPONSE_H
 
-#include "zrpc/zmq_utils.h"
+#include "rpcz/zmq_utils.h"
 
-namespace zrpc {
+namespace rpcz {
 class RemoteResponse {
  public:
   RemoteResponse();
@@ -35,5 +35,5 @@ class RemoteResponse {
   Status status;
   MessageVector reply;
 };
-}  // namespace zrpc
+}  // namespace rpcz
 #endif

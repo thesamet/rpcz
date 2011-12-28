@@ -14,20 +14,20 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_ZRPC_H
-#define ZRPC_ZRPC_H
+#ifndef RPCZ_RPCZ_H
+#define RPCZ_RPCZ_H
 
 // Master include file
-#include "zrpc/application.h"
-#include "zrpc/callback.h"
-#include "zrpc/connection_manager.h"
-#include "zrpc/event_manager.h"
-#include "zrpc/macros.h"
-#include "zrpc/rpc.h"
-#include "zrpc/rpc_channel.h"
-#include "zrpc/server.h"
-#include "zrpc/service.h"
-#include "zrpc/sync_event.h"
+#include "rpcz/application.h"
+#include "rpcz/callback.h"
+#include "rpcz/connection_manager.h"
+#include "rpcz/event_manager.h"
+#include "rpcz/macros.h"
+#include "rpcz/rpc.h"
+#include "rpcz/rpc_channel.h"
+#include "rpcz/server.h"
+#include "rpcz/service.h"
+#include "rpcz/sync_event.h"
 
 // Two include files were intentionally left out since they rely on ZeroMQ
 // headers being around and probably most people will not need this low-level

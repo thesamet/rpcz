@@ -5,9 +5,9 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 message("-- Build type: ${CMAKE_BUILD_TYPE}")
 
-option(zrpc_build_tests "Build zrpc's tests." OFF)
-option(zrpc_build_static "Build static library." OFF)
-option(zrpc_build_examples "Build zrpc's examples." OFF)
+option(rpcz_build_tests "Build rpcz's tests." OFF)
+option(rpcz_build_static "Build static library." OFF)
+option(rpcz_build_examples "Build rpcz's examples." OFF)
 
 find_package(ProtobufPlugin REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread program_options)
@@ -27,14 +27,14 @@ set(CMAKE_OSX_ARCHITECTURES x86_64)
 
 add_subdirectory(src)
 
-if(zrpc_build_tests)
+if(rpcz_build_tests)
   enable_testing()
   add_subdirectory(test)
-endif(zrpc_build_tests)
+endif(rpcz_build_tests)
 
-if(zrpc_build_examples)
+if(rpcz_build_examples)
   add_subdirectory(examples/cpp)
-endif(zrpc_build_examples)
+endif(rpcz_build_examples)
 
-file(GLOB ZRPC_PUBLIC_HEADERS include/zrpc/*.h)
-install(FILES ${ZRPC_PUBLIC_HEADERS} DESTINATION include/zrpc)
+file(GLOB RPCZ_PUBLIC_HEADERS include/rpcz/*.h)
+install(FILES ${RPCZ_PUBLIC_HEADERS} DESTINATION include/rpcz)

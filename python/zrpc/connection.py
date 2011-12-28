@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from zrpc import zrpc_pb2
+from rpcz import rpcz_pb2
 
 
 class RPCException(Exception):

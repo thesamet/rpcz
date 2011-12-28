@@ -14,14 +14,14 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_RPC_CHANNEL_H
-#define ZRPC_RPC_CHANNEL_H
+#ifndef RPCZ_RPC_CHANNEL_H
+#define RPCZ_RPC_CHANNEL_H
 
 #include <string>
 #include <set>
 
 #include "google/protobuf/stubs/common.h"
-#include "zrpc/macros.h"
+#include "rpcz/macros.h"
 
 namespace google {
 namespace protobuf {
@@ -30,7 +30,7 @@ class MethodDescriptor;
 }  // namespace protobuf
 }  // namespace google
 
-namespace zrpc {
+namespace rpcz {
 class Closure;
 class Connection;
 class RPC;

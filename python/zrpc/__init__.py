@@ -1,5 +1,5 @@
 #!/usr/bin/env python
 
 import sys
-from zrpc.pywrapzrpc import Application
-from zrpc.rpc import RPC
+from rpcz.pywraprpcz import Application
+from rpcz.rpc import RPC

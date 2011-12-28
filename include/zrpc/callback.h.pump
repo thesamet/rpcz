@@ -15,12 +15,12 @@ $var max_args = 7
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_CALLBACK_H
-#define ZRPC_CALLBACK_H
+#ifndef RPCZ_CALLBACK_H
+#define RPCZ_CALLBACK_H
 
-#include "zrpc/macros.h"
+#include "rpcz/macros.h"
 
-namespace zrpc {
+namespace rpcz {
 
 class Closure {
  public:
@@ -139,5 +139,5 @@ $for arg [[, arg$arg]]);
 
 
 ]]
-} //namespace zrpc
+} //namespace rpcz
 #endif

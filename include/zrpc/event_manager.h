@@ -14,10 +14,10 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_EVENT_MANAGER_H
-#define ZRPC_EVENT_MANAGER_H
+#ifndef RPCZ_EVENT_MANAGER_H
+#define RPCZ_EVENT_MANAGER_H
 
-#include "zrpc/macros.h"
+#include "rpcz/macros.h"
 
 namespace zmq {
   class context_t;
@@ -27,7 +27,7 @@ template <typename T>
 class thread_specific_ptr;
 }  // namespace boost
 
-namespace zrpc {
+namespace rpcz {
 
 class Closure;
 class EventManagerController;
@@ -74,5 +74,5 @@ class EventManager {
   friend class Server;
   DISALLOW_COPY_AND_ASSIGN(EventManager);
 };
-}  // namespace zrpc
+}  // namespace rpcz
 #endif

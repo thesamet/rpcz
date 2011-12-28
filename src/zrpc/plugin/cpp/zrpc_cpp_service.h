@@ -14,8 +14,8 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_CPP_SERVICE_H
-#define ZRPC_CPP_SERVICE_H
+#ifndef RPCZ_CPP_SERVICE_H
+#define RPCZ_CPP_SERVICE_H
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/stubs/common.h>
@@ -36,7 +36,7 @@ namespace protobuf {
 }
 }
 
-namespace zrpc {
+namespace rpcz {
 namespace plugin {
 namespace cpp {
 
@@ -105,5 +105,5 @@ class ServiceGenerator {
 
 }  // namespace cpp
 }  // namespace plugin
-}  // namespace zrpc
-#endif  // ZRPC_CPP_SERVICE_H
+}  // namespace rpcz
+#endif  // RPCZ_CPP_SERVICE_H

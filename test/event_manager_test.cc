@@ -17,16 +17,16 @@
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
-#include "zrpc/event_manager.h"
+#include "rpcz/event_manager.h"
 #include <zmq.hpp>
-#include "zrpc/callback.h"
-#include "zrpc/macros.h"
-#include "zrpc/zmq_utils.h"
+#include "rpcz/callback.h"
+#include "rpcz/macros.h"
+#include "rpcz/zmq_utils.h"
 #include "gtest/gtest.h"
 #include "glog/logging.h"
 
 
-namespace zrpc {
+namespace rpcz {
 
 const static char* kEndpoint = "inproc://test";
 const static char* kReply = "gotit";
@@ -98,4 +98,4 @@ TEST_F(EventManagerTest, ProcessesManyCallbacksFromManyThreads) {
   }
   thread_group.join_all();
 }
-}  // namespace zrpc
+}  // namespace rpcz

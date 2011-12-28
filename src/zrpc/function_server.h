@@ -14,13 +14,13 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_FUNCTION_SERVER_H
-#define ZRPC_FUNCTION_SERVER_H
+#ifndef RPCZ_FUNCTION_SERVER_H
+#define RPCZ_FUNCTION_SERVER_H
 
 #include "boost/function.hpp"
 #include "zmq.hpp"
-#include "zrpc/macros.h"
-#include "zrpc/zmq_utils.h"
+#include "rpcz/macros.h"
+#include "rpcz/zmq_utils.h"
 
 namespace boost {
 class thread;
@@ -33,7 +33,7 @@ namespace zmq {
   class socket_t;
 }  // namespace zmq
 
-namespace zrpc {
+namespace rpcz {
 // A multithreaded function executor.
 class Reactor;
 
@@ -115,5 +115,5 @@ class FunctionServer {
   friend class FunctionServerThread;
   DISALLOW_COPY_AND_ASSIGN(FunctionServer);
 };
-}  // namespace zrpc
+}  // namespace rpcz
 #endif

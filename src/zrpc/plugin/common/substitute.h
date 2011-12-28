@@ -32,8 +32,8 @@
 // from google3/strings/substitute.h
 
 #include <string>
-#include <zrpc/plugin/common/common.h>
-#include <zrpc/plugin/common/strutil.h>
+#include <rpcz/plugin/common/common.h>
+#include <rpcz/plugin/common/strutil.h>
 
 #ifndef GOOGLE_PROTOBUF_STUBS_SUBSTITUTE_H_
 #define GOOGLE_PROTOBUF_STUBS_SUBSTITUTE_H_

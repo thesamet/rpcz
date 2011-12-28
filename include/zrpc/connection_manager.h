@@ -14,13 +14,13 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_CONNECTION_MANAGER_H
-#define ZRPC_CONNECTION_MANAGER_H
+#ifndef RPCZ_CONNECTION_MANAGER_H
+#define RPCZ_CONNECTION_MANAGER_H
 
 #include <string>
 
-#include "zrpc/event_manager.h"
-#include "zrpc/macros.h"
+#include "rpcz/event_manager.h"
+#include "rpcz/macros.h"
 
 namespace zmq {
 class context_t;
@@ -33,7 +33,7 @@ template <typename T>
 class thread_specific_ptr;
 }  // namespace boost
 
-namespace zrpc {
+namespace rpcz {
 class Closure;
 class Connection;
 class ConnectionThreadContext;
@@ -89,7 +89,7 @@ class ConnectionManager {
   DISALLOW_COPY_AND_ASSIGN(ConnectionManager);
 };
 
-// Installs a SIGINT and SIGTERM handlers that causes all ZRPC's event loops
+// Installs a SIGINT and SIGTERM handlers that causes all RPCZ's event loops
 // to cleanly quit.
 void InstallSignalHandler();
 
@@ -126,5 +126,5 @@ class Connection {
  private:
   DISALLOW_COPY_AND_ASSIGN(Connection);
 };
-}  // namespace zrpc
+}  // namespace rpcz
 #endif

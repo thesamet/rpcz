@@ -15,14 +15,14 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include <iostream>
-#include "zrpc/zrpc.h"
+#include "rpcz/rpcz.h"
 #include "cpp/search.pb.h"
-#include "cpp/search.zrpc.h"
+#include "cpp/search.rpcz.h"
 
 using namespace std;
 
 int main() {
-  zrpc::Application application;
+  rpcz::Application application;
   examples::SearchService_Stub search_stub(application.CreateRpcChannel(
           "tcp://localhost:5555"), true);
   examples::SearchRequest request;
@@ -33,7 +33,7 @@ int main() {
   try {
     search_stub.Search(request, &response, 1000);
     cout << response.DebugString() << endl;
-  } catch (zrpc::RpcError &e) {
+  } catch (rpcz::RpcError &e) {
     cout << "Error: " << e.what() << endl;;
   }
 }

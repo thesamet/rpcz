@@ -2,9 +2,9 @@
 
 import zmq
 import search_pb2
-import search_zrpc
-from zrpc import zrpc_pb2
-from zrpc import connection
+import search_rpcz
+from rpcz import rpcz_pb2
+from rpcz import connection
 
 
 def main():
@@ -12,7 +12,7 @@ def main():
     socket = context.socket(zmq.REQ);
     socket.connect('tcp://localhost:5555')
     conn = connection.BlockingConnection(socket)
-    f = search_zrpc.SearchService_Stub(conn)
+    f = search_rpcz.SearchService_Stub(conn)
     request = search_pb2.SearchRequest()
     request.query = "bar"
     for y in xrange(1000):

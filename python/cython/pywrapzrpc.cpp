@@ -230,22 +230,22 @@
 #define _USE_MATH_DEFINES
 #endif
 #include <math.h>
-#define __PYX_HAVE__pywrapzrpc
-#define __PYX_HAVE_API__pywrapzrpc
+#define __PYX_HAVE__pywraprpcz
+#define __PYX_HAVE_API__pywraprpcz
 #include "stdio.h"
 #include "pythread.h"
 #include "stdlib.h"
-#include "zrpc/connection_manager.h"
-#include "zrpc/callback.h"
+#include "rpcz/connection_manager.h"
+#include "rpcz/callback.h"
 #include "string"
-#include "zrpc/rpc.h"
-#include "zrpc/macros.h"
-#include "zrpc/rpc_channel.h"
+#include "rpcz/rpc.h"
+#include "rpcz/macros.h"
+#include "rpcz/rpc_channel.h"
 #include "ios"
 #include "new"
 #include "stdexcept"
 #include "typeinfo"
-#include "zrpc/zrpc.h"
+#include "rpcz/rpcz.h"
 #ifdef _OPENMP
 #include <omp.h>
 #endif /* _OPENMP */
@@ -328,67 +328,67 @@ static const char *__pyx_filename;
 
 
 static const char *__pyx_f[] = {
-  "pywrapzrpc.pyx",
+  "pywraprpcz.pyx",
   "bool.pxd",
   "complex.pxd",
 };
 
 /*--- Type declarations ---*/
-struct __pyx_obj_10pywrapzrpc_RpcChannel;
-struct __pyx_obj_10pywrapzrpc_Application;
-struct __pyx_obj_10pywrapzrpc_WrappedRPC;
-struct __pyx_t_10pywrapzrpc_ClosureWrapper;
+struct __pyx_obj_10pywraprpcz_RpcChannel;
+struct __pyx_obj_10pywraprpcz_Application;
+struct __pyx_obj_10pywraprpcz_WrappedRPC;
+struct __pyx_t_10pywraprpcz_ClosureWrapper;
 
-/* "pywrapzrpc.pyx":98
+/* "pywraprpcz.pyx":98
  * 
  * 
  * cdef struct ClosureWrapper:             # <<<<<<<<<<<<<<
  *     string* response_str
  *     void* response_obj
  */
-struct __pyx_t_10pywrapzrpc_ClosureWrapper {
+struct __pyx_t_10pywraprpcz_ClosureWrapper {
   std::string *response_str;
   void *response_obj;
   void *callback;
   void *rpc;
 };
 
-/* "pywrapzrpc.pyx":136
+/* "pywraprpcz.pyx":136
  * 
  * 
  * cdef class RpcChannel:             # <<<<<<<<<<<<<<
  *     cdef _RpcChannel *thisptr
  *     def __dealloc__(self):
  */
-struct __pyx_obj_10pywrapzrpc_RpcChannel {
+struct __pyx_obj_10pywraprpcz_RpcChannel {
   PyObject_HEAD
-  zrpc::RpcChannel *thisptr;
+  rpcz::RpcChannel *thisptr;
 };
 
 
-/* "pywrapzrpc.pyx":170
+/* "pywraprpcz.pyx":170
  * 
  * 
  * cdef class Application:             # <<<<<<<<<<<<<<
  *     cdef _Application *thisptr
  *     def __cinit__(self):
  */
-struct __pyx_obj_10pywrapzrpc_Application {
+struct __pyx_obj_10pywraprpcz_Application {
   PyObject_HEAD
-  zrpc::Application *thisptr;
+  rpcz::Application *thisptr;
 };
 
 
-/* "pywrapzrpc.pyx":68
+/* "pywraprpcz.pyx":68
  * 
  * 
  * cdef class WrappedRPC:             # <<<<<<<<<<<<<<
  *     cdef _RPC *thisptr
  *     def __cinit__(self):
  */
-struct __pyx_obj_10pywrapzrpc_WrappedRPC {
+struct __pyx_obj_10pywraprpcz_WrappedRPC {
   PyObject_HEAD
-  zrpc::RPC *thisptr;
+  rpcz::RPC *thisptr;
 };
 
 
@@ -644,18 +644,18 @@ static PyTypeObject *__pyx_ptype_7cpython_7complex_complex = 0;
 
 /* Module declarations from 'libc.stdlib' */
 
-/* Module declarations from 'pywrapzrpc' */
-static PyTypeObject *__pyx_ptype_10pywrapzrpc_WrappedRPC = 0;
-static PyTypeObject *__pyx_ptype_10pywrapzrpc_RpcChannel = 0;
-static PyTypeObject *__pyx_ptype_10pywrapzrpc_Application = 0;
-static std::string __pyx_f_10pywrapzrpc_make_string(PyObject *); /*proto*/
-static PyObject *__pyx_f_10pywrapzrpc_ptr_string_to_pystring(std::string *); /*proto*/
-static PyObject *__pyx_f_10pywrapzrpc_string_to_pystring(std::string); /*proto*/
-static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrpc_ClosureWrapper *); /*proto*/
-#define __Pyx_MODULE_NAME "pywrapzrpc"
-int __pyx_module_is_main_pywrapzrpc = 0;
+/* Module declarations from 'pywraprpcz' */
+static PyTypeObject *__pyx_ptype_10pywraprpcz_WrappedRPC = 0;
+static PyTypeObject *__pyx_ptype_10pywraprpcz_RpcChannel = 0;
+static PyTypeObject *__pyx_ptype_10pywraprpcz_Application = 0;
+static std::string __pyx_f_10pywraprpcz_make_string(PyObject *); /*proto*/
+static PyObject *__pyx_f_10pywraprpcz_ptr_string_to_pystring(std::string *); /*proto*/
+static PyObject *__pyx_f_10pywraprpcz_string_to_pystring(std::string); /*proto*/
+static void __pyx_f_10pywraprpcz_PythonCallbackBridge(struct __pyx_t_10pywraprpcz_ClosureWrapper *); /*proto*/
+#define __Pyx_MODULE_NAME "pywraprpcz"
+int __pyx_module_is_main_pywraprpcz = 0;
 
-/* Implementation of 'pywrapzrpc' */
+/* Implementation of 'pywraprpcz' */
 static PyObject *__pyx_builtin_KeyboardInterrupt;
 static PyObject *__pyx_builtin_TypeError;
 static char __pyx_k_1[] = "bridge returnung";
@@ -669,7 +669,7 @@ static char __pyx_k____test__[] = "__test__";
 static char __pyx_k__callback[] = "callback";
 static char __pyx_k__response[] = "response";
 static char __pyx_k__TypeError[] = "TypeError";
-static char __pyx_k__pywrapzrpc[] = "pywrapzrpc";
+static char __pyx_k__pywraprpcz[] = "pywraprpcz";
 static char __pyx_k__method_name[] = "method_name";
 static char __pyx_k__service_name[] = "service_name";
 static char __pyx_k__ParseFromString[] = "ParseFromString";
@@ -686,7 +686,7 @@ static PyObject *__pyx_n_s____main__;
 static PyObject *__pyx_n_s____test__;
 static PyObject *__pyx_n_s__callback;
 static PyObject *__pyx_n_s__method_name;
-static PyObject *__pyx_n_s__pywrapzrpc;
+static PyObject *__pyx_n_s__pywraprpcz;
 static PyObject *__pyx_n_s__request;
 static PyObject *__pyx_n_s__response;
 static PyObject *__pyx_n_s__rpc;
@@ -694,7 +694,7 @@ static PyObject *__pyx_n_s__service_name;
 static PyObject *__pyx_n_s__sys;
 static PyObject *__pyx_k_tuple_3;
 
-/* "pywrapzrpc.pyx":24
+/* "pywraprpcz.pyx":24
  *   pass
  * 
  * def Init():             # <<<<<<<<<<<<<<
@@ -702,9 +702,9 @@ static PyObject *__pyx_k_tuple_3;
  *     # InstallFailureSignalHandler()
  */
 
-static PyObject *__pyx_pf_10pywrapzrpc_Init(PyObject *__pyx_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static PyMethodDef __pyx_mdef_10pywrapzrpc_Init = {__Pyx_NAMESTR("Init"), (PyCFunction)__pyx_pf_10pywrapzrpc_Init, METH_NOARGS, __Pyx_DOCSTR(0)};
-static PyObject *__pyx_pf_10pywrapzrpc_Init(PyObject *__pyx_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pf_10pywraprpcz_Init(PyObject *__pyx_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyMethodDef __pyx_mdef_10pywraprpcz_Init = {__Pyx_NAMESTR("Init"), (PyCFunction)__pyx_pf_10pywraprpcz_Init, METH_NOARGS, __Pyx_DOCSTR(0)};
+static PyObject *__pyx_pf_10pywraprpcz_Init(PyObject *__pyx_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_v_sys = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
@@ -715,7 +715,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_Init(PyObject *__pyx_self, CYTHON_UNUSED 
   __Pyx_RefNannySetupContext("Init");
   __pyx_self = __pyx_self;
 
-  /* "pywrapzrpc.pyx":25
+  /* "pywraprpcz.pyx":25
  * 
  * def Init():
  *     import sys             # <<<<<<<<<<<<<<
@@ -727,20 +727,20 @@ static PyObject *__pyx_pf_10pywrapzrpc_Init(PyObject *__pyx_self, CYTHON_UNUSED 
   __pyx_v_sys = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "pywrapzrpc.pyx":28
+  /* "pywraprpcz.pyx":28
  *     # InstallFailureSignalHandler()
  *     # InitGoogleLogging(sys.argv[0])
  *     InstallSignalHandler()             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  zrpc::InstallSignalHandler();
+  rpcz::InstallSignalHandler();
 
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("pywrapzrpc.Init", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.Init", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_sys);
@@ -749,7 +749,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_Init(PyObject *__pyx_self, CYTHON_UNUSED 
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":40
+/* "pywraprpcz.pyx":40
  * 
  * 
  * cdef string make_string(pystring) except *:             # <<<<<<<<<<<<<<
@@ -757,7 +757,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_Init(PyObject *__pyx_self, CYTHON_UNUSED 
  * 
  */
 
-static std::string __pyx_f_10pywrapzrpc_make_string(PyObject *__pyx_v_pystring) {
+static std::string __pyx_f_10pywraprpcz_make_string(PyObject *__pyx_v_pystring) {
   std::string __pyx_r;
   __Pyx_RefNannyDeclarations
   char *__pyx_t_1;
@@ -767,7 +767,7 @@ static std::string __pyx_f_10pywrapzrpc_make_string(PyObject *__pyx_v_pystring) 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("make_string");
 
-  /* "pywrapzrpc.pyx":41
+  /* "pywraprpcz.pyx":41
  * 
  * cdef string make_string(pystring) except *:
  *     return string(pystring, len(pystring))             # <<<<<<<<<<<<<<
@@ -781,13 +781,13 @@ static std::string __pyx_f_10pywrapzrpc_make_string(PyObject *__pyx_v_pystring) 
 
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_AddTraceback("pywrapzrpc.make_string", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.make_string", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":44
+/* "pywraprpcz.pyx":44
  * 
  * 
  * cdef ptr_string_to_pystring(string* s):             # <<<<<<<<<<<<<<
@@ -795,7 +795,7 @@ static std::string __pyx_f_10pywrapzrpc_make_string(PyObject *__pyx_v_pystring) 
  * 
  */
 
-static PyObject *__pyx_f_10pywrapzrpc_ptr_string_to_pystring(std::string *__pyx_v_s) {
+static PyObject *__pyx_f_10pywraprpcz_ptr_string_to_pystring(std::string *__pyx_v_s) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -804,7 +804,7 @@ static PyObject *__pyx_f_10pywrapzrpc_ptr_string_to_pystring(std::string *__pyx_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("ptr_string_to_pystring");
 
-  /* "pywrapzrpc.pyx":45
+  /* "pywraprpcz.pyx":45
  * 
  * cdef ptr_string_to_pystring(string* s):
  *     return s.c_str()[:s.size()]             # <<<<<<<<<<<<<<
@@ -822,7 +822,7 @@ static PyObject *__pyx_f_10pywrapzrpc_ptr_string_to_pystring(std::string *__pyx_
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("pywrapzrpc.ptr_string_to_pystring", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.ptr_string_to_pystring", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -830,7 +830,7 @@ static PyObject *__pyx_f_10pywrapzrpc_ptr_string_to_pystring(std::string *__pyx_
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":48
+/* "pywraprpcz.pyx":48
  * 
  * 
  * cdef string_to_pystring(string s):             # <<<<<<<<<<<<<<
@@ -838,7 +838,7 @@ static PyObject *__pyx_f_10pywrapzrpc_ptr_string_to_pystring(std::string *__pyx_
  * 
  */
 
-static PyObject *__pyx_f_10pywrapzrpc_string_to_pystring(std::string __pyx_v_s) {
+static PyObject *__pyx_f_10pywraprpcz_string_to_pystring(std::string __pyx_v_s) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -847,7 +847,7 @@ static PyObject *__pyx_f_10pywrapzrpc_string_to_pystring(std::string __pyx_v_s) 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("string_to_pystring");
 
-  /* "pywrapzrpc.pyx":49
+  /* "pywraprpcz.pyx":49
  * 
  * cdef string_to_pystring(string s):
  *     return s.c_str()[:s.size()]             # <<<<<<<<<<<<<<
@@ -865,7 +865,7 @@ static PyObject *__pyx_f_10pywrapzrpc_string_to_pystring(std::string __pyx_v_s) 
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("pywrapzrpc.string_to_pystring", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.string_to_pystring", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -873,7 +873,7 @@ static PyObject *__pyx_f_10pywrapzrpc_string_to_pystring(std::string __pyx_v_s) 
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":70
+/* "pywraprpcz.pyx":70
  * cdef class WrappedRPC:
  *     cdef _RPC *thisptr
  *     def __cinit__(self):             # <<<<<<<<<<<<<<
@@ -881,8 +881,8 @@ static PyObject *__pyx_f_10pywrapzrpc_string_to_pystring(std::string __pyx_v_s) 
  *     def __dealloc__(self):
  */
 
-static int __pyx_pf_10pywrapzrpc_10WrappedRPC___cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_pf_10pywrapzrpc_10WrappedRPC___cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static int __pyx_pf_10pywraprpcz_10WrappedRPC___cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pf_10pywraprpcz_10WrappedRPC___cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__");
@@ -890,21 +890,21 @@ static int __pyx_pf_10pywrapzrpc_10WrappedRPC___cinit__(PyObject *__pyx_v_self, 
     __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 0, 0, PyTuple_GET_SIZE(__pyx_args)); return -1;}
   if (unlikely(__pyx_kwds) && unlikely(PyDict_Size(__pyx_kwds) > 0) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "__cinit__", 0))) return -1;
 
-  /* "pywrapzrpc.pyx":71
+  /* "pywraprpcz.pyx":71
  *     cdef _RPC *thisptr
  *     def __cinit__(self):
  *         self.thisptr = new _RPC()             # <<<<<<<<<<<<<<
  *     def __dealloc__(self):
  *         del self.thisptr
  */
-  ((struct __pyx_obj_10pywrapzrpc_WrappedRPC *)__pyx_v_self)->thisptr = new zrpc::RPC();
+  ((struct __pyx_obj_10pywraprpcz_WrappedRPC *)__pyx_v_self)->thisptr = new rpcz::RPC();
 
   __pyx_r = 0;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":72
+/* "pywraprpcz.pyx":72
  *     def __cinit__(self):
  *         self.thisptr = new _RPC()
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
@@ -912,24 +912,24 @@ static int __pyx_pf_10pywrapzrpc_10WrappedRPC___cinit__(PyObject *__pyx_v_self, 
  *     def ok(self):
  */
 
-static void __pyx_pf_10pywrapzrpc_10WrappedRPC_1__dealloc__(PyObject *__pyx_v_self); /*proto*/
-static void __pyx_pf_10pywrapzrpc_10WrappedRPC_1__dealloc__(PyObject *__pyx_v_self) {
+static void __pyx_pf_10pywraprpcz_10WrappedRPC_1__dealloc__(PyObject *__pyx_v_self); /*proto*/
+static void __pyx_pf_10pywraprpcz_10WrappedRPC_1__dealloc__(PyObject *__pyx_v_self) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__dealloc__");
 
-  /* "pywrapzrpc.pyx":73
+  /* "pywraprpcz.pyx":73
  *         self.thisptr = new _RPC()
  *     def __dealloc__(self):
  *         del self.thisptr             # <<<<<<<<<<<<<<
  *     def ok(self):
  *         return self.thisptr.OK()
  */
-  delete ((struct __pyx_obj_10pywrapzrpc_WrappedRPC *)__pyx_v_self)->thisptr;
+  delete ((struct __pyx_obj_10pywraprpcz_WrappedRPC *)__pyx_v_self)->thisptr;
 
   __Pyx_RefNannyFinishContext();
 }
 
-/* "pywrapzrpc.pyx":74
+/* "pywraprpcz.pyx":74
  *     def __dealloc__(self):
  *         del self.thisptr
  *     def ok(self):             # <<<<<<<<<<<<<<
@@ -937,8 +937,8 @@ static void __pyx_pf_10pywrapzrpc_10WrappedRPC_1__dealloc__(PyObject *__pyx_v_se
  *     def wait(self):
  */
 
-static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_2ok(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_2ok(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pf_10pywraprpcz_10WrappedRPC_2ok(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pf_10pywraprpcz_10WrappedRPC_2ok(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -947,7 +947,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_2ok(PyObject *__pyx_v_self, 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("ok");
 
-  /* "pywrapzrpc.pyx":75
+  /* "pywraprpcz.pyx":75
  *         del self.thisptr
  *     def ok(self):
  *         return self.thisptr.OK()             # <<<<<<<<<<<<<<
@@ -955,7 +955,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_2ok(PyObject *__pyx_v_self, 
  *         with nogil:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyBool_FromLong(((struct __pyx_obj_10pywrapzrpc_WrappedRPC *)__pyx_v_self)->thisptr->OK()); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 75; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyBool_FromLong(((struct __pyx_obj_10pywraprpcz_WrappedRPC *)__pyx_v_self)->thisptr->OK()); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 75; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -965,7 +965,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_2ok(PyObject *__pyx_v_self, 
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("pywrapzrpc.WrappedRPC.ok", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.WrappedRPC.ok", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -973,7 +973,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_2ok(PyObject *__pyx_v_self, 
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":76
+/* "pywraprpcz.pyx":76
  *     def ok(self):
  *         return self.thisptr.OK()
  *     def wait(self):             # <<<<<<<<<<<<<<
@@ -981,8 +981,8 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_2ok(PyObject *__pyx_v_self, 
  *             value = self.thisptr.Wait()
  */
 
-static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_3wait(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_3wait(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pf_10pywraprpcz_10WrappedRPC_3wait(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pf_10pywraprpcz_10WrappedRPC_3wait(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   int __pyx_v_value;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
@@ -993,7 +993,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_3wait(PyObject *__pyx_v_self
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("wait");
 
-  /* "pywrapzrpc.pyx":77
+  /* "pywraprpcz.pyx":77
  *         return self.thisptr.OK()
  *     def wait(self):
  *         with nogil:             # <<<<<<<<<<<<<<
@@ -1007,17 +1007,17 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_3wait(PyObject *__pyx_v_self
       Py_UNBLOCK_THREADS
       /*try:*/ {
 
-        /* "pywrapzrpc.pyx":78
+        /* "pywraprpcz.pyx":78
  *     def wait(self):
  *         with nogil:
  *             value = self.thisptr.Wait()             # <<<<<<<<<<<<<<
  *         if value == -1:
  *           raise KeyboardInterrupt()
  */
-        __pyx_v_value = ((struct __pyx_obj_10pywrapzrpc_WrappedRPC *)__pyx_v_self)->thisptr->Wait();
+        __pyx_v_value = ((struct __pyx_obj_10pywraprpcz_WrappedRPC *)__pyx_v_self)->thisptr->Wait();
       }
 
-      /* "pywrapzrpc.pyx":77
+      /* "pywraprpcz.pyx":77
  *         return self.thisptr.OK()
  *     def wait(self):
  *         with nogil:             # <<<<<<<<<<<<<<
@@ -1029,7 +1029,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_3wait(PyObject *__pyx_v_self
       }
   }
 
-  /* "pywrapzrpc.pyx":79
+  /* "pywraprpcz.pyx":79
  *         with nogil:
  *             value = self.thisptr.Wait()
  *         if value == -1:             # <<<<<<<<<<<<<<
@@ -1039,7 +1039,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_3wait(PyObject *__pyx_v_self
   __pyx_t_1 = (__pyx_v_value == -1);
   if (__pyx_t_1) {
 
-    /* "pywrapzrpc.pyx":80
+    /* "pywraprpcz.pyx":80
  *             value = self.thisptr.Wait()
  *         if value == -1:
  *           raise KeyboardInterrupt()             # <<<<<<<<<<<<<<
@@ -1059,7 +1059,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_3wait(PyObject *__pyx_v_self
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_AddTraceback("pywrapzrpc.WrappedRPC.wait", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.WrappedRPC.wait", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1067,7 +1067,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_3wait(PyObject *__pyx_v_self
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":83
+/* "pywraprpcz.pyx":83
  * 
  *     property status:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -1075,8 +1075,8 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_3wait(PyObject *__pyx_v_self
  *     property application_error:
  */
 
-static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_6status___get__(PyObject *__pyx_v_self); /*proto*/
-static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_6status___get__(PyObject *__pyx_v_self) {
+static PyObject *__pyx_pf_10pywraprpcz_10WrappedRPC_6status___get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pf_10pywraprpcz_10WrappedRPC_6status___get__(PyObject *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1085,7 +1085,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_6status___get__(PyObject *__
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__");
 
-  /* "pywrapzrpc.pyx":84
+  /* "pywraprpcz.pyx":84
  *     property status:
  *         def __get__(self):
  *             return self.thisptr.GetStatus()             # <<<<<<<<<<<<<<
@@ -1093,7 +1093,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_6status___get__(PyObject *__
  *         def __get__(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyInt_FromLong(((struct __pyx_obj_10pywrapzrpc_WrappedRPC *)__pyx_v_self)->thisptr->GetStatus()); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 84; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyInt_FromLong(((struct __pyx_obj_10pywraprpcz_WrappedRPC *)__pyx_v_self)->thisptr->GetStatus()); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 84; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -1103,7 +1103,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_6status___get__(PyObject *__
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("pywrapzrpc.WrappedRPC.status.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.WrappedRPC.status.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1111,7 +1111,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_6status___get__(PyObject *__
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":86
+/* "pywraprpcz.pyx":86
  *             return self.thisptr.GetStatus()
  *     property application_error:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -1119,8 +1119,8 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_6status___get__(PyObject *__
  *     property error_message:
  */
 
-static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_17application_error___get__(PyObject *__pyx_v_self); /*proto*/
-static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_17application_error___get__(PyObject *__pyx_v_self) {
+static PyObject *__pyx_pf_10pywraprpcz_10WrappedRPC_17application_error___get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pf_10pywraprpcz_10WrappedRPC_17application_error___get__(PyObject *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1129,7 +1129,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_17application_error___get__(
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__");
 
-  /* "pywrapzrpc.pyx":87
+  /* "pywraprpcz.pyx":87
  *     property application_error:
  *         def __get__(self):
  *             return self.thisptr.GetApplicationError()             # <<<<<<<<<<<<<<
@@ -1137,7 +1137,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_17application_error___get__(
  *         def __get__(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyInt_FromLong(((struct __pyx_obj_10pywrapzrpc_WrappedRPC *)__pyx_v_self)->thisptr->GetApplicationError()); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyInt_FromLong(((struct __pyx_obj_10pywraprpcz_WrappedRPC *)__pyx_v_self)->thisptr->GetApplicationError()); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -1147,7 +1147,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_17application_error___get__(
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("pywrapzrpc.WrappedRPC.application_error.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.WrappedRPC.application_error.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1155,7 +1155,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_17application_error___get__(
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":89
+/* "pywraprpcz.pyx":89
  *             return self.thisptr.GetApplicationError()
  *     property error_message:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -1163,8 +1163,8 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_17application_error___get__(
  *     property deadline_ms:
  */
 
-static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_13error_message___get__(PyObject *__pyx_v_self); /*proto*/
-static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_13error_message___get__(PyObject *__pyx_v_self) {
+static PyObject *__pyx_pf_10pywraprpcz_10WrappedRPC_13error_message___get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pf_10pywraprpcz_10WrappedRPC_13error_message___get__(PyObject *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1173,7 +1173,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_13error_message___get__(PyOb
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__");
 
-  /* "pywrapzrpc.pyx":90
+  /* "pywraprpcz.pyx":90
  *     property error_message:
  *         def __get__(self):
  *             return string_to_pystring(self.thisptr.GetErrorMessage())             # <<<<<<<<<<<<<<
@@ -1181,7 +1181,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_13error_message___get__(PyOb
  *         def __get__(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_10pywrapzrpc_string_to_pystring(((struct __pyx_obj_10pywrapzrpc_WrappedRPC *)__pyx_v_self)->thisptr->GetErrorMessage()); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 90; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_10pywraprpcz_string_to_pystring(((struct __pyx_obj_10pywraprpcz_WrappedRPC *)__pyx_v_self)->thisptr->GetErrorMessage()); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 90; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -1191,7 +1191,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_13error_message___get__(PyOb
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("pywrapzrpc.WrappedRPC.error_message.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.WrappedRPC.error_message.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1199,7 +1199,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_13error_message___get__(PyOb
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":92
+/* "pywraprpcz.pyx":92
  *             return string_to_pystring(self.thisptr.GetErrorMessage())
  *     property deadline_ms:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -1207,8 +1207,8 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_13error_message___get__(PyOb
  *         def __set__(self, value):
  */
 
-static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_11deadline_ms___get__(PyObject *__pyx_v_self); /*proto*/
-static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_11deadline_ms___get__(PyObject *__pyx_v_self) {
+static PyObject *__pyx_pf_10pywraprpcz_10WrappedRPC_11deadline_ms___get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pf_10pywraprpcz_10WrappedRPC_11deadline_ms___get__(PyObject *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1217,7 +1217,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_11deadline_ms___get__(PyObje
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__");
 
-  /* "pywrapzrpc.pyx":93
+  /* "pywraprpcz.pyx":93
  *     property deadline_ms:
  *         def __get__(self):
  *             return self.thisptr.GetDeadlineMs()             # <<<<<<<<<<<<<<
@@ -1225,7 +1225,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_11deadline_ms___get__(PyObje
  *             self.thisptr.SetDeadlineMs(value)
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyInt_FromLong(((struct __pyx_obj_10pywrapzrpc_WrappedRPC *)__pyx_v_self)->thisptr->GetDeadlineMs()); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyInt_FromLong(((struct __pyx_obj_10pywraprpcz_WrappedRPC *)__pyx_v_self)->thisptr->GetDeadlineMs()); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -1235,7 +1235,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_11deadline_ms___get__(PyObje
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("pywrapzrpc.WrappedRPC.deadline_ms.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.WrappedRPC.deadline_ms.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1243,7 +1243,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_11deadline_ms___get__(PyObje
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":94
+/* "pywraprpcz.pyx":94
  *         def __get__(self):
  *             return self.thisptr.GetDeadlineMs()
  *         def __set__(self, value):             # <<<<<<<<<<<<<<
@@ -1251,8 +1251,8 @@ static PyObject *__pyx_pf_10pywrapzrpc_10WrappedRPC_11deadline_ms___get__(PyObje
  * 
  */
 
-static int __pyx_pf_10pywrapzrpc_10WrappedRPC_11deadline_ms_1__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
-static int __pyx_pf_10pywrapzrpc_10WrappedRPC_11deadline_ms_1__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pf_10pywraprpcz_10WrappedRPC_11deadline_ms_1__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pf_10pywraprpcz_10WrappedRPC_11deadline_ms_1__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
@@ -1261,7 +1261,7 @@ static int __pyx_pf_10pywrapzrpc_10WrappedRPC_11deadline_ms_1__set__(PyObject *_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__");
 
-  /* "pywrapzrpc.pyx":95
+  /* "pywraprpcz.pyx":95
  *             return self.thisptr.GetDeadlineMs()
  *         def __set__(self, value):
  *             self.thisptr.SetDeadlineMs(value)             # <<<<<<<<<<<<<<
@@ -1269,19 +1269,19 @@ static int __pyx_pf_10pywrapzrpc_10WrappedRPC_11deadline_ms_1__set__(PyObject *_
  * 
  */
   __pyx_t_1 = __Pyx_PyInt_AsInt(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 95; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  ((struct __pyx_obj_10pywrapzrpc_WrappedRPC *)__pyx_v_self)->thisptr->SetDeadlineMs(__pyx_t_1);
+  ((struct __pyx_obj_10pywraprpcz_WrappedRPC *)__pyx_v_self)->thisptr->SetDeadlineMs(__pyx_t_1);
 
   __pyx_r = 0;
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_AddTraceback("pywrapzrpc.WrappedRPC.deadline_ms.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.WrappedRPC.deadline_ms.__set__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":111
+/* "pywraprpcz.pyx":111
  *     Closure* NewCallback(void(ClosureWrapper*) nogil, ClosureWrapper*)
  * 
  * cdef void PythonCallbackBridge(ClosureWrapper *closure_wrapper) with gil:             # <<<<<<<<<<<<<<
@@ -1289,7 +1289,7 @@ static int __pyx_pf_10pywrapzrpc_10WrappedRPC_11deadline_ms_1__set__(PyObject *_
  *     # ran from a non-python thread.
  */
 
-static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrpc_ClosureWrapper *__pyx_v_closure_wrapper) {
+static void __pyx_f_10pywraprpcz_PythonCallbackBridge(struct __pyx_t_10pywraprpcz_ClosureWrapper *__pyx_v_closure_wrapper) {
   PyObject *__pyx_v_response = NULL;
   PyObject *__pyx_v_callback = NULL;
   PyObject *__pyx_v_rpc = NULL;
@@ -1306,7 +1306,7 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
   #endif
   __Pyx_RefNannySetupContext("PythonCallbackBridge");
 
-  /* "pywrapzrpc.pyx":114
+  /* "pywraprpcz.pyx":114
  *     # We don't really have the GIL when this function is called, and it is
  *     # ran from a non-python thread.
  *     (<object>closure_wrapper.response_obj).ParseFromString(             # <<<<<<<<<<<<<<
@@ -1316,14 +1316,14 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
   __pyx_t_1 = PyObject_GetAttr(((PyObject *)__pyx_v_closure_wrapper->response_obj), __pyx_n_s__ParseFromString); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
 
-  /* "pywrapzrpc.pyx":115
+  /* "pywraprpcz.pyx":115
  *     # ran from a non-python thread.
  *     (<object>closure_wrapper.response_obj).ParseFromString(
  *             ptr_string_to_pystring(closure_wrapper.response_str))             # <<<<<<<<<<<<<<
  *     response = <object>closure_wrapper.response_obj;
  *     callback = <object>closure_wrapper.callback
  */
-  __pyx_t_2 = __pyx_f_10pywrapzrpc_ptr_string_to_pystring(__pyx_v_closure_wrapper->response_str); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 115; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __pyx_f_10pywraprpcz_ptr_string_to_pystring(__pyx_v_closure_wrapper->response_str); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 115; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(((PyObject *)__pyx_t_3));
@@ -1336,7 +1336,7 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
   __Pyx_DECREF(((PyObject *)__pyx_t_3)); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "pywrapzrpc.pyx":116
+  /* "pywraprpcz.pyx":116
  *     (<object>closure_wrapper.response_obj).ParseFromString(
  *             ptr_string_to_pystring(closure_wrapper.response_str))
  *     response = <object>closure_wrapper.response_obj;             # <<<<<<<<<<<<<<
@@ -1346,7 +1346,7 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
   __Pyx_INCREF(((PyObject *)__pyx_v_closure_wrapper->response_obj));
   __pyx_v_response = ((PyObject *)__pyx_v_closure_wrapper->response_obj);
 
-  /* "pywrapzrpc.pyx":117
+  /* "pywraprpcz.pyx":117
  *             ptr_string_to_pystring(closure_wrapper.response_str))
  *     response = <object>closure_wrapper.response_obj;
  *     callback = <object>closure_wrapper.callback             # <<<<<<<<<<<<<<
@@ -1356,7 +1356,7 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
   __Pyx_INCREF(((PyObject *)__pyx_v_closure_wrapper->callback));
   __pyx_v_callback = ((PyObject *)__pyx_v_closure_wrapper->callback);
 
-  /* "pywrapzrpc.pyx":118
+  /* "pywraprpcz.pyx":118
  *     response = <object>closure_wrapper.response_obj;
  *     callback = <object>closure_wrapper.callback
  *     rpc = <object>closure_wrapper.rpc             # <<<<<<<<<<<<<<
@@ -1366,7 +1366,7 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
   __Pyx_INCREF(((PyObject *)__pyx_v_closure_wrapper->rpc));
   __pyx_v_rpc = ((PyObject *)__pyx_v_closure_wrapper->rpc);
 
-  /* "pywrapzrpc.pyx":119
+  /* "pywraprpcz.pyx":119
  *     callback = <object>closure_wrapper.callback
  *     rpc = <object>closure_wrapper.rpc
  *     if callback is not None:             # <<<<<<<<<<<<<<
@@ -1376,7 +1376,7 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
   __pyx_t_4 = (__pyx_v_callback != Py_None);
   if (__pyx_t_4) {
 
-    /* "pywrapzrpc.pyx":120
+    /* "pywraprpcz.pyx":120
  *     rpc = <object>closure_wrapper.rpc
  *     if callback is not None:
  *         callback(response, rpc)             # <<<<<<<<<<<<<<
@@ -1399,7 +1399,7 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
   }
   __pyx_L3:;
 
-  /* "pywrapzrpc.pyx":121
+  /* "pywraprpcz.pyx":121
  *     if callback is not None:
  *         callback(response, rpc)
  *     Py_DECREF(<object>closure_wrapper.response_obj)             # <<<<<<<<<<<<<<
@@ -1411,7 +1411,7 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
   Py_DECREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "pywrapzrpc.pyx":122
+  /* "pywraprpcz.pyx":122
  *         callback(response, rpc)
  *     Py_DECREF(<object>closure_wrapper.response_obj)
  *     Py_DECREF(<object>closure_wrapper.callback)             # <<<<<<<<<<<<<<
@@ -1423,7 +1423,7 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
   Py_DECREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "pywrapzrpc.pyx":123
+  /* "pywraprpcz.pyx":123
  *     Py_DECREF(<object>closure_wrapper.response_obj)
  *     Py_DECREF(<object>closure_wrapper.callback)
  *     Py_DECREF(<object>closure_wrapper.rpc)             # <<<<<<<<<<<<<<
@@ -1435,7 +1435,7 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
   Py_DECREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "pywrapzrpc.pyx":124
+  /* "pywraprpcz.pyx":124
  *     Py_DECREF(<object>closure_wrapper.callback)
  *     Py_DECREF(<object>closure_wrapper.rpc)
  *     del closure_wrapper.response_str             # <<<<<<<<<<<<<<
@@ -1444,7 +1444,7 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
  */
   delete __pyx_v_closure_wrapper->response_str;
 
-  /* "pywrapzrpc.pyx":125
+  /* "pywraprpcz.pyx":125
  *     Py_DECREF(<object>closure_wrapper.rpc)
  *     del closure_wrapper.response_str
  *     print "bridge returnung"             # <<<<<<<<<<<<<<
@@ -1453,7 +1453,7 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
  */
   if (__Pyx_PrintOne(0, ((PyObject *)__pyx_kp_s_1)) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 125; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "pywrapzrpc.pyx":126
+  /* "pywraprpcz.pyx":126
  *     del closure_wrapper.response_str
  *     print "bridge returnung"
  *     free(closure_wrapper)             # <<<<<<<<<<<<<<
@@ -1467,7 +1467,7 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
   __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_WriteUnraisable("pywrapzrpc.PythonCallbackBridge", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_WriteUnraisable("pywraprpcz.PythonCallbackBridge", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_response);
   __Pyx_XDECREF(__pyx_v_callback);
@@ -1478,7 +1478,7 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
   #endif
 }
 
-/* "pywrapzrpc.pyx":138
+/* "pywraprpcz.pyx":138
  * cdef class RpcChannel:
  *     cdef _RpcChannel *thisptr
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
@@ -1486,24 +1486,24 @@ static void __pyx_f_10pywrapzrpc_PythonCallbackBridge(struct __pyx_t_10pywrapzrp
  *     def __init__(self):
  */
 
-static void __pyx_pf_10pywrapzrpc_10RpcChannel___dealloc__(PyObject *__pyx_v_self); /*proto*/
-static void __pyx_pf_10pywrapzrpc_10RpcChannel___dealloc__(PyObject *__pyx_v_self) {
+static void __pyx_pf_10pywraprpcz_10RpcChannel___dealloc__(PyObject *__pyx_v_self); /*proto*/
+static void __pyx_pf_10pywraprpcz_10RpcChannel___dealloc__(PyObject *__pyx_v_self) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__dealloc__");
 
-  /* "pywrapzrpc.pyx":139
+  /* "pywraprpcz.pyx":139
  *     cdef _RpcChannel *thisptr
  *     def __dealloc__(self):
  *         del self.thisptr             # <<<<<<<<<<<<<<
  *     def __init__(self):
  *         raise TypeError("Use Application.CreateRpcChannel to create a "
  */
-  delete ((struct __pyx_obj_10pywrapzrpc_RpcChannel *)__pyx_v_self)->thisptr;
+  delete ((struct __pyx_obj_10pywraprpcz_RpcChannel *)__pyx_v_self)->thisptr;
 
   __Pyx_RefNannyFinishContext();
 }
 
-/* "pywrapzrpc.pyx":140
+/* "pywraprpcz.pyx":140
  *     def __dealloc__(self):
  *         del self.thisptr
  *     def __init__(self):             # <<<<<<<<<<<<<<
@@ -1511,8 +1511,8 @@ static void __pyx_pf_10pywrapzrpc_10RpcChannel___dealloc__(PyObject *__pyx_v_sel
  *                         "RpcChannel.")
  */
 
-static int __pyx_pf_10pywrapzrpc_10RpcChannel_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_pf_10pywrapzrpc_10RpcChannel_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static int __pyx_pf_10pywraprpcz_10RpcChannel_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pf_10pywraprpcz_10RpcChannel_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1524,7 +1524,7 @@ static int __pyx_pf_10pywrapzrpc_10RpcChannel_1__init__(PyObject *__pyx_v_self, 
     __Pyx_RaiseArgtupleInvalid("__init__", 1, 0, 0, PyTuple_GET_SIZE(__pyx_args)); return -1;}
   if (unlikely(__pyx_kwds) && unlikely(PyDict_Size(__pyx_kwds) > 0) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "__init__", 0))) return -1;
 
-  /* "pywrapzrpc.pyx":141
+  /* "pywraprpcz.pyx":141
  *         del self.thisptr
  *     def __init__(self):
  *         raise TypeError("Use Application.CreateRpcChannel to create a "             # <<<<<<<<<<<<<<
@@ -1541,14 +1541,14 @@ static int __pyx_pf_10pywrapzrpc_10RpcChannel_1__init__(PyObject *__pyx_v_self, 
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("pywrapzrpc.RpcChannel.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.RpcChannel.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":143
+/* "pywraprpcz.pyx":143
  *         raise TypeError("Use Application.CreateRpcChannel to create a "
  *                         "RpcChannel.")
  *     def CallMethod(self, service_name, method_name,             # <<<<<<<<<<<<<<
@@ -1556,15 +1556,15 @@ static int __pyx_pf_10pywrapzrpc_10RpcChannel_1__init__(PyObject *__pyx_v_self, 
  *         cdef ClosureWrapper* closure_wrapper = <ClosureWrapper*>malloc(
  */
 
-static PyObject *__pyx_pf_10pywrapzrpc_10RpcChannel_2CallMethod(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pf_10pywrapzrpc_10RpcChannel_2CallMethod(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pf_10pywraprpcz_10RpcChannel_2CallMethod(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pf_10pywraprpcz_10RpcChannel_2CallMethod(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_service_name = 0;
   PyObject *__pyx_v_method_name = 0;
   PyObject *__pyx_v_request = 0;
   PyObject *__pyx_v_response = 0;
-  struct __pyx_obj_10pywrapzrpc_WrappedRPC *__pyx_v_rpc = 0;
+  struct __pyx_obj_10pywraprpcz_WrappedRPC *__pyx_v_rpc = 0;
   PyObject *__pyx_v_callback = 0;
-  struct __pyx_t_10pywrapzrpc_ClosureWrapper *__pyx_v_closure_wrapper;
+  struct __pyx_t_10pywraprpcz_ClosureWrapper *__pyx_v_closure_wrapper;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   std::string __pyx_t_1;
@@ -1645,29 +1645,29 @@ static PyObject *__pyx_pf_10pywrapzrpc_10RpcChannel_2CallMethod(PyObject *__pyx_
     __pyx_v_method_name = values[1];
     __pyx_v_request = values[2];
     __pyx_v_response = values[3];
-    __pyx_v_rpc = ((struct __pyx_obj_10pywrapzrpc_WrappedRPC *)values[4]);
+    __pyx_v_rpc = ((struct __pyx_obj_10pywraprpcz_WrappedRPC *)values[4]);
     __pyx_v_callback = values[5];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("CallMethod", 1, 6, 6, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 143; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("pywrapzrpc.RpcChannel.CallMethod", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.RpcChannel.CallMethod", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_rpc), __pyx_ptype_10pywrapzrpc_WrappedRPC, 1, "rpc", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_rpc), __pyx_ptype_10pywraprpcz_WrappedRPC, 1, "rpc", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 144; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "pywrapzrpc.pyx":146
+  /* "pywraprpcz.pyx":146
  *                    request, response, WrappedRPC rpc, callback):
  *         cdef ClosureWrapper* closure_wrapper = <ClosureWrapper*>malloc(
  *                 sizeof(ClosureWrapper))             # <<<<<<<<<<<<<<
  *         closure_wrapper.response_str = new string()
  *         closure_wrapper.response_obj = <void*>response
  */
-  __pyx_v_closure_wrapper = ((struct __pyx_t_10pywrapzrpc_ClosureWrapper *)malloc((sizeof(struct __pyx_t_10pywrapzrpc_ClosureWrapper))));
+  __pyx_v_closure_wrapper = ((struct __pyx_t_10pywraprpcz_ClosureWrapper *)malloc((sizeof(struct __pyx_t_10pywraprpcz_ClosureWrapper))));
 
-  /* "pywrapzrpc.pyx":147
+  /* "pywraprpcz.pyx":147
  *         cdef ClosureWrapper* closure_wrapper = <ClosureWrapper*>malloc(
  *                 sizeof(ClosureWrapper))
  *         closure_wrapper.response_str = new string()             # <<<<<<<<<<<<<<
@@ -1676,7 +1676,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10RpcChannel_2CallMethod(PyObject *__pyx_
  */
   __pyx_v_closure_wrapper->response_str = new std::string();
 
-  /* "pywrapzrpc.pyx":148
+  /* "pywraprpcz.pyx":148
  *                 sizeof(ClosureWrapper))
  *         closure_wrapper.response_str = new string()
  *         closure_wrapper.response_obj = <void*>response             # <<<<<<<<<<<<<<
@@ -1685,7 +1685,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10RpcChannel_2CallMethod(PyObject *__pyx_
  */
   __pyx_v_closure_wrapper->response_obj = ((void *)__pyx_v_response);
 
-  /* "pywrapzrpc.pyx":149
+  /* "pywraprpcz.pyx":149
  *         closure_wrapper.response_str = new string()
  *         closure_wrapper.response_obj = <void*>response
  *         closure_wrapper.callback = <void*>callback             # <<<<<<<<<<<<<<
@@ -1694,7 +1694,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10RpcChannel_2CallMethod(PyObject *__pyx_
  */
   __pyx_v_closure_wrapper->callback = ((void *)__pyx_v_callback);
 
-  /* "pywrapzrpc.pyx":150
+  /* "pywraprpcz.pyx":150
  *         closure_wrapper.response_obj = <void*>response
  *         closure_wrapper.callback = <void*>callback
  *         closure_wrapper.rpc = <void*>rpc             # <<<<<<<<<<<<<<
@@ -1703,7 +1703,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10RpcChannel_2CallMethod(PyObject *__pyx_
  */
   __pyx_v_closure_wrapper->rpc = ((void *)__pyx_v_rpc);
 
-  /* "pywrapzrpc.pyx":151
+  /* "pywraprpcz.pyx":151
  *         closure_wrapper.callback = <void*>callback
  *         closure_wrapper.rpc = <void*>rpc
  *         Py_INCREF(response)             # <<<<<<<<<<<<<<
@@ -1712,7 +1712,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10RpcChannel_2CallMethod(PyObject *__pyx_
  */
   Py_INCREF(__pyx_v_response);
 
-  /* "pywrapzrpc.pyx":152
+  /* "pywraprpcz.pyx":152
  *         closure_wrapper.rpc = <void*>rpc
  *         Py_INCREF(response)
  *         Py_INCREF(callback)             # <<<<<<<<<<<<<<
@@ -1721,7 +1721,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10RpcChannel_2CallMethod(PyObject *__pyx_
  */
   Py_INCREF(__pyx_v_callback);
 
-  /* "pywrapzrpc.pyx":153
+  /* "pywraprpcz.pyx":153
  *         Py_INCREF(response)
  *         Py_INCREF(callback)
  *         Py_INCREF(rpc)             # <<<<<<<<<<<<<<
@@ -1730,25 +1730,25 @@ static PyObject *__pyx_pf_10pywrapzrpc_10RpcChannel_2CallMethod(PyObject *__pyx_
  */
   Py_INCREF(((PyObject *)__pyx_v_rpc));
 
-  /* "pywrapzrpc.pyx":155
+  /* "pywraprpcz.pyx":155
  *         Py_INCREF(rpc)
  *         self.thisptr.CallMethod0(
  *                 make_string(service_name),             # <<<<<<<<<<<<<<
  *                 make_string(method_name),
  *                 make_string(request.SerializeToString()),
  */
-  __pyx_t_1 = __pyx_f_10pywrapzrpc_make_string(__pyx_v_service_name); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 155; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_10pywraprpcz_make_string(__pyx_v_service_name); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 155; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "pywrapzrpc.pyx":156
+  /* "pywraprpcz.pyx":156
  *         self.thisptr.CallMethod0(
  *                 make_string(service_name),
  *                 make_string(method_name),             # <<<<<<<<<<<<<<
  *                 make_string(request.SerializeToString()),
  *                 closure_wrapper.response_str,
  */
-  __pyx_t_2 = __pyx_f_10pywrapzrpc_make_string(__pyx_v_method_name); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 156; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __pyx_f_10pywraprpcz_make_string(__pyx_v_method_name); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 156; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "pywrapzrpc.pyx":157
+  /* "pywraprpcz.pyx":157
  *                 make_string(service_name),
  *                 make_string(method_name),
  *                 make_string(request.SerializeToString()),             # <<<<<<<<<<<<<<
@@ -1760,24 +1760,24 @@ static PyObject *__pyx_pf_10pywrapzrpc_10RpcChannel_2CallMethod(PyObject *__pyx_
   __pyx_t_4 = PyObject_Call(__pyx_t_3, ((PyObject *)__pyx_empty_tuple), NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 157; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_5 = __pyx_f_10pywrapzrpc_make_string(__pyx_t_4); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 157; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = __pyx_f_10pywraprpcz_make_string(__pyx_t_4); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 157; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "pywrapzrpc.pyx":161
+  /* "pywraprpcz.pyx":161
  *                 rpc.thisptr,
  *                 NewCallback(
  *                     PythonCallbackBridge, closure_wrapper))             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  try {((struct __pyx_obj_10pywrapzrpc_RpcChannel *)__pyx_v_self)->thisptr->CallMethod0(__pyx_t_1, __pyx_t_2, __pyx_t_5, __pyx_v_closure_wrapper->response_str, __pyx_v_rpc->thisptr, zrpc::NewCallback(__pyx_f_10pywrapzrpc_PythonCallbackBridge, __pyx_v_closure_wrapper));} catch(...) {__Pyx_CppExn2PyErr(); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 154; __pyx_clineno = __LINE__; goto __pyx_L1_error;}}
+  try {((struct __pyx_obj_10pywraprpcz_RpcChannel *)__pyx_v_self)->thisptr->CallMethod0(__pyx_t_1, __pyx_t_2, __pyx_t_5, __pyx_v_closure_wrapper->response_str, __pyx_v_rpc->thisptr, rpcz::NewCallback(__pyx_f_10pywraprpcz_PythonCallbackBridge, __pyx_v_closure_wrapper));} catch(...) {__Pyx_CppExn2PyErr(); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 154; __pyx_clineno = __LINE__; goto __pyx_L1_error;}}
 
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_AddTraceback("pywrapzrpc.RpcChannel.CallMethod", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.RpcChannel.CallMethod", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1785,7 +1785,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_10RpcChannel_2CallMethod(PyObject *__pyx_
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":172
+/* "pywraprpcz.pyx":172
  * cdef class Application:
  *     cdef _Application *thisptr
  *     def __cinit__(self):             # <<<<<<<<<<<<<<
@@ -1793,8 +1793,8 @@ static PyObject *__pyx_pf_10pywrapzrpc_10RpcChannel_2CallMethod(PyObject *__pyx_
  *     def __dealloc__(self):
  */
 
-static int __pyx_pf_10pywrapzrpc_11Application___cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_pf_10pywrapzrpc_11Application___cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static int __pyx_pf_10pywraprpcz_11Application___cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pf_10pywraprpcz_11Application___cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__");
@@ -1802,21 +1802,21 @@ static int __pyx_pf_10pywrapzrpc_11Application___cinit__(PyObject *__pyx_v_self,
     __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 0, 0, PyTuple_GET_SIZE(__pyx_args)); return -1;}
   if (unlikely(__pyx_kwds) && unlikely(PyDict_Size(__pyx_kwds) > 0) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "__cinit__", 0))) return -1;
 
-  /* "pywrapzrpc.pyx":173
+  /* "pywraprpcz.pyx":173
  *     cdef _Application *thisptr
  *     def __cinit__(self):
  *         self.thisptr = new _Application()             # <<<<<<<<<<<<<<
  *     def __dealloc__(self):
  *         del self.thisptr
  */
-  ((struct __pyx_obj_10pywrapzrpc_Application *)__pyx_v_self)->thisptr = new zrpc::Application();
+  ((struct __pyx_obj_10pywraprpcz_Application *)__pyx_v_self)->thisptr = new rpcz::Application();
 
   __pyx_r = 0;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "pywrapzrpc.pyx":174
+/* "pywraprpcz.pyx":174
  *     def __cinit__(self):
  *         self.thisptr = new _Application()
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
@@ -1824,24 +1824,24 @@ static int __pyx_pf_10pywrapzrpc_11Application___cinit__(PyObject *__pyx_v_self,
  * 
  */
 
-static void __pyx_pf_10pywrapzrpc_11Application_1__dealloc__(PyObject *__pyx_v_self); /*proto*/
-static void __pyx_pf_10pywrapzrpc_11Application_1__dealloc__(PyObject *__pyx_v_self) {
+static void __pyx_pf_10pywraprpcz_11Application_1__dealloc__(PyObject *__pyx_v_self); /*proto*/
+static void __pyx_pf_10pywraprpcz_11Application_1__dealloc__(PyObject *__pyx_v_self) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__dealloc__");
 
-  /* "pywrapzrpc.pyx":175
+  /* "pywraprpcz.pyx":175
  *         self.thisptr = new _Application()
  *     def __dealloc__(self):
  *         del self.thisptr             # <<<<<<<<<<<<<<
  * 
  *     def CreateRpcChannel(self, endpoint):
  */
-  delete ((struct __pyx_obj_10pywrapzrpc_Application *)__pyx_v_self)->thisptr;
+  delete ((struct __pyx_obj_10pywraprpcz_Application *)__pyx_v_self)->thisptr;
 
   __Pyx_RefNannyFinishContext();
 }
 
-/* "pywrapzrpc.pyx":177
+/* "pywraprpcz.pyx":177
  *         del self.thisptr
  * 
  *     def CreateRpcChannel(self, endpoint):             # <<<<<<<<<<<<<<
@@ -1849,9 +1849,9 @@ static void __pyx_pf_10pywrapzrpc_11Application_1__dealloc__(PyObject *__pyx_v_s
  *         channel.thisptr = self.thisptr.CreateRpcChannel(make_string(endpoint))
  */
 
-static PyObject *__pyx_pf_10pywrapzrpc_11Application_2CreateRpcChannel(PyObject *__pyx_v_self, PyObject *__pyx_v_endpoint); /*proto*/
-static PyObject *__pyx_pf_10pywrapzrpc_11Application_2CreateRpcChannel(PyObject *__pyx_v_self, PyObject *__pyx_v_endpoint) {
-  struct __pyx_obj_10pywrapzrpc_RpcChannel *__pyx_v_channel = 0;
+static PyObject *__pyx_pf_10pywraprpcz_11Application_2CreateRpcChannel(PyObject *__pyx_v_self, PyObject *__pyx_v_endpoint); /*proto*/
+static PyObject *__pyx_pf_10pywraprpcz_11Application_2CreateRpcChannel(PyObject *__pyx_v_self, PyObject *__pyx_v_endpoint) {
+  struct __pyx_obj_10pywraprpcz_RpcChannel *__pyx_v_channel = 0;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1861,29 +1861,29 @@ static PyObject *__pyx_pf_10pywrapzrpc_11Application_2CreateRpcChannel(PyObject 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("CreateRpcChannel");
 
-  /* "pywrapzrpc.pyx":178
+  /* "pywraprpcz.pyx":178
  * 
  *     def CreateRpcChannel(self, endpoint):
  *         cdef RpcChannel channel = RpcChannel.__new__(RpcChannel)             # <<<<<<<<<<<<<<
  *         channel.thisptr = self.thisptr.CreateRpcChannel(make_string(endpoint))
  *         return channel
  */
-  __pyx_t_1 = __Pyx_tp_new(((PyObject*)__pyx_ptype_10pywrapzrpc_RpcChannel)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 178; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_tp_new(((PyObject*)__pyx_ptype_10pywraprpcz_RpcChannel)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 178; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_10pywrapzrpc_RpcChannel)))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 178; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_v_channel = ((struct __pyx_obj_10pywrapzrpc_RpcChannel *)__pyx_t_1);
+  if (!(likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_10pywraprpcz_RpcChannel)))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 178; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_channel = ((struct __pyx_obj_10pywraprpcz_RpcChannel *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "pywrapzrpc.pyx":179
+  /* "pywraprpcz.pyx":179
  *     def CreateRpcChannel(self, endpoint):
  *         cdef RpcChannel channel = RpcChannel.__new__(RpcChannel)
  *         channel.thisptr = self.thisptr.CreateRpcChannel(make_string(endpoint))             # <<<<<<<<<<<<<<
  *         return channel
  */
-  __pyx_t_2 = __pyx_f_10pywrapzrpc_make_string(__pyx_v_endpoint); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 179; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_v_channel->thisptr = ((struct __pyx_obj_10pywrapzrpc_Application *)__pyx_v_self)->thisptr->CreateRpcChannel(__pyx_t_2);
+  __pyx_t_2 = __pyx_f_10pywraprpcz_make_string(__pyx_v_endpoint); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 179; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_channel->thisptr = ((struct __pyx_obj_10pywraprpcz_Application *)__pyx_v_self)->thisptr->CreateRpcChannel(__pyx_t_2);
 
-  /* "pywrapzrpc.pyx":180
+  /* "pywraprpcz.pyx":180
  *         cdef RpcChannel channel = RpcChannel.__new__(RpcChannel)
  *         channel.thisptr = self.thisptr.CreateRpcChannel(make_string(endpoint))
  *         return channel             # <<<<<<<<<<<<<<
@@ -1897,7 +1897,7 @@ static PyObject *__pyx_pf_10pywrapzrpc_11Application_2CreateRpcChannel(PyObject 
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("pywrapzrpc.Application.CreateRpcChannel", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pywraprpcz.Application.CreateRpcChannel", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF((PyObject *)__pyx_v_channel);
@@ -1906,21 +1906,21 @@ static PyObject *__pyx_pf_10pywrapzrpc_11Application_2CreateRpcChannel(PyObject 
   return __pyx_r;
 }
 
-static PyObject *__pyx_tp_new_10pywrapzrpc_WrappedRPC(PyTypeObject *t, PyObject *a, PyObject *k) {
+static PyObject *__pyx_tp_new_10pywraprpcz_WrappedRPC(PyTypeObject *t, PyObject *a, PyObject *k) {
   PyObject *o = (*t->tp_alloc)(t, 0);
   if (!o) return 0;
-  if (__pyx_pf_10pywrapzrpc_10WrappedRPC___cinit__(o, __pyx_empty_tuple, NULL) < 0) {
+  if (__pyx_pf_10pywraprpcz_10WrappedRPC___cinit__(o, __pyx_empty_tuple, NULL) < 0) {
     Py_DECREF(o); o = 0;
   }
   return o;
 }
 
-static void __pyx_tp_dealloc_10pywrapzrpc_WrappedRPC(PyObject *o) {
+static void __pyx_tp_dealloc_10pywraprpcz_WrappedRPC(PyObject *o) {
   {
     PyObject *etype, *eval, *etb;
     PyErr_Fetch(&etype, &eval, &etb);
     ++Py_REFCNT(o);
-    __pyx_pf_10pywrapzrpc_10WrappedRPC_1__dealloc__(o);
+    __pyx_pf_10pywraprpcz_10WrappedRPC_1__dealloc__(o);
     if (PyErr_Occurred()) PyErr_WriteUnraisable(o);
     --Py_REFCNT(o);
     PyErr_Restore(etype, eval, etb);
@@ -1928,25 +1928,25 @@ static void __pyx_tp_dealloc_10pywrapzrpc_WrappedRPC(PyObject *o) {
   (*Py_TYPE(o)->tp_free)(o);
 }
 
-static PyObject *__pyx_getprop_10pywrapzrpc_10WrappedRPC_status(PyObject *o, void *x) {
-  return __pyx_pf_10pywrapzrpc_10WrappedRPC_6status___get__(o);
+static PyObject *__pyx_getprop_10pywraprpcz_10WrappedRPC_status(PyObject *o, void *x) {
+  return __pyx_pf_10pywraprpcz_10WrappedRPC_6status___get__(o);
 }
 
-static PyObject *__pyx_getprop_10pywrapzrpc_10WrappedRPC_application_error(PyObject *o, void *x) {
-  return __pyx_pf_10pywrapzrpc_10WrappedRPC_17application_error___get__(o);
+static PyObject *__pyx_getprop_10pywraprpcz_10WrappedRPC_application_error(PyObject *o, void *x) {
+  return __pyx_pf_10pywraprpcz_10WrappedRPC_17application_error___get__(o);
 }
 
-static PyObject *__pyx_getprop_10pywrapzrpc_10WrappedRPC_error_message(PyObject *o, void *x) {
-  return __pyx_pf_10pywrapzrpc_10WrappedRPC_13error_message___get__(o);
+static PyObject *__pyx_getprop_10pywraprpcz_10WrappedRPC_error_message(PyObject *o, void *x) {
+  return __pyx_pf_10pywraprpcz_10WrappedRPC_13error_message___get__(o);
 }
 
-static PyObject *__pyx_getprop_10pywrapzrpc_10WrappedRPC_deadline_ms(PyObject *o, void *x) {
-  return __pyx_pf_10pywrapzrpc_10WrappedRPC_11deadline_ms___get__(o);
+static PyObject *__pyx_getprop_10pywraprpcz_10WrappedRPC_deadline_ms(PyObject *o, void *x) {
+  return __pyx_pf_10pywraprpcz_10WrappedRPC_11deadline_ms___get__(o);
 }
 
-static int __pyx_setprop_10pywrapzrpc_10WrappedRPC_deadline_ms(PyObject *o, PyObject *v, void *x) {
+static int __pyx_setprop_10pywraprpcz_10WrappedRPC_deadline_ms(PyObject *o, PyObject *v, void *x) {
   if (v) {
-    return __pyx_pf_10pywrapzrpc_10WrappedRPC_11deadline_ms_1__set__(o, v);
+    return __pyx_pf_10pywraprpcz_10WrappedRPC_11deadline_ms_1__set__(o, v);
   }
   else {
     PyErr_SetString(PyExc_NotImplementedError, "__del__");
@@ -1954,17 +1954,17 @@ static int __pyx_setprop_10pywrapzrpc_10WrappedRPC_deadline_ms(PyObject *o, PyOb
   }
 }
 
-static PyMethodDef __pyx_methods_10pywrapzrpc_WrappedRPC[] = {
-  {__Pyx_NAMESTR("ok"), (PyCFunction)__pyx_pf_10pywrapzrpc_10WrappedRPC_2ok, METH_NOARGS, __Pyx_DOCSTR(0)},
-  {__Pyx_NAMESTR("wait"), (PyCFunction)__pyx_pf_10pywrapzrpc_10WrappedRPC_3wait, METH_NOARGS, __Pyx_DOCSTR(0)},
+static PyMethodDef __pyx_methods_10pywraprpcz_WrappedRPC[] = {
+  {__Pyx_NAMESTR("ok"), (PyCFunction)__pyx_pf_10pywraprpcz_10WrappedRPC_2ok, METH_NOARGS, __Pyx_DOCSTR(0)},
+  {__Pyx_NAMESTR("wait"), (PyCFunction)__pyx_pf_10pywraprpcz_10WrappedRPC_3wait, METH_NOARGS, __Pyx_DOCSTR(0)},
   {0, 0, 0, 0}
 };
 
-static struct PyGetSetDef __pyx_getsets_10pywrapzrpc_WrappedRPC[] = {
-  {(char *)"status", __pyx_getprop_10pywrapzrpc_10WrappedRPC_status, 0, 0, 0},
-  {(char *)"application_error", __pyx_getprop_10pywrapzrpc_10WrappedRPC_application_error, 0, 0, 0},
-  {(char *)"error_message", __pyx_getprop_10pywrapzrpc_10WrappedRPC_error_message, 0, 0, 0},
-  {(char *)"deadline_ms", __pyx_getprop_10pywrapzrpc_10WrappedRPC_deadline_ms, __pyx_setprop_10pywrapzrpc_10WrappedRPC_deadline_ms, 0, 0},
+static struct PyGetSetDef __pyx_getsets_10pywraprpcz_WrappedRPC[] = {
+  {(char *)"status", __pyx_getprop_10pywraprpcz_10WrappedRPC_status, 0, 0, 0},
+  {(char *)"application_error", __pyx_getprop_10pywraprpcz_10WrappedRPC_application_error, 0, 0, 0},
+  {(char *)"error_message", __pyx_getprop_10pywraprpcz_10WrappedRPC_error_message, 0, 0, 0},
+  {(char *)"deadline_ms", __pyx_getprop_10pywraprpcz_10WrappedRPC_deadline_ms, __pyx_setprop_10pywraprpcz_10WrappedRPC_deadline_ms, 0, 0},
   {0, 0, 0, 0, 0}
 };
 
@@ -2066,12 +2066,12 @@ static PyBufferProcs __pyx_tp_as_buffer_WrappedRPC = {
   #endif
 };
 
-static PyTypeObject __pyx_type_10pywrapzrpc_WrappedRPC = {
+static PyTypeObject __pyx_type_10pywraprpcz_WrappedRPC = {
   PyVarObject_HEAD_INIT(0, 0)
-  __Pyx_NAMESTR("pywrapzrpc.WrappedRPC"), /*tp_name*/
-  sizeof(struct __pyx_obj_10pywrapzrpc_WrappedRPC), /*tp_basicsize*/
+  __Pyx_NAMESTR("pywraprpcz.WrappedRPC"), /*tp_name*/
+  sizeof(struct __pyx_obj_10pywraprpcz_WrappedRPC), /*tp_basicsize*/
   0, /*tp_itemsize*/
-  __pyx_tp_dealloc_10pywrapzrpc_WrappedRPC, /*tp_dealloc*/
+  __pyx_tp_dealloc_10pywraprpcz_WrappedRPC, /*tp_dealloc*/
   0, /*tp_print*/
   0, /*tp_getattr*/
   0, /*tp_setattr*/
@@ -2098,9 +2098,9 @@ static PyTypeObject __pyx_type_10pywrapzrpc_WrappedRPC = {
   0, /*tp_weaklistoffset*/
   0, /*tp_iter*/
   0, /*tp_iternext*/
-  __pyx_methods_10pywrapzrpc_WrappedRPC, /*tp_methods*/
+  __pyx_methods_10pywraprpcz_WrappedRPC, /*tp_methods*/
   0, /*tp_members*/
-  __pyx_getsets_10pywrapzrpc_WrappedRPC, /*tp_getset*/
+  __pyx_getsets_10pywraprpcz_WrappedRPC, /*tp_getset*/
   0, /*tp_base*/
   0, /*tp_dict*/
   0, /*tp_descr_get*/
@@ -2108,7 +2108,7 @@ static PyTypeObject __pyx_type_10pywrapzrpc_WrappedRPC = {
   0, /*tp_dictoffset*/
   0, /*tp_init*/
   0, /*tp_alloc*/
-  __pyx_tp_new_10pywrapzrpc_WrappedRPC, /*tp_new*/
+  __pyx_tp_new_10pywraprpcz_WrappedRPC, /*tp_new*/
   0, /*tp_free*/
   0, /*tp_is_gc*/
   0, /*tp_bases*/
@@ -2122,18 +2122,18 @@ static PyTypeObject __pyx_type_10pywrapzrpc_WrappedRPC = {
   #endif
 };
 
-static PyObject *__pyx_tp_new_10pywrapzrpc_RpcChannel(PyTypeObject *t, PyObject *a, PyObject *k) {
+static PyObject *__pyx_tp_new_10pywraprpcz_RpcChannel(PyTypeObject *t, PyObject *a, PyObject *k) {
   PyObject *o = (*t->tp_alloc)(t, 0);
   if (!o) return 0;
   return o;
 }
 
-static void __pyx_tp_dealloc_10pywrapzrpc_RpcChannel(PyObject *o) {
+static void __pyx_tp_dealloc_10pywraprpcz_RpcChannel(PyObject *o) {
   {
     PyObject *etype, *eval, *etb;
     PyErr_Fetch(&etype, &eval, &etb);
     ++Py_REFCNT(o);
-    __pyx_pf_10pywrapzrpc_10RpcChannel___dealloc__(o);
+    __pyx_pf_10pywraprpcz_10RpcChannel___dealloc__(o);
     if (PyErr_Occurred()) PyErr_WriteUnraisable(o);
     --Py_REFCNT(o);
     PyErr_Restore(etype, eval, etb);
@@ -2141,8 +2141,8 @@ static void __pyx_tp_dealloc_10pywrapzrpc_RpcChannel(PyObject *o) {
   (*Py_TYPE(o)->tp_free)(o);
 }
 
-static PyMethodDef __pyx_methods_10pywrapzrpc_RpcChannel[] = {
-  {__Pyx_NAMESTR("CallMethod"), (PyCFunction)__pyx_pf_10pywrapzrpc_10RpcChannel_2CallMethod, METH_VARARGS|METH_KEYWORDS, __Pyx_DOCSTR(0)},
+static PyMethodDef __pyx_methods_10pywraprpcz_RpcChannel[] = {
+  {__Pyx_NAMESTR("CallMethod"), (PyCFunction)__pyx_pf_10pywraprpcz_10RpcChannel_2CallMethod, METH_VARARGS|METH_KEYWORDS, __Pyx_DOCSTR(0)},
   {0, 0, 0, 0}
 };
 
@@ -2244,12 +2244,12 @@ static PyBufferProcs __pyx_tp_as_buffer_RpcChannel = {
   #endif
 };
 
-static PyTypeObject __pyx_type_10pywrapzrpc_RpcChannel = {
+static PyTypeObject __pyx_type_10pywraprpcz_RpcChannel = {
   PyVarObject_HEAD_INIT(0, 0)
-  __Pyx_NAMESTR("pywrapzrpc.RpcChannel"), /*tp_name*/
-  sizeof(struct __pyx_obj_10pywrapzrpc_RpcChannel), /*tp_basicsize*/
+  __Pyx_NAMESTR("pywraprpcz.RpcChannel"), /*tp_name*/
+  sizeof(struct __pyx_obj_10pywraprpcz_RpcChannel), /*tp_basicsize*/
   0, /*tp_itemsize*/
-  __pyx_tp_dealloc_10pywrapzrpc_RpcChannel, /*tp_dealloc*/
+  __pyx_tp_dealloc_10pywraprpcz_RpcChannel, /*tp_dealloc*/
   0, /*tp_print*/
   0, /*tp_getattr*/
   0, /*tp_setattr*/
@@ -2276,7 +2276,7 @@ static PyTypeObject __pyx_type_10pywrapzrpc_RpcChannel = {
   0, /*tp_weaklistoffset*/
   0, /*tp_iter*/
   0, /*tp_iternext*/
-  __pyx_methods_10pywrapzrpc_RpcChannel, /*tp_methods*/
+  __pyx_methods_10pywraprpcz_RpcChannel, /*tp_methods*/
   0, /*tp_members*/
   0, /*tp_getset*/
   0, /*tp_base*/
@@ -2284,9 +2284,9 @@ static PyTypeObject __pyx_type_10pywrapzrpc_RpcChannel = {
   0, /*tp_descr_get*/
   0, /*tp_descr_set*/
   0, /*tp_dictoffset*/
-  __pyx_pf_10pywrapzrpc_10RpcChannel_1__init__, /*tp_init*/
+  __pyx_pf_10pywraprpcz_10RpcChannel_1__init__, /*tp_init*/
   0, /*tp_alloc*/
-  __pyx_tp_new_10pywrapzrpc_RpcChannel, /*tp_new*/
+  __pyx_tp_new_10pywraprpcz_RpcChannel, /*tp_new*/
   0, /*tp_free*/
   0, /*tp_is_gc*/
   0, /*tp_bases*/
@@ -2300,21 +2300,21 @@ static PyTypeObject __pyx_type_10pywrapzrpc_RpcChannel = {
   #endif
 };
 
-static PyObject *__pyx_tp_new_10pywrapzrpc_Application(PyTypeObject *t, PyObject *a, PyObject *k) {
+static PyObject *__pyx_tp_new_10pywraprpcz_Application(PyTypeObject *t, PyObject *a, PyObject *k) {
   PyObject *o = (*t->tp_alloc)(t, 0);
   if (!o) return 0;
-  if (__pyx_pf_10pywrapzrpc_11Application___cinit__(o, __pyx_empty_tuple, NULL) < 0) {
+  if (__pyx_pf_10pywraprpcz_11Application___cinit__(o, __pyx_empty_tuple, NULL) < 0) {
     Py_DECREF(o); o = 0;
   }
   return o;
 }
 
-static void __pyx_tp_dealloc_10pywrapzrpc_Application(PyObject *o) {
+static void __pyx_tp_dealloc_10pywraprpcz_Application(PyObject *o) {
   {
     PyObject *etype, *eval, *etb;
     PyErr_Fetch(&etype, &eval, &etb);
     ++Py_REFCNT(o);
-    __pyx_pf_10pywrapzrpc_11Application_1__dealloc__(o);
+    __pyx_pf_10pywraprpcz_11Application_1__dealloc__(o);
     if (PyErr_Occurred()) PyErr_WriteUnraisable(o);
     --Py_REFCNT(o);
     PyErr_Restore(etype, eval, etb);
@@ -2322,8 +2322,8 @@ static void __pyx_tp_dealloc_10pywrapzrpc_Application(PyObject *o) {
   (*Py_TYPE(o)->tp_free)(o);
 }
 
-static PyMethodDef __pyx_methods_10pywrapzrpc_Application[] = {
-  {__Pyx_NAMESTR("CreateRpcChannel"), (PyCFunction)__pyx_pf_10pywrapzrpc_11Application_2CreateRpcChannel, METH_O, __Pyx_DOCSTR(0)},
+static PyMethodDef __pyx_methods_10pywraprpcz_Application[] = {
+  {__Pyx_NAMESTR("CreateRpcChannel"), (PyCFunction)__pyx_pf_10pywraprpcz_11Application_2CreateRpcChannel, METH_O, __Pyx_DOCSTR(0)},
   {0, 0, 0, 0}
 };
 
@@ -2425,12 +2425,12 @@ static PyBufferProcs __pyx_tp_as_buffer_Application = {
   #endif
 };
 
-static PyTypeObject __pyx_type_10pywrapzrpc_Application = {
+static PyTypeObject __pyx_type_10pywraprpcz_Application = {
   PyVarObject_HEAD_INIT(0, 0)
-  __Pyx_NAMESTR("pywrapzrpc.Application"), /*tp_name*/
-  sizeof(struct __pyx_obj_10pywrapzrpc_Application), /*tp_basicsize*/
+  __Pyx_NAMESTR("pywraprpcz.Application"), /*tp_name*/
+  sizeof(struct __pyx_obj_10pywraprpcz_Application), /*tp_basicsize*/
   0, /*tp_itemsize*/
-  __pyx_tp_dealloc_10pywrapzrpc_Application, /*tp_dealloc*/
+  __pyx_tp_dealloc_10pywraprpcz_Application, /*tp_dealloc*/
   0, /*tp_print*/
   0, /*tp_getattr*/
   0, /*tp_setattr*/
@@ -2457,7 +2457,7 @@ static PyTypeObject __pyx_type_10pywrapzrpc_Application = {
   0, /*tp_weaklistoffset*/
   0, /*tp_iter*/
   0, /*tp_iternext*/
-  __pyx_methods_10pywrapzrpc_Application, /*tp_methods*/
+  __pyx_methods_10pywraprpcz_Application, /*tp_methods*/
   0, /*tp_members*/
   0, /*tp_getset*/
   0, /*tp_base*/
@@ -2467,7 +2467,7 @@ static PyTypeObject __pyx_type_10pywrapzrpc_Application = {
   0, /*tp_dictoffset*/
   0, /*tp_init*/
   0, /*tp_alloc*/
-  __pyx_tp_new_10pywrapzrpc_Application, /*tp_new*/
+  __pyx_tp_new_10pywraprpcz_Application, /*tp_new*/
   0, /*tp_free*/
   0, /*tp_is_gc*/
   0, /*tp_bases*/
@@ -2488,7 +2488,7 @@ static PyMethodDef __pyx_methods[] = {
 #if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef __pyx_moduledef = {
     PyModuleDef_HEAD_INIT,
-    __Pyx_NAMESTR("pywrapzrpc"),
+    __Pyx_NAMESTR("pywraprpcz"),
     0, /* m_doc */
     -1, /* m_size */
     __pyx_methods /* m_methods */,
@@ -2511,7 +2511,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s____test__, __pyx_k____test__, sizeof(__pyx_k____test__), 0, 0, 1, 1},
   {&__pyx_n_s__callback, __pyx_k__callback, sizeof(__pyx_k__callback), 0, 0, 1, 1},
   {&__pyx_n_s__method_name, __pyx_k__method_name, sizeof(__pyx_k__method_name), 0, 0, 1, 1},
-  {&__pyx_n_s__pywrapzrpc, __pyx_k__pywrapzrpc, sizeof(__pyx_k__pywrapzrpc), 0, 0, 1, 1},
+  {&__pyx_n_s__pywraprpcz, __pyx_k__pywraprpcz, sizeof(__pyx_k__pywraprpcz), 0, 0, 1, 1},
   {&__pyx_n_s__request, __pyx_k__request, sizeof(__pyx_k__request), 0, 0, 1, 1},
   {&__pyx_n_s__response, __pyx_k__response, sizeof(__pyx_k__response), 0, 0, 1, 1},
   {&__pyx_n_s__rpc, __pyx_k__rpc, sizeof(__pyx_k__rpc), 0, 0, 1, 1},
@@ -2531,7 +2531,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants");
 
-  /* "pywrapzrpc.pyx":141
+  /* "pywraprpcz.pyx":141
  *         del self.thisptr
  *     def __init__(self):
  *         raise TypeError("Use Application.CreateRpcChannel to create a "             # <<<<<<<<<<<<<<
@@ -2559,11 +2559,11 @@ static int __Pyx_InitGlobals(void) {
 }
 
 #if PY_MAJOR_VERSION < 3
-PyMODINIT_FUNC initpywrapzrpc(void); /*proto*/
-PyMODINIT_FUNC initpywrapzrpc(void)
+PyMODINIT_FUNC initpywraprpcz(void); /*proto*/
+PyMODINIT_FUNC initpywraprpcz(void)
 #else
-PyMODINIT_FUNC PyInit_pywrapzrpc(void); /*proto*/
-PyMODINIT_FUNC PyInit_pywrapzrpc(void)
+PyMODINIT_FUNC PyInit_pywraprpcz(void); /*proto*/
+PyMODINIT_FUNC PyInit_pywraprpcz(void)
 #endif
 {
   PyObject *__pyx_t_1 = NULL;
@@ -2577,7 +2577,7 @@ PyMODINIT_FUNC PyInit_pywrapzrpc(void)
           Py_FatalError("failed to import 'refnanny' module");
   }
   #endif
-  __Pyx_RefNannySetupContext("PyMODINIT_FUNC PyInit_pywrapzrpc(void)");
+  __Pyx_RefNannySetupContext("PyMODINIT_FUNC PyInit_pywraprpcz(void)");
   if ( __Pyx_check_binary_version() < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_empty_tuple = PyTuple_New(0); if (unlikely(!__pyx_empty_tuple)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_empty_bytes = PyBytes_FromStringAndSize("", 0); if (unlikely(!__pyx_empty_bytes)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -2593,7 +2593,7 @@ PyMODINIT_FUNC PyInit_pywrapzrpc(void)
   #endif
   /*--- Module creation code ---*/
   #if PY_MAJOR_VERSION < 3
-  __pyx_m = Py_InitModule4(__Pyx_NAMESTR("pywrapzrpc"), __pyx_methods, 0, 0, PYTHON_API_VERSION);
+  __pyx_m = Py_InitModule4(__Pyx_NAMESTR("pywraprpcz"), __pyx_methods, 0, 0, PYTHON_API_VERSION);
   #else
   __pyx_m = PyModule_Create(&__pyx_moduledef);
   #endif
@@ -2606,7 +2606,7 @@ PyMODINIT_FUNC PyInit_pywrapzrpc(void)
   if (__Pyx_SetAttrString(__pyx_m, "__builtins__", __pyx_b) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   /*--- Initialize various global constants etc. ---*/
   if (unlikely(__Pyx_InitGlobals() < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (__pyx_module_is_main_pywrapzrpc) {
+  if (__pyx_module_is_main_pywraprpcz) {
     if (__Pyx_SetAttrString(__pyx_m, "__name__", __pyx_n_s____main__) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   }
   /*--- Builtin init code ---*/
@@ -2617,15 +2617,15 @@ PyMODINIT_FUNC PyInit_pywrapzrpc(void)
   /*--- Variable export code ---*/
   /*--- Function export code ---*/
   /*--- Type init code ---*/
-  if (PyType_Ready(&__pyx_type_10pywrapzrpc_WrappedRPC) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 68; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (__Pyx_SetAttrString(__pyx_m, "WrappedRPC", (PyObject *)&__pyx_type_10pywrapzrpc_WrappedRPC) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 68; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_ptype_10pywrapzrpc_WrappedRPC = &__pyx_type_10pywrapzrpc_WrappedRPC;
-  if (PyType_Ready(&__pyx_type_10pywrapzrpc_RpcChannel) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 136; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (__Pyx_SetAttrString(__pyx_m, "RpcChannel", (PyObject *)&__pyx_type_10pywrapzrpc_RpcChannel) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 136; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_ptype_10pywrapzrpc_RpcChannel = &__pyx_type_10pywrapzrpc_RpcChannel;
-  if (PyType_Ready(&__pyx_type_10pywrapzrpc_Application) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 170; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (__Pyx_SetAttrString(__pyx_m, "Application", (PyObject *)&__pyx_type_10pywrapzrpc_Application) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 170; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_ptype_10pywrapzrpc_Application = &__pyx_type_10pywrapzrpc_Application;
+  if (PyType_Ready(&__pyx_type_10pywraprpcz_WrappedRPC) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 68; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_SetAttrString(__pyx_m, "WrappedRPC", (PyObject *)&__pyx_type_10pywraprpcz_WrappedRPC) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 68; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_ptype_10pywraprpcz_WrappedRPC = &__pyx_type_10pywraprpcz_WrappedRPC;
+  if (PyType_Ready(&__pyx_type_10pywraprpcz_RpcChannel) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 136; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_SetAttrString(__pyx_m, "RpcChannel", (PyObject *)&__pyx_type_10pywraprpcz_RpcChannel) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 136; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_ptype_10pywraprpcz_RpcChannel = &__pyx_type_10pywraprpcz_RpcChannel;
+  if (PyType_Ready(&__pyx_type_10pywraprpcz_Application) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 170; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_SetAttrString(__pyx_m, "Application", (PyObject *)&__pyx_type_10pywraprpcz_Application) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 170; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_ptype_10pywraprpcz_Application = &__pyx_type_10pywraprpcz_Application;
   /*--- Type import code ---*/
   __pyx_ptype_7cpython_4bool_bool = __Pyx_ImportType(__Pyx_BUILTIN_MODULE_NAME, "bool", sizeof(PyBoolObject), 0); if (unlikely(!__pyx_ptype_7cpython_4bool_bool)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 8; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_ptype_7cpython_7complex_complex = __Pyx_ImportType(__Pyx_BUILTIN_MODULE_NAME, "complex", sizeof(PyComplexObject), 0); if (unlikely(!__pyx_ptype_7cpython_7complex_complex)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 15; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -2633,28 +2633,28 @@ PyMODINIT_FUNC PyInit_pywrapzrpc(void)
   /*--- Function import code ---*/
   /*--- Execution code ---*/
 
-  /* "pywrapzrpc.pyx":16
+  /* "pywraprpcz.pyx":16
  *     void PyEval_InitThreads()
  * 
  * PyEval_InitThreads()             # <<<<<<<<<<<<<<
  * 
- * cdef extern from "zrpc/connection_manager.h" namespace "zrpc":
+ * cdef extern from "rpcz/connection_manager.h" namespace "rpcz":
  */
   PyEval_InitThreads();
 
-  /* "pywrapzrpc.pyx":24
+  /* "pywraprpcz.pyx":24
  *   pass
  * 
  * def Init():             # <<<<<<<<<<<<<<
  *     import sys
  *     # InstallFailureSignalHandler()
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10pywrapzrpc_Init, NULL, __pyx_n_s__pywrapzrpc); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 24; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10pywraprpcz_Init, NULL, __pyx_n_s__pywraprpcz); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 24; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   if (PyObject_SetAttr(__pyx_m, __pyx_n_s__Init, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 24; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "pywrapzrpc.pyx":1
+  /* "pywraprpcz.pyx":1
  * from cpython cimport Py_DECREF, Py_INCREF             # <<<<<<<<<<<<<<
  * from libc.stdlib cimport malloc, free
  * 
@@ -2667,10 +2667,10 @@ PyMODINIT_FUNC PyInit_pywrapzrpc(void)
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
   if (__pyx_m) {
-    __Pyx_AddTraceback("init pywrapzrpc", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    __Pyx_AddTraceback("init pywraprpcz", __pyx_clineno, __pyx_lineno, __pyx_filename);
     Py_DECREF(__pyx_m); __pyx_m = 0;
   } else if (!PyErr_Occurred()) {
-    PyErr_SetString(PyExc_ImportError, "init pywrapzrpc");
+    PyErr_SetString(PyExc_ImportError, "init pywraprpcz");
   }
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();

@@ -14,15 +14,15 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_REACTOR_H
-#define ZRPC_REACTOR_H
+#ifndef RPCZ_REACTOR_H
+#define RPCZ_REACTOR_H
 
 #include <map>
 #include <vector>
 #include "zmq.hpp"
-#include "zrpc/macros.h"
+#include "rpcz/macros.h"
 
-namespace zrpc {
+namespace rpcz {
 
 class Closure;
 

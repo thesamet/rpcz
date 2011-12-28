@@ -14,8 +14,8 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_ZRPC_CPP_GENERATOR_H
-#define ZRPC_ZRPC_CPP_GENERATOR_H
+#ifndef RPCZ_RPCZ_CPP_GENERATOR_H
+#define RPCZ_RPCZ_CPP_GENERATOR_H
 
 #include <google/protobuf/compiler/code_generator.h>
 #include <google/protobuf/stubs/common.h>
@@ -27,15 +27,15 @@ class FileDescriptor;
 }  // namespace protobuf
 }  // namespace google
 
-namespace zrpc {
+namespace rpcz {
 namespace plugin {
 namespace cpp {
 
-class LIBPROTOC_EXPORT ZRpcCppGenerator :
+class LIBPROTOC_EXPORT RpczCppGenerator :
     public ::google::protobuf::compiler::CodeGenerator {
  public:
-  ZRpcCppGenerator();
-  ~ZRpcCppGenerator();
+  RpczCppGenerator();
+  ~RpczCppGenerator();
 
   bool Generate(
       const ::google::protobuf::FileDescriptor* file,
@@ -44,9 +44,9 @@ class LIBPROTOC_EXPORT ZRpcCppGenerator :
       std::string* error) const;
 
  private:
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ZRpcCppGenerator);
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(RpczCppGenerator);
 };
 }  // namespace cpp
 }  // namespace plugin
-}  // namespace zrpc
+}  // namespace rpcz
 #endif

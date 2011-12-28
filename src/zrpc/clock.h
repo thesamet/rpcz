@@ -14,12 +14,12 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_CLOCK_H
-#define ZRPC_CLOCK_H
+#ifndef RPCZ_CLOCK_H
+#define RPCZ_CLOCK_H
 
-#include "zrpc/macros.h"
+#include "rpcz/macros.h"
 
-namespace zrpc {
+namespace rpcz {
 
 uint64 zclock_time();
 

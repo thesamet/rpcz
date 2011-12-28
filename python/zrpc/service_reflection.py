@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import zrpc.rpc
+import rpcz.rpc
 
 class GeneratedServiceType(type):
     def __new__(cls, name, bases, attrs):
@@ -12,7 +12,7 @@ def _BuildStubMethod(method_descriptor):
         response = method_descriptor.output_type._concrete_class()
         if rpc is None:
             blocking_mode = True
-            rpc = zrpc.rpc.RPC()
+            rpc = rpcz.rpc.RPC()
             if deadline_ms is not None:
                 rpc.deadline_ms = deadline_ms
         else:

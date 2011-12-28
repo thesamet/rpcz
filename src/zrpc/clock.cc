@@ -17,7 +17,7 @@
 #include "clock.h"
 #include <sys/time.h>
 
-namespace zrpc {
+namespace rpcz {
 
 uint64 zclock_time(void) {
     struct timeval tv;
@@ -25,4 +25,4 @@ uint64 zclock_time(void) {
     return (int64_t) (tv.tv_sec * 1000 + tv.tv_usec / 1000);
 }
 
-}  // namespace zrpc
+}  // namespace rpcz

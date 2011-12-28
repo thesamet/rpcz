@@ -14,15 +14,15 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "zrpc/plugin/cpp/zrpc_cpp_service.h"
+#include "rpcz/plugin/cpp/rpcz_cpp_service.h"
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/io/printer.h>
 
-#include "zrpc/plugin/common/strutil.h"
-#include "zrpc/plugin/cpp/cpp_helpers.h"
+#include "rpcz/plugin/common/strutil.h"
+#include "rpcz/plugin/cpp/cpp_helpers.h"
 
-namespace zrpc {
+namespace rpcz {
 namespace plugin {
 namespace cpp {
 
@@ -55,7 +55,7 @@ void ServiceGenerator::GenerateDeclarations(io::Printer* printer) {
 
 void ServiceGenerator::GenerateInterface(io::Printer* printer) {
   printer->Print(vars_,
-    "class $dllexport$$classname$ : public zrpc::Service {\n"
+    "class $dllexport$$classname$ : public rpcz::Service {\n"
     " protected:\n"
     "  // This class should be treated as an abstract interface.\n"
     "  inline $classname$() {};\n"
@@ -80,8 +80,8 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
     "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
     "                const ::google::protobuf::Message& request,\n"
     "                ::google::protobuf::Message* response,\n"
-    "                ::zrpc::RPC* rpc,\n"
-    "                ::zrpc::Closure* done);\n"
+    "                ::rpcz::RPC* rpc,\n"
+    "                ::rpcz::Closure* done);\n"
     "const ::google::protobuf::Message& GetRequestPrototype(\n"
     "  const ::google::protobuf::MethodDescriptor* method) const;\n"
     "const ::google::protobuf::Message& GetResponsePrototype(\n"
@@ -104,10 +104,10 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
   printer->Indent();
 
   printer->Print(vars_,
-    "$classname$_Stub(::zrpc::RpcChannel* channel, bool owns_channels=false);\n"
+    "$classname$_Stub(::rpcz::RpcChannel* channel, bool owns_channels=false);\n"
     "~$classname$_Stub();\n"
     "\n"
-    "inline ::zrpc::RpcChannel* channel() { return channel_; }\n"
+    "inline ::rpcz::RpcChannel* channel() { return channel_; }\n"
     "\n"
     "// implements $classname$ ------------------------------------------\n"
     "\n");
@@ -117,7 +117,7 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
   printer->Outdent();
   printer->Print(vars_,
     " private:\n"
-    "  ::zrpc::RpcChannel* channel_;\n"
+    "  ::rpcz::RpcChannel* channel_;\n"
     "  bool owns_channel_;\n"
     "  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS($classname$_Stub);\n"
     "};\n"
@@ -137,8 +137,8 @@ void ServiceGenerator::GenerateMethodSignatures(
     printer->Print(sub_vars,
       "$virtual$void $name$(const $input_type$& request,\n"
       "                     $output_type$* response,\n"
-      "                     ::zrpc::RPC* rpc,\n"
-      "                     ::zrpc::Closure* done);\n");
+      "                     ::rpcz::RPC* rpc,\n"
+      "                     ::rpcz::Closure* done);\n");
     if (stub) {
       printer->Print(sub_vars,
                      "$virtual$void $name$(const $input_type$& request,\n"
@@ -185,7 +185,7 @@ void ServiceGenerator::GenerateImplementation(io::Printer* printer) {
 
   // Generate stub implementation.
   printer->Print(vars_,
-    "$classname$_Stub::$classname$_Stub(::zrpc::RpcChannel* channel, bool owns_channel)\n"
+    "$classname$_Stub::$classname$_Stub(::rpcz::RpcChannel* channel, bool owns_channel)\n"
     "  : channel_(channel), owns_channel_(owns_channel) {}\n"
     "$classname$_Stub::~$classname$_Stub() {\n"
     "  if (owns_channel_) delete channel_;\n"
@@ -208,9 +208,9 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
     printer->Print(sub_vars,
       "void $classname$::$name$(const $input_type$&,\n"
       "                         $output_type$*,\n"
-      "                         ::zrpc::RPC* rpc,\n"
-      "                         ::zrpc::Closure* done) {\n"
-      "  rpc->SetFailed(::zrpc::GenericRPCResponse::METHOD_NOT_IMPLEMENTED,\n"
+      "                         ::rpcz::RPC* rpc,\n"
+      "                         ::rpcz::Closure* done) {\n"
+      "  rpc->SetFailed(::rpcz::GenericRPCResponse::METHOD_NOT_IMPLEMENTED,\n"
       "                 \"Method $name$() not implemented.\");\n"
       "  done->Run();\n"
       "}\n"
@@ -223,8 +223,8 @@ void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
     "void $classname$::CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
     "                             const ::google::protobuf::Message& request,\n"
     "                             ::google::protobuf::Message* response,\n"
-    "                             ::zrpc::RPC* rpc,\n"
-    "                             ::zrpc::Closure* done) {\n"
+    "                             ::rpcz::RPC* rpc,\n"
+    "                             ::rpcz::Closure* done) {\n"
     "  GOOGLE_DCHECK_EQ(method->service(), $classname$_descriptor_);\n"
     "  switch(method->index()) {\n");
 
@@ -308,8 +308,8 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
     printer->Print(sub_vars,
       "void $classname$_Stub::$name$(const $input_type$& request,\n"
       "                              $output_type$* response,\n"
-      "                              ::zrpc::RPC* rpc,\n"
-      "                              ::zrpc::Closure* done) {\n"
+      "                              ::rpcz::RPC* rpc,\n"
+      "                              ::rpcz::Closure* done) {\n"
       "  channel_->CallMethod(descriptor()->method($index$),\n"
       "                       request, response, rpc, done);\n"
       "}\n");
@@ -317,13 +317,13 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
       "void $classname$_Stub::$name$(const $input_type$& request,\n"
       "                              $output_type$* response,\n"
       "                              long deadline_ms) {\n"
-      "  ::zrpc::RPC rpc;\n"
+      "  ::rpcz::RPC rpc;\n"
       "  rpc.SetDeadlineMs(deadline_ms);\n"
       "  channel_->CallMethod(descriptor()->method($index$),\n"
       "                       request, response, &rpc, NULL);\n"
       "  rpc.Wait();\n"
       "  if (!rpc.OK()) {\n"
-      "    throw ::zrpc::RpcError(rpc);\n"
+      "    throw ::rpcz::RpcError(rpc);\n"
       "  }\n"
       "}\n");
   }
@@ -331,4 +331,4 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
 
 }  // namespace cpp
 }  // namespace plugin
-}  // namespace zrpc
+}  // namespace rpcz

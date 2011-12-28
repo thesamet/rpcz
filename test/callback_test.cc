@@ -14,12 +14,12 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "zrpc/callback.h"
+#include "rpcz/callback.h"
 
 #include <string>
 #include "gtest/gtest.h"
 
-namespace zrpc {
+namespace rpcz {
 
 static bool called = false;
 void ZeroCallback() {
@@ -75,4 +75,4 @@ TEST(CallbackTest, TestMethodPermanentCallback) {
   delete c;
   EXPECT_TRUE(called);
 }
-}  // namespace zrpc
+}  // namespace rpcz

@@ -14,7 +14,7 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "zrpc/connection_manager.h"
+#include "rpcz/connection_manager.h"
 
 #include <algorithm>
 #include "boost/thread/thread.hpp"
@@ -32,17 +32,17 @@
 #include "zmq.hpp"
 
 #include "google/protobuf/stubs/common.h"
-#include "zrpc/callback.h"
-#include "zrpc/clock.h"
-#include "zrpc/event_manager.h"
-#include "zrpc/function_server.h"
-#include "zrpc/logging.h"
-#include "zrpc/macros.h"
-#include "zrpc/reactor.h"
-#include "zrpc/remote_response.h"
-#include "zrpc/sync_event.h"
+#include "rpcz/callback.h"
+#include "rpcz/clock.h"
+#include "rpcz/event_manager.h"
+#include "rpcz/function_server.h"
+#include "rpcz/logging.h"
+#include "rpcz/macros.h"
+#include "rpcz/reactor.h"
+#include "rpcz/remote_response.h"
+#include "rpcz/sync_event.h"
 
-namespace zrpc {
+namespace rpcz {
 namespace {
 static const uint64 kLargePrime = (1ULL << 63) - 165;
 static const uint64 kGenerator = 2;
@@ -271,4 +271,4 @@ Connection* ConnectionManager::Connect(const std::string& endpoint) {
 }
  
 ConnectionManager::~ConnectionManager() {}
-}  // namespace zrpc
+}  // namespace rpcz

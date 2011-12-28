@@ -14,13 +14,13 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#ifndef ZRPC_SYNC_EVENT_H
-#define ZRPC_SYNC_EVENT_H
+#ifndef RPCZ_SYNC_EVENT_H
+#define RPCZ_SYNC_EVENT_H
 
 #include <boost/thread/thread.hpp>
-#include "zrpc/macros.h"
+#include "rpcz/macros.h"
 
-namespace zrpc {
+namespace rpcz {
 
 // SyncEvent provides a mechanism for threads to wait for an event.
 class SyncEvent {
@@ -41,5 +41,5 @@ class SyncEvent {
   DISALLOW_COPY_AND_ASSIGN(SyncEvent);
 };
 
-}  // namespace zrpc
+}  // namespace rpcz
 #endif

@@ -14,10 +14,10 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "zrpc/remote_response.h"
-#include "zrpc/zmq_utils.h"
+#include "rpcz/remote_response.h"
+#include "rpcz/zmq_utils.h"
 
-namespace zrpc {
+namespace rpcz {
 
 RemoteResponse::RemoteResponse()
   : status(INACTIVE), reply() {}
@@ -25,4 +25,4 @@ RemoteResponse::RemoteResponse()
 RemoteResponse::~RemoteResponse() {
 }
 
-}  // namespace zrpc
+}  // namespace rpcz

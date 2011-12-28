@@ -18,11 +18,11 @@
 #include "boost/function.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/thread/condition_variable.hpp"
-#include "zrpc/function_server.h"
-#include "zrpc/sync_event.h"
+#include "rpcz/function_server.h"
+#include "rpcz/sync_event.h"
 #include "gtest/gtest.h"
 
-namespace zrpc {
+namespace rpcz {
 
 class FunctionServerTest : public ::testing::Test {
  public:
@@ -163,4 +163,4 @@ TEST_F(FunctionServerTest, TestDelegatingHandler) {
   GOOGLE_CHECK_EQ(2, reply_vector.size());
   GOOGLE_CHECK_EQ("This is it!", MessageToString(reply_vector[1]));
 }
-}  // namespace zrpc
+}  // namespace rpcz

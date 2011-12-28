@@ -2,4 +2,4 @@
 build
 *.pyc
 *_pb2.py
-*_zrpc.py
+*_rpcz.py

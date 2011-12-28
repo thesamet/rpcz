@@ -14,16 +14,16 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "zrpc/event_manager.h"
+#include "rpcz/event_manager.h"
 #include "boost/thread/thread.hpp"
 #include "boost/thread/tss.hpp"
 #include "zmq.hpp"
-#include "zrpc/callback.h"
-#include "zrpc/function_server.h"
-#include "zrpc/logging.h"
-#include "zrpc/zmq_utils.h"
+#include "rpcz/callback.h"
+#include "rpcz/function_server.h"
+#include "rpcz/logging.h"
+#include "rpcz/zmq_utils.h"
 
-namespace zrpc {
+namespace rpcz {
 
 void ClosureRunner(Closure* closure, FunctionServer::ReplyFunction reply) {
   closure->Run();
@@ -84,4 +84,4 @@ EventManagerController* EventManager::GetController() const {
 void EventManager::Add(Closure* closure) {
   GetController()->Add(closure);
 }
-}  // namespace zrpc
+}  // namespace rpcz

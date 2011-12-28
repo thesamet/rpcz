@@ -15,16 +15,16 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include <iostream>
-#include "zrpc/zrpc.h"
+#include "rpcz/rpcz.h"
 #include "cpp/search.pb.h"
-#include "cpp/search.zrpc.h"
+#include "cpp/search.rpcz.h"
 
 namespace examples {
 class SearchServiceImpl : public SearchService {
 
   virtual void Search(
       const SearchRequest& request,
-      SearchResponse* response, zrpc::RPC* rpc, zrpc::Closure* done) {
+      SearchResponse* response, rpcz::RPC* rpc, rpcz::Closure* done) {
     std::cout << "Got request for '" << request.query() << "'" << std::endl;
     response->add_results("result1 for " + request.query());
     response->add_results("this is result2");
@@ -34,8 +34,8 @@ class SearchServiceImpl : public SearchService {
 }  // namespace examples
 
 int main() {
-  zrpc::Application application;
-  zrpc::Server* server = application.CreateServer("tcp://*:5555");
+  rpcz::Application application;
+  rpcz::Server* server = application.CreateServer("tcp://*:5555");
   examples::SearchServiceImpl search_service;
   server->RegisterService(&search_service);
   std::cout << "Serving requests on port 5555." << std::endl;

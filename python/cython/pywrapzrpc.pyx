@@ -15,10 +15,10 @@ cdef extern from "Python.h":
 
 PyEval_InitThreads()
 
-cdef extern from "zrpc/connection_manager.h" namespace "zrpc":
+cdef extern from "rpcz/connection_manager.h" namespace "rpcz":
     cdef void InstallSignalHandler()
 
-cdef extern from "zrpc/callback.h" namespace "zrpc":
+cdef extern from "rpcz/callback.h" namespace "rpcz":
   pass
 
 def Init():
@@ -49,13 +49,13 @@ cdef string_to_pystring(string s):
     return s.c_str()[:s.size()]
 
 
-# cdef extern from "zrpc/rpc.h" namespace "zrpc":
-#     cdef enum Status "zrpc::GeneratedRPCResponse::Status":
+# cdef extern from "rpcz/rpc.h" namespace "rpcz":
+#     cdef enum Status "rpcz::GeneratedRPCResponse::Status":
 #         APPLICATION_ERROR, OK, DEADLINE_EXCEEDED
 
 
-cdef extern from "zrpc/rpc.h" namespace "zrpc":
-    cdef cppclass _RPC "zrpc::RPC":
+cdef extern from "rpcz/rpc.h" namespace "rpcz":
+    cdef cppclass _RPC "rpcz::RPC":
         bint OK()
         int GetStatus()
         string GetErrorMessage()
@@ -102,7 +102,7 @@ cdef struct ClosureWrapper:
     void* rpc
 
 
-cdef extern from "zrpc/macros.h" namespace "zrpc":
+cdef extern from "rpcz/macros.h" namespace "rpcz":
     cdef cppclass Closure:
         pass
 
@@ -126,8 +126,8 @@ cdef void PythonCallbackBridge(ClosureWrapper *closure_wrapper) with gil:
     free(closure_wrapper)
 
 
-cdef extern from "zrpc/rpc_channel.h" namespace "zrpc":
-    cdef cppclass _RpcChannel "zrpc::RpcChannel":
+cdef extern from "rpcz/rpc_channel.h" namespace "rpcz":
+    cdef cppclass _RpcChannel "rpcz::RpcChannel":
         void CallMethod0(string service_name, string method_name,
                          string request, string* response, _RPC* rpc, 
                          Closure* callback) except +
@@ -161,8 +161,8 @@ cdef class RpcChannel:
                     PythonCallbackBridge, closure_wrapper))
 
 
-cdef extern from "zrpc/zrpc.h" namespace "zrpc":
-    cdef cppclass _Application "zrpc::Application":
+cdef extern from "rpcz/rpcz.h" namespace "rpcz":
+    cdef cppclass _Application "rpcz::Application":
         _Application()
         _RpcChannel* CreateRpcChannel(string)
 

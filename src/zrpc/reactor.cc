@@ -14,16 +14,16 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "zrpc/reactor.h"
+#include "rpcz/reactor.h"
 #include <signal.h>
 #include <vector>
-#include "zrpc/callback.h"
-#include "zrpc/clock.h"
-#include "zrpc/logging.h"
-#include "zrpc/macros.h"
+#include "rpcz/callback.h"
+#include "rpcz/clock.h"
+#include "rpcz/logging.h"
+#include "rpcz/macros.h"
 #include "zmq.hpp"
 
-namespace zrpc {
+namespace rpcz {
 namespace {
 static bool g_interrupted = false;
 void SignalHandler(int signal_value) {
@@ -126,4 +126,4 @@ void InstallSignalHandler() {
   sigaction(SIGINT, &action, NULL);
   sigaction(SIGTERM, &action, NULL);
 }
-}  // namespace zrpc
+}  // namespace rpcz
