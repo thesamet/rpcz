@@ -10,7 +10,7 @@ message RpcRequestHeader {
 message RpcResponseHeader {
   enum Status {
     INACTIVE = 0;
-    INFLIGHT = 1;
+    ACTIVE = 1;
     OK = 2;  // Done
     CANCELLED = 3;
     APPLICATION_ERROR = 4;
@@ -19,9 +19,9 @@ message RpcResponseHeader {
   }
   enum ApplicationError {
     NO_ERROR = 0;
-    INVALID_GENERIC_WRAPPER = -1;
-    UNKNOWN_SERVICE = -2;
-    UNKNOWN_METHOD = -3;
+    INVALID_HEADER = -1;
+    NO_SUCH_SERVICE = -2;
+    NO_SUCH_METHOD = -3;
     INVALID_MESSAGE = -4;
     METHOD_NOT_IMPLEMENTED = -5;
   }

@@ -46,7 +46,7 @@ int RPC::Wait() {
   Status status = GetStatus();
   CHECK_NE(status, status::INACTIVE)
       << "Request must be sent before calling Wait()";
-  if (status != status::INFLIGHT) {
+  if (status != status::ACTIVE) {
     return GetStatus();
   }
   sync_event_->Wait();

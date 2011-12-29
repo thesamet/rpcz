@@ -71,7 +71,7 @@ void ReplyWithAppError(RpcRequestContext& context,
                        int application_error,
                        const std::string& error="") {
   RpcResponseHeader response;
-  response.set_status(RpcResponseHeader::APPLICATION_ERROR);
+  response.set_status(status::APPLICATION_ERROR);
   response.set_application_error(application_error);
   if (!error.empty()) {
     response.set_error(error);
@@ -100,7 +100,7 @@ void FinalizeResponseWithError(RpcRequestContext* context,
                                const std::string& error_message) {
   RpcResponseHeader generic_rpc_response;
   zmq::message_t* payload = new zmq::message_t();
-  generic_rpc_response.set_status(RpcResponseHeader::APPLICATION_ERROR);
+  generic_rpc_response.set_status(status::APPLICATION_ERROR);
   generic_rpc_response.set_application_error(application_error);
   if (!error_message.empty()) {
     generic_rpc_response.set_error(error_message);
@@ -164,9 +164,9 @@ class ServerImpl {
     RpcRequestHeader generic_rpc_request;
     if (!generic_rpc_request.ParseFromArray(request.data(), request.size())) {
       // Handle bad RPC.
-      DLOG(INFO) << "Received corrupt message.";
+      DLOG(INFO) << "Received bad header.";
       ReplyWithAppError(*context,
-                        RpcResponseHeader::INVALID_GENERIC_WRAPPER);
+                        application_error::INVALID_HEADER);
       return;
     };
     ServiceMap::const_iterator service_it = service_map_.find(
@@ -174,7 +174,7 @@ class ServerImpl {
     if (service_it == service_map_.end()) {
       // Handle invalid service.
       DLOG(INFO) << "Invalid service: " << generic_rpc_request.service();
-      ReplyWithAppError(*context, RpcResponseHeader::UNKNOWN_SERVICE);
+      ReplyWithAppError(*context, application_error::NO_SUCH_SERVICE);
       return;
     }
     rpcz::Service* service = service_it->second;
@@ -184,7 +184,7 @@ class ServerImpl {
     if (descriptor == NULL) {
       // Invalid method name
       DLOG(INFO) << "Invalid method name: " << generic_rpc_request.method();
-      ReplyWithAppError(*context, RpcResponseHeader::UNKNOWN_METHOD);
+      ReplyWithAppError(*context, application_error::NO_SUCH_METHOD);
       return;
     }
     context->request.reset(CHECK_NOTNULL(
@@ -193,11 +193,11 @@ class ServerImpl {
       DLOG(INFO) << "Failed to parse request.";
       // Invalid proto;
       ReplyWithAppError(*context,
-                        RpcResponseHeader::INVALID_MESSAGE);
+                        application_error::INVALID_MESSAGE);
       return;
     }
 
-    context->rpc.SetStatus(RpcResponseHeader::OK);
+    context->rpc.SetStatus(status::OK);
     service->CallMethod(descriptor,
                         *context->request,
                         context.release());

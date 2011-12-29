@@ -26,16 +26,31 @@
 namespace rpcz {
 
 typedef RpcResponseHeader::Status Status;
+typedef RpcResponseHeader::ApplicationError ApplicationError;
 
 namespace status {
 static const Status INACTIVE = RpcResponseHeader::INACTIVE;
-static const Status INFLIGHT = RpcResponseHeader::INFLIGHT;
+static const Status ACTIVE = RpcResponseHeader::ACTIVE;
 static const Status OK = RpcResponseHeader::OK;
 static const Status CANCELLED = RpcResponseHeader::CANCELLED;
 static const Status APPLICATION_ERROR = RpcResponseHeader::APPLICATION_ERROR;
 static const Status DEADLINE_EXCEEDED = RpcResponseHeader::DEADLINE_EXCEEDED;
 static const Status TERMINATED = RpcResponseHeader::TERMINATED;
 }  // namespace status
+namespace application_error {
+static const ApplicationError NO_ERROR =
+    RpcResponseHeader::NO_ERROR;
+static const ApplicationError INVALID_HEADER =
+    RpcResponseHeader::INVALID_HEADER;
+static const ApplicationError NO_SUCH_SERVICE =
+    RpcResponseHeader::NO_SUCH_SERVICE;
+static const ApplicationError NO_SUCH_METHOD =
+    RpcResponseHeader::NO_SUCH_METHOD;
+static const ApplicationError INVALID_MESSAGE =
+    RpcResponseHeader::INVALID_MESSAGE;
+static const ApplicationError METHOD_NOT_IMPLEMENTED =
+    RpcResponseHeader::METHOD_NOT_IMPLEMENTED;
+}  // namespace application_error
 
 class SyncEvent;
 class RPC {
