@@ -79,7 +79,7 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
     "const ::google::protobuf::ServiceDescriptor* GetDescriptor();\n"
     "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
     "                const ::google::protobuf::Message& request,\n"
-    "                ::rpcz::RpcRequestContext* RpcRequestContext);\n"
+    "                ::rpcz::ServerChannel* channel);\n"
     "const ::google::protobuf::Message& GetRequestPrototype(\n"
     "  const ::google::protobuf::MethodDescriptor* method) const;\n"
     "const ::google::protobuf::Message& GetResponsePrototype(\n"
@@ -222,7 +222,7 @@ void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
   printer->Print(vars_,
     "void $classname$::CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
     "                             const ::google::protobuf::Message& request,\n"
-    "                             ::rpcz::RpcRequestContext* context) {\n"
+    "                             ::rpcz::ServerChannel* channel) {\n"
     "  GOOGLE_DCHECK_EQ(method->service(), $classname$_descriptor_);\n"
     "  switch(method->index()) {\n");
 
@@ -240,7 +240,7 @@ void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
       "    case $index$:\n"
       "      $name$(\n"
       "          *::google::protobuf::down_cast<const $input_type$*>(&request),\n"
-      "          ::rpcz::Reply< $output_type$>(context));\n"
+      "          ::rpcz::Reply< $output_type$>(channel));\n"
       "      break;\n");
   }
 

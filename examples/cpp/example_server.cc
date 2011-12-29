@@ -29,10 +29,9 @@ class SearchServiceImpl : public SearchService {
       const SearchRequest& request,
       rpcz::Reply<SearchResponse> reply) {
     cout << "Got request for '" << request.query() << "'" << endl;
-    SearchResponse response;
-    response.add_results("result1 for " + request.query());
-    response.add_results("this is result2");
-    reply(response);
+    reply->add_results("result1 for " + request.query());
+    reply->add_results("this is result2");
+    reply.Send();
   }
 
 };

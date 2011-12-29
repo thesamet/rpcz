@@ -1,11 +1,11 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,41 +28,51 @@ class ServiceDescriptor;
 }  // namespace google
 
 namespace rpcz {
-class Closure;
-class RPC;
-struct RpcRequestContext;
 
-void FinalizeResponse(RpcRequestContext* context,
-                      const google::protobuf::Message& response);
+class ServerChannel {
+ public:
+  virtual void Send(const google::protobuf::Message& response) = 0;
+  virtual void SendError(int application_error,
+                         const std::string& error_message = "") = 0;
+  virtual ~ServerChannel() {}
+};
 
-void FinalizeResponseWithError(RpcRequestContext* context,
-                               int application_error,
-                               const std::string& error_message);
-
-template <typename T>
+template <typename MessageType>
 class Reply {
  public:
-  explicit Reply(RpcRequestContext* context) :
-      context_(context), replied_(false) {
+  explicit Reply(ServerChannel* channel) :
+      channel_(channel), response_(new MessageType), replied_(false) {
   }
 
-  ~Reply() {}
-  
-  void operator()(const T& reply) {
+  ~Reply() { }
+
+  void Send() {
     assert(!replied_);
-    FinalizeResponse(context_, reply);
+    channel_->Send(*response_);
+    delete response_;
+    delete channel_;
     replied_ = true;
   }
 
   void Error(int application_error, const std::string& error_message="") {
     assert(!replied_);
-    FinalizeResponseWithError(context_, application_error,
-                              error_message);
+    channel_->SendError(application_error, error_message);
+    delete response_;
+    delete channel_;
     replied_ = true;
   }
 
+  MessageType& operator*() const { return *response_; }
+
+  MessageType* operator->() const  { return response_; }
+
+  MessageType* get() const { return response_; }
+
+  MessageType*& operator->() { return response_; }
+
  private:
-  RpcRequestContext* context_;
+  ServerChannel* channel_;
+  MessageType* response_;
   bool replied_;
 };
 
@@ -79,7 +89,7 @@ class Service {
 
   virtual void CallMethod(const google::protobuf::MethodDescriptor* method,
                           const google::protobuf::Message& request,
-                          RpcRequestContext* rpc_request_context) = 0;
+                          ServerChannel* rpc_request_context) = 0;
 };
 }  // namespace
 #endif

@@ -99,7 +99,7 @@ class RPC {
   scoped_ptr<SyncEvent> sync_event_;
 
   friend class RpcChannelImpl;
-  friend class ServerImpl;
+  friend class ServerChannelImpl;
 };
 
 class RpcError : public std::runtime_error {

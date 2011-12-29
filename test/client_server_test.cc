@@ -38,7 +38,8 @@ namespace rpcz {
 void SuperDone(SearchResponse *response,
                RPC* newrpc, Reply<SearchResponse> reply) {
   delete newrpc;
-  reply(*response);
+  reply->CopyFrom(*response);
+  reply.Send();
   delete response;
 }
 
@@ -68,13 +69,12 @@ class SearchServiceImpl : public SearchService {
       delayed_reply_ = reply;
       return;
     } else if (request.query() == "delayed") {
-      delayed_reply_(SearchResponse());
-      reply(SearchResponse());
+      delayed_reply_.Send();
+      reply.Send();
     } else {
-      SearchResponse response;
-      response.add_results("The search for " + request.query());
-      response.add_results("is great");
-      reply(response);
+      reply->add_results("The search for " + request.query());
+      reply->add_results("is great");
+      reply.Send();
     }
   }
 
@@ -89,9 +89,8 @@ class BackendSearchServiceImpl : public SearchService {
   virtual void Search(
       const SearchRequest&,
       Reply<SearchResponse> reply) {
-    SearchResponse response;
-    response.add_results("42!");
-    reply(response);
+    reply->add_results("42!");
+    reply.Send();
   }
 };
 
