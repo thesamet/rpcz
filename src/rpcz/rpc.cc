@@ -25,7 +25,7 @@ namespace rpcz {
 
 RPC::RPC()
     : status_(status::INACTIVE),
-      application_error_(0),
+      application_error_code_(0),
       deadline_ms_(-1),
       sync_event_(new SyncEvent()) {
 };
@@ -35,7 +35,7 @@ RPC::~RPC() {}
 void RPC::SetFailed(int application_error, const std::string& error_message) {
   SetStatus(status::APPLICATION_ERROR);
   error_message_ = error_message;
-  application_error_ = application_error;
+  application_error_code_ = application_error;
 }
 
 void RPC::SetStatus(Status status) {
@@ -57,7 +57,7 @@ std::string RPC::ToString() const {
   std::string result =
       "status: " + RpcResponseHeader_Status_Name(GetStatus());
   if (GetStatus() == status::APPLICATION_ERROR) {
-    result += "(" + boost::lexical_cast<std::string>(GetApplicationError())
+    result += "(" + boost::lexical_cast<std::string>(GetApplicationErrorCode())
            + ")";
   }
   std::string error_message = GetErrorMessage();

@@ -117,7 +117,7 @@ int RunCall(const std::string& endpoint,
 
   if (rpc.GetStatus() != status::OK) {
     cerr << "Status: " << rpc.GetStatus() << endl;
-    cerr << "Error " << rpc.GetApplicationError() << ": "
+    cerr << "Error " << rpc.GetApplicationErrorCode() << ": "
         << rpc.GetErrorMessage() << endl;
   } else {
     std::string out;

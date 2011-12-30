@@ -150,12 +150,12 @@ class ServerTest : public ::testing::Test {
   }
 
   SearchResponse SendBlockingRequest(Connection* connection,
-                                   const std::string& query) {
+                                     const std::string& query) {
     SearchService_Stub stub(RpcChannel::Create(connection), true);
     SearchRequest request;
     SearchResponse response;
-    RPC rpc;
     request.set_query(query);
+    RPC rpc;
     stub.Search(request, &response, &rpc, NULL);
     rpc.Wait();
     EXPECT_TRUE(rpc.OK());
@@ -200,9 +200,9 @@ TEST_F(ServerTest, SimpleRequestWithError) {
   StartServer();
   SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
   SearchRequest request;
+  request.set_query("foo");
   SearchResponse response;
   RPC rpc;
-  request.set_query("foo");
   stub.Search(request, &response, &rpc, NULL);
   rpc.Wait();
   ASSERT_EQ(RpcResponseHeader::APPLICATION_ERROR, rpc.GetStatus());

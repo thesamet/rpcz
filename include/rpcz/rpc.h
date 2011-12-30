@@ -53,6 +53,7 @@ static const ApplicationError METHOD_NOT_IMPLEMENTED =
 }  // namespace application_error
 
 class SyncEvent;
+
 class RPC {
  public:
   RPC();
@@ -71,8 +72,8 @@ class RPC {
     return error_message_;
   }
 
-  inline int GetApplicationError() const {
-    return application_error_;
+  inline int GetApplicationErrorCode() const {
+    return application_error_code_;
   }
 
   inline int64 GetDeadlineMs() const {
@@ -83,7 +84,7 @@ class RPC {
     deadline_ms_ = deadline_ms;
   }
 
-  void SetFailed(int application_error, const std::string& message);
+  void SetFailed(int application_error_code, const std::string& message);
 
   int Wait();
 
@@ -94,7 +95,7 @@ class RPC {
 
   Status status_;
   std::string error_message_;
-  int application_error_;
+  int application_error_code_;
   int64 deadline_ms_;
   scoped_ptr<SyncEvent> sync_event_;
 
