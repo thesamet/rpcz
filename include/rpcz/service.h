@@ -41,15 +41,14 @@ template <typename MessageType>
 class Reply {
  public:
   explicit Reply(ServerChannel* channel) :
-      channel_(channel), response_(new MessageType), replied_(false) {
+      channel_(channel), replied_(false) {
   }
 
   ~Reply() { }
 
-  void Send() {
+  void Send(const MessageType& response) {
     assert(!replied_);
-    channel_->Send(*response_);
-    delete response_;
+    channel_->Send(response);
     delete channel_;
     replied_ = true;
   }
@@ -57,22 +56,12 @@ class Reply {
   void Error(int application_error, const std::string& error_message="") {
     assert(!replied_);
     channel_->SendError(application_error, error_message);
-    delete response_;
     delete channel_;
     replied_ = true;
   }
 
-  MessageType& operator*() const { return *response_; }
-
-  MessageType* operator->() const  { return response_; }
-
-  MessageType* get() const { return response_; }
-
-  MessageType*& operator->() { return response_; }
-
  private:
   ServerChannel* channel_;
-  MessageType* response_;
   bool replied_;
 };
 
