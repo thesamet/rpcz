@@ -73,7 +73,7 @@ class ServerChannelImpl : public ServerChannel {
                     zmq::message_t* request_id,
                     FunctionServer::ReplyFunction reply)
       : routes_(routes), request_id_(request_id),
-        reply_(reply) { rpc_.SetStatus(status::ACTIVE); }
+        reply_(reply) { }
 
   virtual void Send(const google::protobuf::Message& response) {
     RpcResponseHeader generic_rpc_response;
@@ -100,7 +100,6 @@ class ServerChannelImpl : public ServerChannel {
   }
 
  private:
-  RPC rpc_;
   scoped_ptr<MessageVector> routes_;
   scoped_ptr<zmq::message_t> request_id_;
   scoped_ptr<google::protobuf::Message> request_;
