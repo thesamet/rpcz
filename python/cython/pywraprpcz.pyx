@@ -2,11 +2,6 @@ from cpython cimport Py_DECREF, Py_INCREF
 from libc.stdlib cimport malloc, free
 
 
-# cdef extern from "glog/logging.h" namespace "google":
-#     cdef void InstallFailureSignalHandler()
-#     cdef void InitGoogleLogging(char*)
-
-
 cdef extern from "Python.h":
     ctypedef int PyGILState_STATE
     PyGILState_STATE    PyGILState_Ensure               ()   nogil
@@ -21,9 +16,7 @@ cdef extern from "rpcz/callback.h" namespace "rpcz":
 
 def Init():
     import sys
-    # InstallFailureSignalHandler()
-    # InitGoogleLogging(sys.argv[0])
-    InstallSignalHandler()
+    # InstallSignalHandler()
     PyEval_InitThreads()
 
 
@@ -61,7 +54,7 @@ cdef extern from "rpcz/rpc.h" namespace "rpcz":
         bint OK()
         int GetStatus()
         string GetErrorMessage()
-        int GetApplicationError()
+        int GetApplicationErrorCode()
         int GetDeadlineMs()
         void SetDeadlineMs(int)
         int Wait() nogil
@@ -84,9 +77,9 @@ cdef class WrappedRPC:
     property status:
         def __get__(self):
             return self.thisptr.GetStatus()
-    property application_error:
+    property application_error_code:
         def __get__(self):
-            return self.thisptr.GetApplicationError()
+            return self.thisptr.GetApplicationErrorCode()
     property error_message:
         def __get__(self):
             return string_to_pystring(self.thisptr.GetErrorMessage())

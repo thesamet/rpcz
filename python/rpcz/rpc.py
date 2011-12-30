@@ -7,16 +7,16 @@ class RpcError(Exception):
 
 
 class RpcApplicationError(RpcError):
-  def __init__(self, application_error, message):
-    self.application_error = application_error
+  def __init__(self, application_error_code, message):
+    self.application_error = application_error_code
     self.message = message
 
   def __repr__(self):
-    return "RpcApplicationError(%r, %r)" % (self.application_error,
+    return "RpcApplicationError(%r, %r)" % (self.application_error_code,
                                             self.message)
 
   def __str__(self):
-    return "Error %d: %s" % (self.application_error,
+    return "Error %d: %s" % (self.application_error_code,
                              self.message)
 
 
@@ -26,13 +26,18 @@ class RpcDeadlineExceeded(RpcError):
 
 def RaiseRpcError(rpc):
   if rpc.status == rpcz_pb2.RpcResponseHeader.APPLICATION_ERROR:
-    raise RpcApplicationError(rpc.application_error, rpc.error_message)
+    raise RpcApplicationError(rpc.application_error_code, rpc.error_message)
   else:
     if rpc.status == rpcz_pb2.RpcResponseHeader.DEADLINE_EXCEEDED:
       raise RpcDeadlineExceeded()
 
 
 class RPC(pywraprpcz.WrappedRPC):
+  def __init__(self, deadline_ms = None):
+    super(RPC, self).__init__()
+    if deadline_ms is not None:
+      self.deadline_ms = deadline_ms
+
   def wait(self):
     super(RPC, self).wait()
     if not self.ok():
