@@ -45,7 +45,7 @@ setup(
     author = "Nadav Samet",
     author_email = "nadavs@google.com",
     description = "An RPC implementation for Protocol Buffer based on ZeroMQ",
-    license = "BSD",
+    license = "Apache 2.0",
     keywords = "protocol-buffers rpc zeromq 0mq",
     packages=['rpcz', 'tests'],
     url='http://code.google.com/p/rpcz/',
