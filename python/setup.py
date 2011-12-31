@@ -35,7 +35,8 @@ class gen_pyext(Command):
     def finalize_options(self):
         pass
     def run(self):
-        os.system('cython --cplus cython/pywraprpcz.pyx')
+        if os.system('cython --cplus cython/pywraprpcz.pyx') != 0:
+            raise IOError("Running cython failed.")
 
 
 setup(

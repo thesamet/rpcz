@@ -285,7 +285,28 @@ TEST_F(ServerTest, EasyBlockingRequestRaisesExceptions) {
   SearchRequest request;
   SearchResponse response;
   request.set_query("foo");
-  EXPECT_THROW(stub.Search(request, &response),
-               RpcError);
+  try {
+    stub.Search(request, &response);
+    ASSERT_TRUE(false);
+  } catch (RpcError &error) {
+    ASSERT_EQ(status::APPLICATION_ERROR, error.GetStatus());
+    ASSERT_EQ(-4, error.GetApplicationErrorCode());
+  }
+}
+
+TEST_F(ServerTest, EasyBlockingRequestWithTimeout) {
+  StartServer();
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
+  SearchRequest request;
+  SearchResponse response;
+  request.set_query("timeout");
+  try {
+    stub.Search(request, &response, 1);
+    ASSERT_TRUE(false);
+  } catch (RpcError &error) {
+    ASSERT_EQ(status::DEADLINE_EXCEEDED, error.GetStatus());
+  }
+  request.set_query("delayed");
+  stub.Search(request, &response);
 }
 }  // namespace

@@ -3,16 +3,16 @@ from libc.stdlib cimport malloc, free
 
 
 cdef extern from "Python.h":
-    ctypedef int PyGILState_STATE
-    PyGILState_STATE    PyGILState_Ensure               ()   nogil
-    void                PyGILState_Release              (PyGILState_STATE) nogil
     void PyEval_InitThreads()
+
 
 cdef extern from "rpcz/connection_manager.h" namespace "rpcz":
     cdef void InstallSignalHandler()
 
+
 cdef extern from "rpcz/callback.h" namespace "rpcz":
   pass
+
 
 def Init():
     import sys
@@ -36,17 +36,16 @@ cdef string make_string(pystring) except *:
     return string(pystring, len(pystring))
 
 
-cdef ptr_string_to_pystring(string* s):
+cdef string_ptr_to_pystring(string* s):
     return s.c_str()[:s.size()]
+
+
+cdef cstring_to_pystring(void* s, size_t size):
+    return (<char*>s)[:size]
 
 
 cdef string_to_pystring(string s):
     return s.c_str()[:s.size()]
-
-
-# cdef extern from "rpcz/rpc.h" namespace "rpcz":
-#     cdef enum Status "rpcz::GeneratedRPCResponse::Status":
-#         APPLICATION_ERROR, OK, DEADLINE_EXCEEDED
 
 
 cdef extern from "rpcz/rpc.h" namespace "rpcz":
@@ -103,11 +102,12 @@ cdef extern from "rpcz/macros.h" namespace "rpcz":
 
     Closure* NewCallback(void(ClosureWrapper*) nogil, ClosureWrapper*)
 
-cdef void PythonCallbackBridge(ClosureWrapper *closure_wrapper) with gil:
-    # We don't really have the GIL when this function is called, and it is
-    # ran from a non-python thread.
+
+# this function is called from C++ after we gave up the GIL. We use "with gil"
+# to acquire it.
+cdef void python_callback_bridge(ClosureWrapper *closure_wrapper) with gil:
     (<object>closure_wrapper.response_obj).ParseFromString(
-            ptr_string_to_pystring(closure_wrapper.response_str))
+            string_ptr_to_pystring(closure_wrapper.response_str))
     response = <object>closure_wrapper.response_obj;
     callback = <object>closure_wrapper.callback
     rpc = <object>closure_wrapper.rpc
@@ -134,7 +134,7 @@ cdef class RpcChannel:
     def __init__(self):
         raise TypeError("Use Application.CreateRpcChannel to create a "
                         "RpcChannel.")
-    def CallMethod(self, service_name, method_name,
+    def call_method(self, service_name, method_name,
                    request, response, WrappedRPC rpc, callback):
         cdef ClosureWrapper* closure_wrapper = <ClosureWrapper*>malloc(
                 sizeof(ClosureWrapper))
@@ -152,13 +152,80 @@ cdef class RpcChannel:
                 closure_wrapper.response_str,
                 rpc.thisptr,
                 NewCallback(
-                    PythonCallbackBridge, closure_wrapper))
+                    python_callback_bridge, closure_wrapper))
+
+
+cdef extern from "rpcz/service.h" namespace "rpcz":
+  cdef cppclass _ServerChannel "rpcz::ServerChannel":
+    void SendError(int, string)
+    void Send0(string)
+ 
+
+cdef class ServerChannel:
+    cdef _ServerChannel *thisptr
+    def __init__(self):
+        raise TypeError("Do not initialize directly.")
+    def __dealloc__(self):
+        del self.thisptr
+    def send_error(self, application_error_code, error_string=""):
+      self.thisptr.SendError(application_error_code,
+                             make_string(error_string))
+      del self.thisptr
+      self.thisptr = NULL
+    def send(self, message):
+      self.thisptr.Send0(make_string(message.SerializeToString()))
+      del self.thisptr
+      self.thisptr = NULL
+
+
+ctypedef void(*Handler)(user_data, string method,
+                        void* payload, size_t payload_len,
+                        _ServerChannel* channel) nogil
+
+
+cdef void rpc_handler_bridge(user_data, string& method,
+                             void* payload, size_t payload_len,
+                             _ServerChannel* channel) with gil:
+  cdef ServerChannel channel_ = ServerChannel.__new__(ServerChannel)
+  channel_.thisptr = channel
+  user_data._call_method(string_to_pystring(method),
+                         cstring_to_pystring(payload, payload_len),
+                         channel_)
+
+
+cdef extern from "python_rpc_service.h" namespace "rpcz":
+    cdef cppclass PythonRpcService:
+        PythonRpcService(Handler, object)
+
+
+
+cdef extern from "rpcz/rpcz.h" namespace "rpcz":
+    cdef cppclass _Server "rpcz::Server":
+        void Start() nogil
+        void RegisterService(PythonRpcService*, string name)
+
+
+cdef class Server:
+    cdef _Server *thisptr
+    def __init__(self):
+        raise TypeError("Use Application.CreateServer to create a "
+                        "Server.")
+    def __dealloc__(self):
+        del self.thisptr
+    def start(self):
+        with nogil:
+            self.thisptr.Start()
+    def register_service(self, service, name=None):
+        cdef PythonRpcService* rpc_service = new PythonRpcService(
+            rpc_handler_bridge, service)
+        self.thisptr.RegisterService(rpc_service, make_string(name))
 
 
 cdef extern from "rpcz/rpcz.h" namespace "rpcz":
     cdef cppclass _Application "rpcz::Application":
         _Application()
         _RpcChannel* CreateRpcChannel(string)
+        _Server* CreateServer(string)
 
 
 cdef class Application:
@@ -168,7 +235,12 @@ cdef class Application:
     def __dealloc__(self):
         del self.thisptr
 
-    def CreateRpcChannel(self, endpoint):
+    def create_rpc_channel(self, endpoint):
         cdef RpcChannel channel = RpcChannel.__new__(RpcChannel)
         channel.thisptr = self.thisptr.CreateRpcChannel(make_string(endpoint))
         return channel
+
+    def create_server(self, endpoint):
+        cdef Server server = Server.__new__(Server)
+        server.thisptr = self.thisptr.CreateServer(make_string(endpoint))
+        return server

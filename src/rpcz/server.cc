@@ -41,14 +41,18 @@
 
 namespace rpcz {
 
+class ServerChannelImpl;
+
 class ServerImpl {
  public:
   ServerImpl(zmq::socket_t* socket, FunctionServer* function_server,
              bool owns_socket);
 
+  ~ServerImpl();
+
   void Start();
 
-  void RegisterService(Service *service);
+  void RegisterService(RpcService *service, const std::string& name);
 
  private:
   void HandleFunctionResponse(zmq::socket_t* fs_socket);
@@ -62,8 +66,8 @@ class ServerImpl {
   zmq::socket_t* socket_;
   FunctionServer* function_server_;
   bool owns_socket_;
-  typedef std::map<std::string, rpcz::Service*> ServiceMap;
-  ServiceMap service_map_;
+  typedef std::map<std::string, rpcz::RpcService*> RpcServiceMap;
+  RpcServiceMap service_map_;
   DISALLOW_COPY_AND_ASSIGN(ServerImpl);
 };
 
@@ -84,6 +88,12 @@ class ServerChannelImpl : public ServerChannel {
     }
     SendGenericResponse(generic_rpc_response,
                         payload.release());
+  }
+
+  virtual void Send0(const std::string& response) {
+    RpcResponseHeader generic_rpc_response;
+    SendGenericResponse(generic_rpc_response,
+                        StringToMessage(response));
   }
 
   virtual void SendError(int application_error,
@@ -121,9 +131,45 @@ class ServerChannelImpl : public ServerChannel {
     reply_(routes_.get());
   }
 
-  friend void ServerImpl::HandleRequestWorker(
-      MessageVector* routes_, MessageVector* data_,
-      FunctionServer::ReplyFunction reply);
+  friend class ProtoRpcService;
+};
+
+class ProtoRpcService : public RpcService {
+ public:
+  explicit ProtoRpcService(Service* service) : service_(service) {
+  }
+
+  virtual void DispatchRequest(const std::string& method,
+                               const void* payload, size_t payload_len,
+                               ServerChannel* channel_) {
+    scoped_ptr<ServerChannelImpl> channel(
+        static_cast<ServerChannelImpl*>(channel_));
+
+    const ::google::protobuf::MethodDescriptor* descriptor =
+        service_->GetDescriptor()->FindMethodByName(
+            method);
+    if (descriptor == NULL) {
+      // Invalid method name
+      DLOG(INFO) << "Invalid method name: " << method,
+      channel->SendError(application_error::NO_SUCH_METHOD);
+      return;
+    }
+    channel->request_.reset(CHECK_NOTNULL(
+            service_->GetRequestPrototype(descriptor).New()));
+    if (!channel->request_->ParseFromArray(payload, payload_len)) {
+      DLOG(INFO) << "Failed to parse request.";
+      // Invalid proto;
+      channel->SendError(application_error::INVALID_MESSAGE);
+      return;
+    }
+
+    service_->CallMethod(descriptor,
+                         *channel->request_,
+                         channel.release());
+  }
+
+ private:
+  Service* service_;
 };
 
 ServerImpl::ServerImpl(zmq::socket_t* socket, FunctionServer* function_server,
@@ -147,8 +193,9 @@ void ServerImpl::Start() {
   }
 }
 
-void ServerImpl::RegisterService(Service *service) {
-  service_map_[service->GetDescriptor()->name()] = service;
+void ServerImpl::RegisterService(RpcService *rpc_service,
+                                 const std::string& name) {
+  service_map_[name] = rpc_service;
 }
 
 void ServerImpl::HandleFunctionResponse(zmq::socket_t* fs_socket) {
@@ -163,7 +210,7 @@ void ServerImpl::HandleRequestWorker(MessageVector* routes_,
                                      FunctionServer::ReplyFunction reply) {
   // We are responsible to delete routes and data (and the pointers they
   // contain, so first wrap them in scoped_ptr's.
-  scoped_ptr<ServerChannelImpl> channel(new ServerChannelImpl(
+  scoped_ptr<ServerChannel> channel(new ServerChannelImpl(
           routes_,
           data_->release(0),
           reply));
@@ -173,43 +220,25 @@ void ServerImpl::HandleRequestWorker(MessageVector* routes_,
   zmq::message_t& request = (*data)[1];
   zmq::message_t& payload = (*data)[2];
 
-  RpcRequestHeader generic_rpc_request;
-  if (!generic_rpc_request.ParseFromArray(request.data(), request.size())) {
+  RpcRequestHeader rpc_request_header;
+  if (!rpc_request_header.ParseFromArray(request.data(), request.size())) {
     // Handle bad RPC.
     DLOG(INFO) << "Received bad header.";
     channel->SendError(application_error::INVALID_HEADER);
     return;
   };
-  ServiceMap::const_iterator service_it = service_map_.find(
-      generic_rpc_request.service());
+  RpcServiceMap::const_iterator service_it = service_map_.find(
+      rpc_request_header.service());
   if (service_it == service_map_.end()) {
     // Handle invalid service.
-    DLOG(INFO) << "Invalid service: " << generic_rpc_request.service();
+    DLOG(INFO) << "Invalid service: " << rpc_request_header.service();
     channel->SendError(application_error::NO_SUCH_SERVICE);
     return;
   }
-  rpcz::Service* service = service_it->second;
-  const ::google::protobuf::MethodDescriptor* descriptor =
-      service->GetDescriptor()->FindMethodByName(
-          generic_rpc_request.method());
-  if (descriptor == NULL) {
-    // Invalid method name
-    DLOG(INFO) << "Invalid method name: " << generic_rpc_request.method();
-    channel->SendError(application_error::NO_SUCH_METHOD);
-    return;
-  }
-  channel->request_.reset(CHECK_NOTNULL(
-          service->GetRequestPrototype(descriptor).New()));
-  if (!channel->request_->ParseFromArray(payload.data(), payload.size())) {
-    DLOG(INFO) << "Failed to parse request.";
-    // Invalid proto;
-    channel->SendError(application_error::INVALID_MESSAGE);
-    return;
-  }
-
-  service->CallMethod(descriptor,
-                      *channel->request_,
-                      channel.release());
+  rpcz::RpcService* service = service_it->second;
+  service->DispatchRequest(rpc_request_header.method(), payload.data(),
+                           payload.size(),
+                           channel.release());
 }
 
 void ServerImpl::HandleRequest(zmq::socket_t* fs_socket) {
@@ -226,6 +255,11 @@ void ServerImpl::HandleRequest(zmq::socket_t* fs_socket) {
                   this, routes.release(), data.release(), _1));
 }
 
+ServerImpl::~ServerImpl() {
+  DeleteContainerSecondPointer(service_map_.begin(),
+                               service_map_.end());
+}
+
 Server::Server(zmq::socket_t* socket, EventManager* event_manager,
                bool owns_socket)
     : server_impl_(new ServerImpl(socket, event_manager->GetFunctionServer(),
@@ -240,6 +274,18 @@ void Server::Start() {
 }
 
 void Server::RegisterService(rpcz::Service *service) {
-  server_impl_->RegisterService(service);
+  RegisterService(service,
+                  service->GetDescriptor()->name());
 }
+
+void Server::RegisterService(rpcz::Service *service, const std::string& name) {
+  RegisterService(new ProtoRpcService(service),
+                  name);
+}
+
+void Server::RegisterService(rpcz::RpcService *rpc_service, const std::string& name) {
+  server_impl_->RegisterService(rpc_service,
+                                name);
+}
+
 }  // namespace

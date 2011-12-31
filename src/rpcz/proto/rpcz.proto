@@ -26,6 +26,6 @@ message RpcResponseHeader {
     METHOD_NOT_IMPLEMENTED = -5;
   }
   optional Status status = 1 [default = OK];
-  optional int32 application_error = 2;
+  optional int32 application_error = 2 [default = 0];
   optional string error = 3;
 }

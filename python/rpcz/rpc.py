@@ -27,10 +27,10 @@ class RpcDeadlineExceeded(RpcError):
 def RaiseRpcError(rpc):
   if rpc.status == rpcz_pb2.RpcResponseHeader.APPLICATION_ERROR:
     raise RpcApplicationError(rpc.application_error_code, rpc.error_message)
-  else:
-    if rpc.status == rpcz_pb2.RpcResponseHeader.DEADLINE_EXCEEDED:
+  elif rpc.status == rpcz_pb2.RpcResponseHeader.DEADLINE_EXCEEDED:
       raise RpcDeadlineExceeded()
-
+  else:
+    raise RpcError(rpc.status)
 
 class RPC(pywraprpcz.WrappedRPC):
   def __init__(self, deadline_ms = None):

@@ -48,5 +48,14 @@ void DeleteContainerPairPointers(const IteratorType& begin,
     delete i->second;
   }
 }
+
+// For each item in the range [begin, end), delete item->second.
+template<typename IteratorType>
+void DeleteContainerSecondPointer(const IteratorType& begin,
+                                  const IteratorType& end) {
+  for (IteratorType i = begin; i != end; ++i) {
+    delete i->second;
+  }
+}
 }  // namespace rpcz
 #endif

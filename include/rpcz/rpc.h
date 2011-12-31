@@ -101,11 +101,35 @@ class RPC {
 
   friend class RpcChannelImpl;
   friend class ServerChannelImpl;
+  DISALLOW_COPY_AND_ASSIGN(RPC);
 };
 
 class RpcError : public std::runtime_error {
  public:
-  explicit RpcError(const RPC& rpc_) : std::runtime_error(rpc_.ToString()) {}
+  explicit RpcError(const RPC& rpc_) 
+      : std::runtime_error(rpc_.ToString()),
+        status_(rpc_.GetStatus()),
+        error_message_(rpc_.GetErrorMessage()),
+        application_error_code_(rpc_.GetApplicationErrorCode()) {}
+
+  virtual ~RpcError() throw() {}
+
+  Status GetStatus() const {
+    return status_;
+  }
+
+  inline std::string GetErrorMessage() const {
+    return error_message_;
+  }
+
+  inline int GetApplicationErrorCode() const {
+    return application_error_code_;
+  }
+
+ private:
+  Status status_;
+  std::string error_message_;
+  int application_error_code_;
 };
 
 class InvalidMessageError : public std::runtime_error {

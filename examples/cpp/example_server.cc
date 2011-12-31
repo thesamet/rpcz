@@ -46,5 +46,4 @@ int main() {
   cout << "Serving requests on port 5555." << endl;
   server->Start();
   delete server;
-  cout << "Terminating!" << endl;
 }

@@ -18,6 +18,7 @@
 #define RPCZ_SERVER_H
 
 #include "rpcz/macros.h"
+#include "rpcz/rpcz.pb.h"
 
 namespace zmq {
 class socket_t;
@@ -25,6 +26,8 @@ class socket_t;
 
 namespace rpcz {
 class EventManager;
+class RpcService;
+class ServerChannel;
 class ServerImpl;
 class Service;
 
@@ -45,8 +48,15 @@ class Server {
   ~Server();
 
   // Registers an RPC Service with this server. All registrations must occur
-  // before Start() is called.
-  void RegisterService(Service *service);
+  // before Start() is called. The name parameter identifies the service for
+  // external clients. If you use the first form, the service name from the
+  // protocol buffer definition will be used. Does not take ownership of the
+  // provided service.
+  void RegisterService(Service* service);
+  void RegisterService(Service* service, const std::string& name);
+
+  // Registers a low-level RpcService.
+  void RegisterService(RpcService* rpc_service, const std::string& name);
 
   // Starts serving requests. The calling thread starts forwarding requests
   // from the socket to the event manager for processings. Only one thread may
@@ -60,6 +70,15 @@ class Server {
  private:
   scoped_ptr<ServerImpl> server_impl_;
   DISALLOW_COPY_AND_ASSIGN(Server);
+};
+
+// RpcService is a low-level request handler: requests and replies are void*.
+// It is exposed here for language bindings. Do not use directly.
+class RpcService {
+ public:
+  virtual void DispatchRequest(const std::string& method,
+                               const void* payload, size_t payload_len,
+                               ServerChannel* channel_) = 0;
 };
 }  // namespace
 #endif

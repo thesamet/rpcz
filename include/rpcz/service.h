@@ -35,6 +35,10 @@ class ServerChannel {
   virtual void SendError(int application_error,
                          const std::string& error_message = "") = 0;
   virtual ~ServerChannel() {}
+
+  // Hack to allow language bindings to do the serialization at their
+  // end. Do not use directly.
+  virtual void Send0(const std::string& response) = 0;
 };
 
 template <typename MessageType>
@@ -78,7 +82,7 @@ class Service {
 
   virtual void CallMethod(const google::protobuf::MethodDescriptor* method,
                           const google::protobuf::Message& request,
-                          ServerChannel* rpc_request_context) = 0;
+                          ServerChannel* server_channel) = 0;
 };
 }  // namespace
 #endif
