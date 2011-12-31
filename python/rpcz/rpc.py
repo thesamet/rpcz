@@ -8,7 +8,7 @@ class RpcError(Exception):
 
 class RpcApplicationError(RpcError):
   def __init__(self, application_error_code, message):
-    self.application_error = application_error_code
+    self.application_error_code = application_error_code
     self.message = message
 
   def __repr__(self):
@@ -31,6 +31,7 @@ def RaiseRpcError(rpc):
       raise RpcDeadlineExceeded()
   else:
     raise RpcError(rpc.status)
+
 
 class RPC(pywraprpcz.WrappedRPC):
   def __init__(self, deadline_ms = None):
