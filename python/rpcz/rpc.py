@@ -24,7 +24,7 @@ class RpcDeadlineExceeded(RpcError):
   pass
 
 
-def RaiseRpcError(rpc):
+def _RaiseRpcError(rpc):
   if rpc.status == rpcz_pb2.RpcResponseHeader.APPLICATION_ERROR:
     raise RpcApplicationError(rpc.application_error_code, rpc.error_message)
   elif rpc.status == rpcz_pb2.RpcResponseHeader.DEADLINE_EXCEEDED:
@@ -42,4 +42,4 @@ class RPC(pywraprpcz.WrappedRPC):
   def wait(self):
     super(RPC, self).wait()
     if not self.ok():
-      RaiseRpcError(self)
+      _RaiseRpcError(self)
