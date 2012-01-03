@@ -173,7 +173,7 @@ void RpcChannelImpl::HandleClientResponse(
       CHECK(false) << "Unexpected RemoteResponse state: "
                    << remote_response.status;
   }
-  // We call Signal() before we execute closure sync the closure may delete
+  // We call Signal() before we execute closure since the closure may delete
   // the RPC object (which contains the sync_event).
   response_context->rpc->sync_event_->Signal();
   if (response_context->user_closure) {
