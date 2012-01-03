@@ -48,6 +48,11 @@ cdef string_to_pystring(string s):
     return s.c_str()[:s.size()]
 
 
+cdef extern from "rpcz/sync_event.h" namespace "rpcz":
+    cdef cppclass _SyncEvent "rpcz::SyncEvent":
+        void Signal() nogil
+        void Wait() nogil
+
 cdef extern from "rpcz/rpc.h" namespace "rpcz":
     cdef cppclass _RPC "rpcz::RPC":
         bint OK()
@@ -61,17 +66,19 @@ cdef extern from "rpcz/rpc.h" namespace "rpcz":
 
 cdef class WrappedRPC:
     cdef _RPC *thisptr
+    cdef _SyncEvent *sync_event
+
     def __cinit__(self):
         self.thisptr = new _RPC()
+        self.sync_event = new _SyncEvent()
     def __dealloc__(self):
+        del self.sync_event
         del self.thisptr
     def ok(self):
         return self.thisptr.OK()
     def wait(self):
         with nogil:
-            value = self.thisptr.Wait()
-        if value == -1:
-          raise KeyboardInterrupt()
+            self.sync_event.Wait()
 
     property status:
         def __get__(self):
@@ -110,7 +117,8 @@ cdef void python_callback_bridge(ClosureWrapper *closure_wrapper) with gil:
             string_ptr_to_pystring(closure_wrapper.response_str))
     response = <object>closure_wrapper.response_obj;
     callback = <object>closure_wrapper.callback
-    rpc = <object>closure_wrapper.rpc
+    rpc = <WrappedRPC>closure_wrapper.rpc
+    rpc.sync_event.Signal()
     if callback is not None:
         callback(response, rpc)
     Py_DECREF(<object>closure_wrapper.response_obj)
