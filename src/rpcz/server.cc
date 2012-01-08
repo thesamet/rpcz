@@ -45,8 +45,7 @@ class ServerChannelImpl;
 
 class ServerImpl {
  public:
-  ServerImpl(zmq::socket_t* socket, FunctionServer* function_server,
-             bool owns_socket);
+  ServerImpl(zmq::socket_t* socket, FunctionServer* function_server);
 
   ~ServerImpl();
 
@@ -65,7 +64,6 @@ class ServerImpl {
 
   zmq::socket_t* socket_;
   FunctionServer* function_server_;
-  bool owns_socket_;
   typedef std::map<std::string, rpcz::RpcService*> RpcServiceMap;
   RpcServiceMap service_map_;
   DISALLOW_COPY_AND_ASSIGN(ServerImpl);
@@ -172,10 +170,8 @@ class ProtoRpcService : public RpcService {
   Service* service_;
 };
 
-ServerImpl::ServerImpl(zmq::socket_t* socket, FunctionServer* function_server,
-             bool owns_socket)
-  : socket_(socket), function_server_(function_server),
-    owns_socket_(owns_socket) {}
+ServerImpl::ServerImpl(zmq::socket_t* socket, FunctionServer* function_server)
+  : socket_(socket), function_server_(function_server) {}
 
 void ServerImpl::Start() {
   // The reactor owns all sockets.
@@ -188,9 +184,6 @@ void ServerImpl::Start() {
                         this, &ServerImpl::HandleFunctionResponse,
                         fs_socket));
   reactor.Loop();
-  if (owns_socket_) {
-    delete socket_;
-  }
 }
 
 void ServerImpl::RegisterService(RpcService *rpc_service,
@@ -260,10 +253,8 @@ ServerImpl::~ServerImpl() {
                                service_map_.end());
 }
 
-Server::Server(zmq::socket_t* socket, EventManager* event_manager,
-               bool owns_socket)
-    : server_impl_(new ServerImpl(socket, event_manager->GetFunctionServer(),
-                                  owns_socket)) {
+Server::Server(zmq::socket_t* socket, EventManager* event_manager)
+  : server_impl_(new ServerImpl(socket, event_manager->GetFunctionServer())) {
 }
 
 Server::~Server() {
@@ -283,7 +274,8 @@ void Server::RegisterService(rpcz::Service *service, const std::string& name) {
                   name);
 }
 
-void Server::RegisterService(rpcz::RpcService *rpc_service, const std::string& name) {
+void Server::RegisterService(rpcz::RpcService *rpc_service,
+                             const std::string& name) {
   server_impl_->RegisterService(rpc_service,
                                 name);
 }
