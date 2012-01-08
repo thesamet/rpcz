@@ -102,12 +102,15 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
   printer->Indent();
 
   printer->Print(vars_,
-    "$classname$_Stub(::rpcz::RpcChannel* channel, bool owns_channels=false);\n"
+    "$classname$_Stub(::rpcz::RpcChannel* channel, \n"
+    "                 bool owns_channel=false);\n"
+    "$classname$_Stub(::rpcz::RpcChannel* channel, \n"
+    "                 const ::std::string& service_name,\n"
+    "                 bool owns_channel=false);\n"
     "~$classname$_Stub();\n"
     "\n"
     "inline ::rpcz::RpcChannel* channel() { return channel_; }\n"
     "\n"
-    "// implements $classname$ ------------------------------------------\n"
     "\n");
 
   GenerateMethodSignatures(NON_VIRTUAL, printer, true);
@@ -116,6 +119,7 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
   printer->Print(vars_,
     " private:\n"
     "  ::rpcz::RpcChannel* channel_;\n"
+    "  ::std::string service_name_;\n"
     "  bool owns_channel_;\n"
     "  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS($classname$_Stub);\n"
     "};\n"
@@ -188,8 +192,15 @@ void ServiceGenerator::GenerateImplementation(io::Printer* printer) {
 
   // Generate stub implementation.
   printer->Print(vars_,
-    "$classname$_Stub::$classname$_Stub(::rpcz::RpcChannel* channel, bool owns_channel)\n"
-    "  : channel_(channel), owns_channel_(owns_channel) {}\n"
+    "$classname$_Stub::$classname$_Stub(::rpcz::RpcChannel* channel,\n"
+    "                                   const ::std::string& service_name,\n"
+    "                                   bool owns_channel)\n"
+    "  : channel_(channel), service_name_(service_name),\n"
+    "    owns_channel_(owns_channel) {}\n"
+    "$classname$_Stub::$classname$_Stub(::rpcz::RpcChannel* channel,\n"
+    "                                   bool owns_channel)\n"
+    "  : channel_(channel), service_name_($classname$::descriptor()->name()),\n"
+    "    owns_channel_(owns_channel) {}\n"
     "$classname$_Stub::~$classname$_Stub() {\n"
     "  if (owns_channel_) delete channel_;\n"
     "}\n"
@@ -306,7 +317,8 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
       "                              $output_type$* response,\n"
       "                              ::rpcz::RPC* rpc,\n"
       "                              ::rpcz::Closure* done) {\n"
-      "  channel_->CallMethod($classname$::descriptor()->method($index$),\n"
+      "  channel_->CallMethod(service_name_,\n"
+      "                       $classname$::descriptor()->method($index$),\n"
       "                       request, response, rpc, done);\n"
       "}\n");
     printer->Print(sub_vars,
@@ -315,7 +327,8 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
       "                              long deadline_ms) {\n"
       "  ::rpcz::RPC rpc;\n"
       "  rpc.SetDeadlineMs(deadline_ms);\n"
-      "  channel_->CallMethod($classname$::descriptor()->method($index$),\n"
+      "  channel_->CallMethod(service_name_,\n"
+      "                       $classname$::descriptor()->method($index$),\n"
       "                       request, response, &rpc, NULL);\n"
       "  rpc.Wait();\n"
       "  if (!rpc.OK()) {\n"

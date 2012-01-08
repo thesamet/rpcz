@@ -48,7 +48,7 @@ def _BuildStubMethod(method_descriptor):
               raise ValueError("'rpc' and 'deadline_ms' cannot be both "
                                "specified. Use rpc.deadline_ms to set a "
                                "deadline")
-        stub._channel.call_method(stub.DESCRIPTOR.name,
+        stub._channel.call_method(stub._service_name,
                                   method_descriptor.name,
                                   request, response, rpc, callback)
         if blocking_mode:
@@ -57,8 +57,9 @@ def _BuildStubMethod(method_descriptor):
     return call
 
 
-def _StubInitMethod(stub, channel):
+def _StubInitMethod(stub, channel, service_name=None):
     stub._channel = channel
+    stub._service_name = service_name or stub.DESCRIPTOR.name
 
 
 class GeneratedServiceStubType(GeneratedServiceType):
@@ -67,6 +68,5 @@ class GeneratedServiceStubType(GeneratedServiceType):
         attrs['__init__'] = _StubInitMethod
         for method in descriptor.methods:
             attrs[method.name] = _BuildStubMethod(method)
-
         return super(GeneratedServiceStubType, cls).__new__(cls, name, bases,
                                                             attrs)

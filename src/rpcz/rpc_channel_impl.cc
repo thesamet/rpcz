@@ -115,12 +115,13 @@ void RpcChannelImpl::CallMethod0(const std::string& service_name,
 }
 
 void RpcChannelImpl::CallMethod(
+    const std::string& service_name,
     const google::protobuf::MethodDescriptor* method,
     const google::protobuf::Message& request,
     google::protobuf::Message* response,
     RPC* rpc,
     Closure* done) {
-  CallMethodFull(method->service()->name(),
+  CallMethodFull(service_name,
                  method->name(),
                  &request,
                  "",
