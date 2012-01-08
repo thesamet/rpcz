@@ -43,6 +43,7 @@ using std::cerr;
 namespace po = boost::program_options;
 
 std::string FLAGS_proto;
+std::string FLAGS_service_name;
 std::vector<std::string> FLAGS_proto_path;
 
 static const char *PNAME = "zsendrpc";
@@ -112,7 +113,9 @@ int RunCall(const std::string& endpoint,
   RPC rpc;
   ::Message *reply = factory.GetPrototype(
       method_desc->output_type())->New();
-  channel->CallMethod(method_desc, *request, reply, &rpc, NULL);
+  channel->CallMethod(
+      FLAGS_service_name.empty() ? service_name : FLAGS_service_name,
+      method_desc, *request, reply, &rpc, NULL);
   rpc.Wait();
 
   if (rpc.GetStatus() != status::OK) {
@@ -174,9 +177,12 @@ int main(int argc, char *argv[]) {
   desc.add_options()
       ("help", "produce help message")
       ("proto", po::value<std::string>(&FLAGS_proto)->required(),
-       "Protocol Buffer file to use")
+       "Protocol Buffer file to use.")
       ("proto_path", po::value<std::vector<std::string> >(&FLAGS_proto_path),
-       "List of directories to search");
+       "List of directories to search.")
+      ("service_name", po::value<std::string>(&FLAGS_service_name),
+       "Service name to use. Leave empty to use the same service name as in "
+       "the proto definition.");
 
   po::positional_options_description p;
   po::parsed_options parsed = po::command_line_parser(argc, argv).

@@ -37,7 +37,8 @@ class RPC;
 
 class RpcChannel {
  public:
-  virtual void CallMethod(const google::protobuf::MethodDescriptor* method,
+  virtual void CallMethod(const std::string& service_name,
+                          const google::protobuf::MethodDescriptor* method,
                           const google::protobuf::Message& request,
                           google::protobuf::Message* response,
                           RPC* rpc,
