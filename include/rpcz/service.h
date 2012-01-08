@@ -17,6 +17,7 @@
 #ifndef RPCZ_SERVICE_H
 #define RPCZ_SERVICE_H
 
+#include <assert.h>
 #include <string>
 
 namespace google {
