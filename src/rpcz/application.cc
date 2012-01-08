@@ -64,7 +64,7 @@ RpcChannel* Application::CreateRpcChannel(const std::string& endpoint) {
 Server* Application::CreateServer(const std::string& endpoint) {
   zmq::socket_t* socket = new zmq::socket_t(*context_, ZMQ_ROUTER);
   socket->bind(endpoint.c_str());
-  Server* server = new Server(socket, event_manager_.get(), true);
+  Server* server = new Server(socket, event_manager_.get());
   return server;
 }
 }  // namespace rpcz

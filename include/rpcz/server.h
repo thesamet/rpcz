@@ -40,10 +40,8 @@ class Server {
   // Creates a server that will receive requests from the given socket that has
   // already been bound to some endpoint. We assume that the socket is of ROUTER
   // type. The provided event manager will be used to handle the requests.
-  // The Server does not take ownership of the socket, unless owns_socket is
-  // true. It also does not take ownership of event_manager.
-  Server(zmq::socket_t* socket, EventManager* event_manager,
-         bool owns_socket=false);
+  // The Server takes ownership of the socket, but not of event_manager.
+  Server(zmq::socket_t* socket, EventManager* event_manager);
 
   ~Server();
 
