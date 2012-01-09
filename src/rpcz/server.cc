@@ -160,10 +160,10 @@ class ProtoRpcService : public RpcService {
       channel->SendError(application_error::INVALID_MESSAGE);
       return;
     }
-
+    ServerChannelImpl* channel_ptr = channel.release();
     service_->CallMethod(descriptor,
-                         *channel->request_,
-                         channel.release());
+                         *channel_ptr->request_,
+                         channel_ptr);
   }
 
  private:
