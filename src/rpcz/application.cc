@@ -52,8 +52,7 @@ void Application::Init(const Application::Options& options) {
                                         options.event_manager_threads));
   connection_manager_.reset(new ConnectionManager(
           context_,
-          event_manager_.get(),
-          options.connection_manager_threads));
+          event_manager_.get()));
 }
 
 RpcChannel* Application::CreateRpcChannel(const std::string& endpoint) {

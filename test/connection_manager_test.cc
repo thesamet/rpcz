@@ -41,7 +41,7 @@ class ConnectionManagerTest : public ::testing::Test {
 };
 
 TEST_F(ConnectionManagerTest, TestStartsAndFinishes) {
-  ConnectionManager cm(&context, NULL, 2);
+  ConnectionManager cm(&context, NULL);
 }
 
 void EchoServer(zmq::socket_t *socket) {
@@ -105,7 +105,7 @@ TEST_F(ConnectionManagerTest, TestTimeoutAsync) {
   server.bind("inproc://server.test");
 
   EventManager em(&context, 5);
-  ConnectionManager cm(&context, &em, 2);
+  ConnectionManager cm(&context, &em);
   scoped_ptr<Connection> connection(cm.Connect("inproc://server.test"));
   scoped_ptr<MessageVector> request(CreateSimpleRequest());
   RemoteResponse response;
@@ -162,7 +162,7 @@ TEST_F(ConnectionManagerTest, ManyClientsTest) {
   scoped_ptr<boost::thread> thread(StartServer(&context));
 
   EventManager em(&context, 5);
-  ConnectionManager cm(&context, &em, 1);
+  ConnectionManager cm(&context, &em);
 
   scoped_ptr<Connection> connection(cm.Connect("inproc://server.test"));
   boost::thread_group group;

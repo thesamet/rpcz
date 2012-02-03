@@ -18,7 +18,7 @@
 #define RPCZ_CONNECTION_MANAGER_H
 
 #include <string>
-
+#include <boost/thread.hpp>
 #include "rpcz/event_manager.h"
 #include "rpcz/macros.h"
 
@@ -27,11 +27,6 @@ class context_t;
 class message_t;
 class socket_t;
 }  // namespace zmq
-
-namespace boost {
-template <typename T>
-class thread_specific_ptr;
-}  // namespace boost
 
 namespace rpcz {
 class Closure;
@@ -50,7 +45,7 @@ struct ThreadContext;
 // The purpose of the ConnectionManager is to enable all threads in a program
 // to share a pool of connections in a lock-free manner.
 //
-// ConnectionManager cm(2);
+// ConnectionManager cm();
 // Connection* c = cm.Connect("tcp://localhost:5557");
 // 
 // Now, it is possible to send requests to this backend fron any thread:
@@ -64,8 +59,7 @@ class ConnectionManager {
   // of the given ZeroMQ context and event manager. The provided event_manager
   // is used for executing user-supplied closures. If the event_manager is NULL
   // then the closure parameter supplied to SendRequest must be NULL.
-  ConnectionManager(zmq::context_t* context, EventManager* event_manager,
-                    int nthreads=1);
+  ConnectionManager(zmq::context_t* context, EventManager* event_manager);
 
   virtual ~ConnectionManager();
 
@@ -74,9 +68,6 @@ class ConnectionManager {
   // to communicate with this endpoint. Returns NULL in error.
   virtual Connection* Connect(const std::string& endpoint);
 
-  scoped_ptr<boost::thread_specific_ptr<ConnectionThreadContext> >
-      thread_context_;
-
  private:
   zmq::context_t* context_;
   // The external event manager is used for running user-supplied closures when
@@ -84,8 +75,13 @@ class ConnectionManager {
   // The internal event manager is used as a container for the worker threads of
   // this connection manager.
   EventManager* external_event_manager_;
-  scoped_ptr<EventManager> internal_event_manager_;
+
+  inline zmq::socket_t& GetFrontendSocket();
+
+  boost::thread thread_;
+  boost::thread_specific_ptr<zmq::socket_t> socket_;
   friend class ConnectionImpl;
+  std::string frontend_endpoint_;
   DISALLOW_COPY_AND_ASSIGN(ConnectionManager);
 };
 
@@ -117,8 +113,6 @@ class Connection {
       Closure* closure) = 0;
 
   virtual ~Connection() {};
-
-  virtual zmq::socket_t* CreateConnectedSocket(zmq::context_t* context) = 0;
 
  protected:
   Connection() {};

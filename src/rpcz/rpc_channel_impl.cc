@@ -90,6 +90,7 @@ void RpcChannelImpl::CallMethodFull(
   response_context->response_msg = response_msg;
   rpc->SetStatus(status::ACTIVE);
 
+  LOG(INFO) << "connection_=" << (size_t)connection_;
   connection_->SendRequest(msg_vector,
                            &response_context->remote_response,
                            rpc->GetDeadlineMs(),
