@@ -66,7 +66,7 @@ class ConnectionManager {
   // Connects all ConnectionManager threads to the given endpoint. On success
   // this method returns a Connection object that can be used from any thread
   // to communicate with this endpoint. Returns NULL in error.
-  virtual Connection* Connect(const std::string& endpoint);
+  virtual Connection Connect(const std::string& endpoint);
 
  private:
   zmq::context_t* context_;
@@ -80,7 +80,7 @@ class ConnectionManager {
 
   boost::thread thread_;
   boost::thread_specific_ptr<zmq::socket_t> socket_;
-  friend class ConnectionImpl;
+  friend class Connection;
   std::string frontend_endpoint_;
   DISALLOW_COPY_AND_ASSIGN(ConnectionManager);
 };
@@ -106,19 +106,23 @@ class Connection {
   //           arrives. The closure gets called also if the request times out.
   //           Hence, it is necessary to check response->status. If no
   //           EventManager was provided to the constructor, this must be NULL.
-  virtual void SendRequest(
+  Connection(const Connection& other)
+      : manager_(other.manager_), connection_id_(other.connection_id_) {}
+
+  Connection() : manager_(NULL), connection_id_(0) {}
+
+  void SendRequest(
       MessageVector* request,
       RemoteResponse* remote_response,
       int64 deadline_ms,
-      Closure* closure) = 0;
-
-  virtual ~Connection() {};
-
- protected:
-  Connection() {};
+      Closure* closure);
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(Connection);
+  Connection(ConnectionManager *manager, uint64 connection_id) :
+      manager_(manager), connection_id_(connection_id) {}
+  ConnectionManager* manager_;
+  uint64 connection_id_;
+  friend class ConnectionManager;
 };
 }  // namespace rpcz
 #endif

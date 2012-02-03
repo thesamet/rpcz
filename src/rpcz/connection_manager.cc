@@ -74,38 +74,24 @@ struct RemoteResponseWrapper {
   MessageVector return_path;
 };
 
-class ConnectionImpl : public Connection {
- public:
-  ConnectionImpl(ConnectionManager* connection_manager)
-      : Connection(), connection_manager_(connection_manager) {}
+void Connection::SendRequest(
+    MessageVector* request,
+    RemoteResponse* response,
+    int64 deadline_ms,
+    Closure* closure) {
+  RemoteResponseWrapper* wrapper = new RemoteResponseWrapper;
+  wrapper->remote_response = response;
+  wrapper->start_time = zclock_time();
+  wrapper->deadline_ms = deadline_ms;
+  wrapper->closure = closure;
 
-  virtual ~ConnectionImpl() {}
-
-  virtual void SendRequest(
-      MessageVector* request,
-      RemoteResponse* response,
-      int64 deadline_ms,
-      Closure* closure) {
-    RemoteResponseWrapper* wrapper = new RemoteResponseWrapper;
-    wrapper->remote_response = response;
-    wrapper->start_time = zclock_time();
-    wrapper->deadline_ms = deadline_ms;
-    wrapper->closure = closure;
-
-    zmq::socket_t& socket = connection_manager_->GetFrontendSocket();
-    SendEmptyMessage(&socket, ZMQ_SNDMORE);
-    SendString(&socket, "REQUEST", ZMQ_SNDMORE);
-    SendPointer(&socket, this, ZMQ_SNDMORE);
-    SendPointer(&socket, wrapper, ZMQ_SNDMORE);
-    WriteVectorToSocket(&socket, *request);
-  }
-
- private:
-  ConnectionManager* connection_manager_;
-  zmq::socket_t* socket_;
-  friend class ConnectionManagerThread;
-  DISALLOW_COPY_AND_ASSIGN(ConnectionImpl);
-};
+  zmq::socket_t& socket = manager_->GetFrontendSocket();
+  SendEmptyMessage(&socket, ZMQ_SNDMORE);
+  SendString(&socket, "REQUEST", ZMQ_SNDMORE);
+  SendUint64(&socket, connection_id_, ZMQ_SNDMORE);
+  SendPointer(&socket, wrapper, ZMQ_SNDMORE);
+  WriteVectorToSocket(&socket, *request);
+}
 
 class ConnectionManagerThread {
  public:
@@ -140,23 +126,23 @@ class ConnectionManagerThread {
       return;
     } else if (command == "CONNECT") {
       std::string endpoint(MessageToString(iter.next()));
-      ConnectionImpl* conn = new ConnectionImpl(connection_manager_);
-      conn->socket_ = new zmq::socket_t(*context_, ZMQ_DEALER);
+      zmq::socket_t* socket = new zmq::socket_t(*context_, ZMQ_DEALER);
+      connections_.push_back(socket);
       int linger_ms = 0;
-      conn->socket_->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
-      conn->socket_->connect(endpoint.c_str());
-      reactor_.AddSocket(conn->socket_, NewPermanentCallback(
+      socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
+      socket->connect(endpoint.c_str());
+      reactor_.AddSocket(socket, NewPermanentCallback(
               this, &ConnectionManagerThread::HandleClientSocket,
-              conn->socket_));
+              socket));
                                                              
       SendString(frontend_socket, sender, ZMQ_SNDMORE);
       SendEmptyMessage(frontend_socket, ZMQ_SNDMORE);
-      SendPointer(frontend_socket, conn, 0);
+      SendUint64(frontend_socket, connections_.size() - 1, 0);
     } else if (command == "REQUEST") {
-      ConnectionImpl* conn = InterpretMessage<ConnectionImpl*>(iter.next());
+      uint64 connection_id = InterpretMessage<uint64>(iter.next());
       RemoteResponseWrapper* remote_response =
           InterpretMessage<RemoteResponseWrapper*>(iter.next());
-      SendRequest(conn, iter, remote_response);
+      SendRequest(connections_[connection_id], iter, remote_response);
     }
   }
 
@@ -186,7 +172,7 @@ class ConnectionManagerThread {
     remote_response_map_.erase(iter);
   }
 
-  void SendRequest(ConnectionImpl* connection,
+  void SendRequest(zmq::socket_t* socket,
                    MessageIterator& iter,
                    RemoteResponseWrapper* remote_response_wrapper) {
     EventId event_id = event_id_generator_.GetNext();
@@ -198,10 +184,10 @@ class ConnectionManagerThread {
           NewCallback(this, &ConnectionManagerThread::HandleTimeout, event_id));
     }
 
-    SendString(connection->socket_, "", ZMQ_SNDMORE);
-    SendUint64(connection->socket_, event_id, ZMQ_SNDMORE);
+    SendString(socket, "", ZMQ_SNDMORE);
+    SendUint64(socket, event_id, ZMQ_SNDMORE);
     while (iter.has_more()) {
-      connection->socket_->send(iter.next(), iter.has_more() ? ZMQ_SNDMORE : 0);
+      socket->send(iter.next(), iter.has_more() ? ZMQ_SNDMORE : 0);
     }
   }
 
@@ -234,6 +220,7 @@ class ConnectionManagerThread {
   EventIdGenerator event_id_generator_;
   EventManager* external_event_manager_;
   Reactor reactor_;
+  std::vector<zmq::socket_t*> connections_;
   zmq::context_t* context_;
 };
 
@@ -262,7 +249,7 @@ zmq::socket_t& ConnectionManager::GetFrontendSocket() {
   return *socket;
 }
 
-Connection* ConnectionManager::Connect(const std::string& endpoint) {
+Connection ConnectionManager::Connect(const std::string& endpoint) {
   zmq::socket_t& socket = GetFrontendSocket();
   SendEmptyMessage(&socket, ZMQ_SNDMORE);
   SendString(&socket, "CONNECT", ZMQ_SNDMORE);
@@ -270,8 +257,8 @@ Connection* ConnectionManager::Connect(const std::string& endpoint) {
   zmq::message_t msg;
   socket.recv(&msg);
   socket.recv(&msg);
-  Connection* connection = InterpretMessage<Connection*>(msg);
-  return connection;
+  uint64 connection_id = InterpretMessage<uint64>(msg);
+  return Connection(this, connection_id);
 }
  
 ConnectionManager::~ConnectionManager() {

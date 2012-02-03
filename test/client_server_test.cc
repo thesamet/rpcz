@@ -157,7 +157,7 @@ class ServerTest : public ::testing::Test {
                     em_.get()));
   }
 
-  SearchResponse SendBlockingRequest(Connection* connection,
+  SearchResponse SendBlockingRequest(Connection connection,
                                      const std::string& query) {
     SearchService_Stub stub(RpcChannel::Create(connection), true);
     SearchRequest request;
@@ -174,8 +174,8 @@ class ServerTest : public ::testing::Test {
   scoped_ptr<zmq::context_t> context_;
   scoped_ptr<EventManager> em_;
   scoped_ptr<ConnectionManager> cm_;
-  Connection* frontend_connection_;
-  Connection* backend_connection_;
+  Connection frontend_connection_;
+  Connection backend_connection_;
   boost::thread server_thread_;
   boost::thread backend_thread_;
 };

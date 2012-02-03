@@ -57,7 +57,7 @@ void Application::Init(const Application::Options& options) {
 
 RpcChannel* Application::CreateRpcChannel(const std::string& endpoint) {
   return RpcChannel::Create(
-      connection_manager_->Connect(endpoint), true);
+      connection_manager_->Connect(endpoint));
 }
 
 Server* Application::CreateServer(const std::string& endpoint) {

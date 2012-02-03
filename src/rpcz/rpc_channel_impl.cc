@@ -26,18 +26,15 @@
 
 namespace rpcz {
 
-RpcChannel* RpcChannel::Create(Connection* connection, bool owns_connection) {
-  return new RpcChannelImpl(connection, owns_connection);
+RpcChannel* RpcChannel::Create(Connection connection) {
+  return new RpcChannelImpl(connection);
 }
 
-RpcChannelImpl::RpcChannelImpl(Connection* connection, bool owns_connection)
-    : connection_(connection), owns_connection_(owns_connection) {
+RpcChannelImpl::RpcChannelImpl(Connection connection)
+    : connection_(connection) {
 }
 
 RpcChannelImpl::~RpcChannelImpl() {
-  if (owns_connection_) {
-    delete connection_;
-  }
 }
 
 struct RpcResponseContext {
@@ -90,13 +87,12 @@ void RpcChannelImpl::CallMethodFull(
   response_context->response_msg = response_msg;
   rpc->SetStatus(status::ACTIVE);
 
-  LOG(INFO) << "connection_=" << (size_t)connection_;
-  connection_->SendRequest(msg_vector,
-                           &response_context->remote_response,
-                           rpc->GetDeadlineMs(),
-                           NewCallback(
-                               this, &RpcChannelImpl::HandleClientResponse,
-                               msg_vector, response_context));
+  connection_.SendRequest(msg_vector,
+                          &response_context->remote_response,
+                          rpc->GetDeadlineMs(),
+                          NewCallback(
+                              this, &RpcChannelImpl::HandleClientResponse,
+                              msg_vector, response_context));
 }
 
 void RpcChannelImpl::CallMethod0(const std::string& service_name,

@@ -106,13 +106,13 @@ TEST_F(ConnectionManagerTest, TestTimeoutAsync) {
 
   EventManager em(&context, 5);
   ConnectionManager cm(&context, &em);
-  scoped_ptr<Connection> connection(cm.Connect("inproc://server.test"));
+  Connection connection(cm.Connect("inproc://server.test"));
   scoped_ptr<MessageVector> request(CreateSimpleRequest());
   RemoteResponse response;
 
   SyncEvent event;
-  connection->SendRequest(request.get(), &response, 0,
-                          NewCallback(ExpectTimeout, &response, &event));
+  connection.SendRequest(request.get(), &response, 0,
+                         NewCallback(ExpectTimeout, &response, &event));
   event.Wait();
   ASSERT_EQ(RemoteResponse::DEADLINE_EXCEEDED, response.status);
   ASSERT_EQ(0, response.reply.size());
@@ -141,7 +141,7 @@ class BarrierClosure : public Closure {
   int count_;
 };
 
-void SendManyMessages(Connection* connection, int thread_id) {
+void SendManyMessages(Connection connection, int thread_id) {
   boost::ptr_vector<RemoteResponse> responses;
   boost::ptr_vector<MessageVector> requests;
   const int request_count = 100;
@@ -152,8 +152,8 @@ void SendManyMessages(Connection* connection, int thread_id) {
     requests.push_back(request);
     RemoteResponse* response = new RemoteResponse;
     responses.push_back(response);
-    connection->SendRequest(request, response, -1,
-                            &barrier);
+    connection.SendRequest(request, response, -1,
+                           &barrier);
   }
   barrier.Wait(request_count);
 }
@@ -164,18 +164,18 @@ TEST_F(ConnectionManagerTest, ManyClientsTest) {
   EventManager em(&context, 5);
   ConnectionManager cm(&context, &em);
 
-  scoped_ptr<Connection> connection(cm.Connect("inproc://server.test"));
+  Connection connection(cm.Connect("inproc://server.test"));
   boost::thread_group group;
   for (int i = 0; i < 10; ++i) {
     group.add_thread(
-        new boost::thread(boost::bind(SendManyMessages, connection.get(), i)));
+        new boost::thread(boost::bind(SendManyMessages, connection, i)));
   }
   group.join_all();
   scoped_ptr<MessageVector> request(CreateQuitRequest());
   RemoteResponse response;
   SyncEvent event;
-  connection->SendRequest(request.get(), &response, -1,
-                          NewCallback(&event, &SyncEvent::Signal));
+  connection.SendRequest(request.get(), &response, -1,
+                         NewCallback(&event, &SyncEvent::Signal));
   event.Wait();
   thread->join();
 }
