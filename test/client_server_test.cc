@@ -111,8 +111,6 @@ class ServerTest : public ::testing::Test {
       em_(new EventManager(context_.get(), 10)),
       cm_(new ConnectionManager(context_.get(), em_.get())) {
     StartServer();
-    frontend_connection_= cm_->Connect("inproc://myserver.frontend");
-    backend_connection_ = cm_->Connect("inproc://myserver.backend");
   }
 
   ~ServerTest() {
@@ -132,21 +130,14 @@ class ServerTest : public ::testing::Test {
 
   void StartServer() {
     zmq::socket_t *backend_socket = new zmq::socket_t(*context_, ZMQ_ROUTER);
-    try {
     backend_socket->bind("inproc://myserver.backend");
-    } catch (zmq::error_t) {
-      LOG(INFO) << "EXCEPTION_1";
-    }
     server_thread_ = boost::thread(
         boost::bind(ServerThread, backend_socket, new BackendSearchServiceImpl,
                     em_.get()));
 
+    backend_connection_ = cm_->Connect("inproc://myserver.backend");
     zmq::socket_t *frontend_socket = new zmq::socket_t(*context_, ZMQ_ROUTER);
-    try {
-      frontend_socket->bind("inproc://myserver.frontend");
-    } catch (zmq::error_t) {
-      LOG(INFO) << "EXCEPTION_1";
-    }
+    frontend_socket->bind("inproc://myserver.frontend");
     backend_thread_ = boost::thread(
         boost::bind(ServerThread,
                     frontend_socket,
@@ -155,6 +146,7 @@ class ServerTest : public ::testing::Test {
                             RpcChannel::Create(backend_connection_),
                         true)),
                     em_.get()));
+    frontend_connection_= cm_->Connect("inproc://myserver.frontend");
   }
 
   SearchResponse SendBlockingRequest(Connection connection,
@@ -258,7 +250,6 @@ TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
   }
 }
 
-/*
 TEST_F(ServerTest, DelegatedRequest) {
   SearchService_Stub stub(RpcChannel::Create(frontend_connection_), true);
   SearchRequest request;
@@ -270,7 +261,6 @@ TEST_F(ServerTest, DelegatedRequest) {
   ASSERT_EQ(RpcResponseHeader::OK, rpc.GetStatus());
   ASSERT_EQ("42!", response.results(0));
 }
-*/
 
 TEST_F(ServerTest, EasyBlockingRequestUsingDelegate) {
   SearchService_Stub stub(RpcChannel::Create(frontend_connection_), true);

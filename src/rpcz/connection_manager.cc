@@ -241,7 +241,6 @@ ConnectionManager::ConnectionManager(
 zmq::socket_t& ConnectionManager::GetFrontendSocket() {
   zmq::socket_t* socket = socket_.get();
   if (socket == NULL) {
-    LOG(INFO) << "Creating socket. Context_=" << (size_t)context_;
     socket = new zmq::socket_t(*context_, ZMQ_DEALER);
     socket->connect(frontend_endpoint_.c_str());
     socket_.reset(socket);
@@ -262,7 +261,6 @@ Connection ConnectionManager::Connect(const std::string& endpoint) {
 }
  
 ConnectionManager::~ConnectionManager() {
-  LOG(INFO) << "Tearing down";
   zmq::socket_t& socket = GetFrontendSocket();
   SendEmptyMessage(&socket, ZMQ_SNDMORE);
   SendString(&socket, "QUIT", 0);

@@ -109,7 +109,7 @@ class Connection {
   Connection(const Connection& other)
       : manager_(other.manager_), connection_id_(other.connection_id_) {}
 
-  Connection() : manager_(NULL), connection_id_(0) {}
+  Connection() : manager_((ConnectionManager*)0xbadecafe), connection_id_(0) {}
 
   void SendRequest(
       MessageVector* request,
