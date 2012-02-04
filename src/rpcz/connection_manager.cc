@@ -44,8 +44,8 @@
 
 namespace rpcz {
 namespace {
-static const uint64 kLargePrime = (1ULL << 63) - 165;
-static const uint64 kGenerator = 2;
+const uint64 kLargePrime = (1ULL << 63) - 165;
+const uint64 kGenerator = 2;
 
 typedef uint64 EventId;
 
@@ -64,6 +64,10 @@ class EventIdGenerator {
   uint64 state_;
   DISALLOW_COPY_AND_ASSIGN(EventIdGenerator);
 };
+
+const char kRequest = 0x02;
+const char kConnect = 0x03;
+const char kQuit = 0xff;
 }  // unnamed namespace
 
 struct RemoteResponseWrapper {
@@ -87,7 +91,7 @@ void Connection::SendRequest(
 
   zmq::socket_t& socket = manager_->GetFrontendSocket();
   SendEmptyMessage(&socket, ZMQ_SNDMORE);
-  SendString(&socket, "REQUEST", ZMQ_SNDMORE);
+  SendChar(&socket, kRequest, ZMQ_SNDMORE);
   SendUint64(&socket, connection_id_, ZMQ_SNDMORE);
   SendPointer(&socket, wrapper, ZMQ_SNDMORE);
   WriteVectorToSocket(&socket, *request);
@@ -98,21 +102,23 @@ class ConnectionManagerThread {
   ConnectionManagerThread(
       zmq::context_t* context,
       EventManager* external_event_manager,
-      ConnectionManager* connection_manager) {
-    context_ = context;
-    external_event_manager_ = external_event_manager;
-    connection_manager_ = connection_manager;
-  }
+      ConnectionManager* connection_manager,
+      zmq::socket_t* frontend_socket) :
+    connection_manager_(connection_manager),
+    external_event_manager_(external_event_manager),
+    context_(context),
+    frontend_socket_(frontend_socket) {
+      reactor_.AddSocket(frontend_socket, NewPermanentCallback(
+              this, &ConnectionManagerThread::HandleFrontendSocket,
+              frontend_socket));
+    }
 
   static void Run(zmq::context_t* context,
                   EventManager* external_event_manager,
                   zmq::socket_t* frontend_socket,
                   ConnectionManager* connection_manager) {
     ConnectionManagerThread cmt(context, external_event_manager,
-                                connection_manager);
-    cmt.reactor_.AddSocket(frontend_socket, NewPermanentCallback(
-            &cmt, &ConnectionManagerThread::HandleFrontendSocket,
-            frontend_socket));
+                                connection_manager, frontend_socket);
     cmt.reactor_.Loop();
   }
 
@@ -120,30 +126,38 @@ class ConnectionManagerThread {
     MessageIterator iter(*frontend_socket);
     std::string sender = MessageToString(iter.next());
     CHECK_EQ(0, iter.next().size());
-    std::string command(MessageToString(iter.next()));
-    if (command == "QUIT") {
-      reactor_.SetShouldQuit();
-      return;
-    } else if (command == "CONNECT") {
-      std::string endpoint(MessageToString(iter.next()));
-      zmq::socket_t* socket = new zmq::socket_t(*context_, ZMQ_DEALER);
-      connections_.push_back(socket);
-      int linger_ms = 0;
-      socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
-      socket->connect(endpoint.c_str());
-      reactor_.AddSocket(socket, NewPermanentCallback(
-              this, &ConnectionManagerThread::HandleClientSocket,
-              socket));
-                                                             
-      SendString(frontend_socket, sender, ZMQ_SNDMORE);
-      SendEmptyMessage(frontend_socket, ZMQ_SNDMORE);
-      SendUint64(frontend_socket, connections_.size() - 1, 0);
-    } else if (command == "REQUEST") {
-      uint64 connection_id = InterpretMessage<uint64>(iter.next());
-      RemoteResponseWrapper* remote_response =
-          InterpretMessage<RemoteResponseWrapper*>(iter.next());
-      SendRequest(connections_[connection_id], iter, remote_response);
+    char command(InterpretMessage<char>(iter.next()));
+    switch (command) {
+      case kQuit:
+        reactor_.SetShouldQuit();
+        break;
+      case kConnect: 
+        HandleConnectCommand(sender, MessageToString(iter.next()));
+        break;
+      case kRequest: {
+        uint64 connection_id = InterpretMessage<uint64>(iter.next());
+        RemoteResponseWrapper* remote_response =
+            InterpretMessage<RemoteResponseWrapper*>(iter.next());
+        SendRequest(connections_[connection_id], iter, remote_response);
+      }
+        break;
     }
+  }
+
+  inline void HandleConnectCommand(const std::string& sender,
+                                   const std::string& endpoint) {
+    zmq::socket_t* socket = new zmq::socket_t(*context_, ZMQ_DEALER);
+    connections_.push_back(socket);
+    int linger_ms = 0;
+    socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
+    socket->connect(endpoint.c_str());
+    reactor_.AddSocket(socket, NewPermanentCallback(
+            this, &ConnectionManagerThread::HandleClientSocket,
+            socket));
+
+    SendString(frontend_socket_, sender, ZMQ_SNDMORE);
+    SendEmptyMessage(frontend_socket_, ZMQ_SNDMORE);
+    SendUint64(frontend_socket_, connections_.size() - 1, 0);
   }
 
   void HandleClientSocket(zmq::socket_t* socket) {
@@ -222,6 +236,7 @@ class ConnectionManagerThread {
   Reactor reactor_;
   std::vector<zmq::socket_t*> connections_;
   zmq::context_t* context_;
+  zmq::socket_t* frontend_socket_;
 };
 
 ConnectionManager::ConnectionManager(
@@ -251,7 +266,7 @@ zmq::socket_t& ConnectionManager::GetFrontendSocket() {
 Connection ConnectionManager::Connect(const std::string& endpoint) {
   zmq::socket_t& socket = GetFrontendSocket();
   SendEmptyMessage(&socket, ZMQ_SNDMORE);
-  SendString(&socket, "CONNECT", ZMQ_SNDMORE);
+  SendChar(&socket, kConnect, ZMQ_SNDMORE);
   SendString(&socket, endpoint, 0);
   zmq::message_t msg;
   socket.recv(&msg);
@@ -263,7 +278,7 @@ Connection ConnectionManager::Connect(const std::string& endpoint) {
 ConnectionManager::~ConnectionManager() {
   zmq::socket_t& socket = GetFrontendSocket();
   SendEmptyMessage(&socket, ZMQ_SNDMORE);
-  SendString(&socket, "QUIT", 0);
+  SendChar(&socket, kQuit, 0);
   thread_.join();
   socket_.reset(NULL);
 }
