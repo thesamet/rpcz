@@ -14,10 +14,12 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
+#include <boost/lexical_cast.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
+#include <glog/logging.h>
 #include <stdio.h>
 #include <zmq.hpp>
 #include "gtest/gtest.h"
@@ -64,10 +66,10 @@ void EchoServer(zmq::socket_t *socket) {
   delete socket;
 }
 
-boost::thread* StartServer(zmq::context_t* context) {
+boost::thread StartServer(zmq::context_t* context) {
   zmq::socket_t* server = new zmq::socket_t(*context, ZMQ_DEALER);
   server->bind("inproc://server.test");
-  return new boost::thread(boost::bind(EchoServer, server));
+  return boost::thread(boost::bind(EchoServer, server));
 }
 
 MessageVector* CreateSimpleRequest(int number=0) {
@@ -159,7 +161,7 @@ void SendManyMessages(Connection connection, int thread_id) {
 }
 
 TEST_F(ConnectionManagerTest, ManyClientsTest) {
-  scoped_ptr<boost::thread> thread(StartServer(&context));
+  boost::thread thread(StartServer(&context));
 
   EventManager em(&context, 5);
   ConnectionManager cm(&context, &em);
@@ -177,6 +179,28 @@ TEST_F(ConnectionManagerTest, ManyClientsTest) {
   connection.SendRequest(request.get(), &response, -1,
                          NewCallback(&event, &SyncEvent::Signal));
   event.Wait();
-  thread->join();
+  thread.join();
+}
+
+void HandleRequest(ClientConnection connection,
+                   MessageIterator& request) {
+  int value = boost::lexical_cast<int>(MessageToString(request.next()));
+  MessageVector v;
+  v.push_back(StringToMessage(boost::lexical_cast<std::string>(value + 1)));
+  connection.Reply(&v);
+}
+
+TEST_F(ConnectionManagerTest, TestBindServer) {
+  EventManager em(&context, 5);
+  ConnectionManager cm(&context, &em);
+  cm.Bind("inproc://server.point", &HandleRequest);
+  Connection c = cm.Connect("inproc://server.point");
+  MessageVector v;
+  v.push_back(StringToMessage("317"));
+  RemoteResponse response;
+  SyncEvent event;
+  c.SendRequest(&v, &response, -1,
+                NewCallback(&event, &SyncEvent::Signal));
+  event.Wait();
 }
 }  // namespace rpcz

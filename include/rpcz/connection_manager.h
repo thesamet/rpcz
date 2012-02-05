@@ -29,9 +29,11 @@ class socket_t;
 }  // namespace zmq
 
 namespace rpcz {
+class ClientConnection;
 class Closure;
 class Connection;
 class ConnectionThreadContext;
+class MessageIterator;
 class MessageVector;
 class RemoteResponse;
 
@@ -54,6 +56,7 @@ struct ThreadContext;
 // ConnectionManager and Connection are thread-safe.
 class ConnectionManager {
  public:
+  typedef void(*ServerFunction)(ClientConnection, MessageIterator&);
   // Constructs an EventManager that uses the provided ZeroMQ context and
   // has nthreads worker threads. The ConnectionManager does not take ownership
   // of the given ZeroMQ context and event manager. The provided event_manager
@@ -68,6 +71,8 @@ class ConnectionManager {
   // to communicate with this endpoint. Returns NULL in error.
   virtual Connection Connect(const std::string& endpoint);
 
+  virtual void Bind(const std::string& endpoint, ServerFunction function);
+
  private:
   zmq::context_t* context_;
   // The external event manager is used for running user-supplied closures when
@@ -81,6 +86,7 @@ class ConnectionManager {
   boost::thread thread_;
   boost::thread_specific_ptr<zmq::socket_t> socket_;
   friend class Connection;
+  friend class ClientConnection;
   std::string frontend_endpoint_;
   DISALLOW_COPY_AND_ASSIGN(ConnectionManager);
 };
@@ -106,9 +112,6 @@ class Connection {
   //           arrives. The closure gets called also if the request times out.
   //           Hence, it is necessary to check response->status. If no
   //           EventManager was provided to the constructor, this must be NULL.
-  Connection(const Connection& other)
-      : manager_(other.manager_), connection_id_(other.connection_id_) {}
-
   Connection() : manager_((ConnectionManager*)0xbadecafe), connection_id_(0) {}
 
   void SendRequest(
@@ -123,6 +126,23 @@ class Connection {
   ConnectionManager* manager_;
   uint64 connection_id_;
   friend class ConnectionManager;
+};
+
+class ClientConnection {
+ public:
+  void Reply(MessageVector* v);
+
+ private:
+  ClientConnection(ConnectionManager* manager, uint64 socket_id,
+                   std::string& sender, std::string& event_id)
+      : manager_(manager), socket_id_(socket_id), sender_(sender),
+      event_id_(event_id) {}
+
+  ConnectionManager* manager_;
+  uint64 socket_id_;
+  const std::string sender_;
+  const std::string event_id_;
+  friend class ConnectionManagerThread;
 };
 }  // namespace rpcz
 #endif
