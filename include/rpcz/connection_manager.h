@@ -135,7 +135,7 @@ class Connection {
   Connection() : manager_((ConnectionManager*)0xbadecafe), connection_id_(0) {}
 
   void SendRequest(
-      MessageVector* request,
+      MessageVector& request,
       RemoteResponse* remote_response,
       int64 deadline_ms,
       Closure* closure);

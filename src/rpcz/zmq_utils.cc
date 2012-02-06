@@ -84,6 +84,7 @@ void WriteVectorToSocket(zmq::socket_t* socket,
                          MessageVector& data,
                          int flags) {
   for (size_t i = 0; i < data.size(); ++i) {
+    LOG(INFO) << "Writing: " << i;
     socket->send(data[i], 
                  flags |
                  ((i < data.size() - 1) ? ZMQ_SNDMORE : 0));

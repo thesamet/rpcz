@@ -111,7 +111,7 @@ TEST_F(ConnectionManagerTest, TestTimeoutAsync) {
   RemoteResponse response;
 
   SyncEvent event;
-  connection.SendRequest(request.get(), &response, 0,
+  connection.SendRequest(*request, &response, 0,
                          NewCallback(ExpectTimeout, &response, &event));
   event.Wait();
   ASSERT_EQ(RemoteResponse::DEADLINE_EXCEEDED, response.status);
@@ -152,11 +152,12 @@ void SendManyMessages(Connection connection, int thread_id) {
     requests.push_back(request);
     RemoteResponse* response = new RemoteResponse;
     responses.push_back(response);
-    connection.SendRequest(request, response, -1,
+    connection.SendRequest(*request, response, -1,
                            &barrier);
   }
   barrier.Wait(request_count);
 }
+
 TEST_F(ConnectionManagerTest, ManyClientsTest) {
   boost::thread thread(StartServer(&context));
   ConnectionManager cm(&context, 4);
@@ -171,7 +172,7 @@ TEST_F(ConnectionManagerTest, ManyClientsTest) {
   scoped_ptr<MessageVector> request(CreateQuitRequest());
   RemoteResponse response;
   SyncEvent event;
-  connection.SendRequest(request.get(), &response, -1,
+  connection.SendRequest(*request, &response, -1,
                          NewCallback(&event, &SyncEvent::Signal));
   event.Wait();
   thread.join();
@@ -193,7 +194,7 @@ TEST_F(ConnectionManagerTest, TestBindServer) {
   v.push_back(StringToMessage("317"));
   RemoteResponse response;
   SyncEvent event;
-  c.SendRequest(&v, &response, -1,
+  c.SendRequest(v, &response, -1,
                 NewCallback(&event, &SyncEvent::Signal));
   event.Wait();
   CHECK_EQ(1, response.reply.size());

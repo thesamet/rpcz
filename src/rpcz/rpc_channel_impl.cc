@@ -72,13 +72,12 @@ void RpcChannelImpl::CallMethodFull(
       throw new InvalidMessageError("Request serialization failed.");
     }
   } else {
-    payload_out.reset(new zmq::message_t(request.size()));
-    memcpy(payload_out->data(), request.c_str(), request.size());
+    payload_out.reset(StringToMessage(request));
   }
 
-  MessageVector* msg_vector = new MessageVector;
-  msg_vector->push_back(msg_out.release());
-  msg_vector->push_back(payload_out.release());
+  MessageVector msg_vector;
+  msg_vector.push_back(msg_out.release());
+  msg_vector.push_back(payload_out.release());
 
   RpcResponseContext *response_context = new RpcResponseContext;
   response_context->rpc = rpc;
@@ -92,7 +91,7 @@ void RpcChannelImpl::CallMethodFull(
                           rpc->GetDeadlineMs(),
                           NewCallback(
                               this, &RpcChannelImpl::HandleClientResponse,
-                              msg_vector, response_context));
+                              response_context));
 }
 
 void RpcChannelImpl::CallMethod0(const std::string& service_name,
@@ -129,9 +128,7 @@ void RpcChannelImpl::CallMethod(
 }
 
 void RpcChannelImpl::HandleClientResponse(
-    MessageVector* request,
     RpcResponseContext* response_context) {
-  delete request;
   RemoteResponse& remote_response = response_context->remote_response;
   switch (remote_response.status) {
     case RemoteResponse::DEADLINE_EXCEEDED:

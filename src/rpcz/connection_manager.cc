@@ -82,7 +82,7 @@ struct RemoteResponseWrapper {
 };
 
 void Connection::SendRequest(
-    MessageVector* request,
+    MessageVector& request,
     RemoteResponse* response,
     int64 deadline_ms,
     Closure* closure) {
@@ -97,7 +97,7 @@ void Connection::SendRequest(
   SendChar(&socket, kRequest, ZMQ_SNDMORE);
   SendUint64(&socket, connection_id_, ZMQ_SNDMORE);
   SendPointer(&socket, wrapper, ZMQ_SNDMORE);
-  WriteVectorToSocket(&socket, *request);
+  WriteVectorToSocket(&socket, request);
 }
 
 void ClientConnection::Reply(MessageVector* v) {
