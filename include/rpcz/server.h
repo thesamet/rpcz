@@ -59,15 +59,6 @@ class Server {
   // Registers a low-level RpcService.
   void RegisterService(RpcService* rpc_service, const std::string& name);
 
-  // Starts serving requests. The calling thread starts forwarding requests
-  // from the socket to the event manager for processings. Only one thread may
-  // call this function. The calling thread gets blocked until this function
-  // returns. 
-  // Currently, the only way to get the control back to the executing thread is
-  // call InstallSignalHandler() and send the process a SIGTERM or SIGINT
-  // (Ctrl-C).
-  void Start();
-
  private:
   void HandleRequest(const ClientConnection& connection,
                      MessageIterator& iter);
@@ -82,6 +73,8 @@ class Server {
 // It is exposed here for language bindings. Do not use directly.
 class RpcService {
  public:
+  virtual ~RpcService() {}
+
   virtual void DispatchRequest(const std::string& method,
                                const void* payload, size_t payload_len,
                                ServerChannel* channel_) = 0;

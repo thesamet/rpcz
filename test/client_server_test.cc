@@ -46,6 +46,10 @@ class SearchServiceImpl : public SearchService {
   SearchServiceImpl(SearchService_Stub* backend)
       : backend_(backend), delayed_reply_(NULL) {};
 
+  ~SearchServiceImpl() {
+    LOG(INFO) << "Terminating";
+  }
+
   virtual void Search(
       const SearchRequest& request,
       Reply<SearchResponse> reply) {
@@ -125,7 +129,7 @@ class ServerTest : public ::testing::Test {
     frontend_server_.RegisterService(
         new SearchServiceImpl(
             new SearchService_Stub(
-                RpcChannel::Create(backend_connection_))));
+                RpcChannel::Create(backend_connection_), true)));
     frontend_server_.Bind("inproc://myserver.frontend");
     frontend_connection_ = cm_->Connect("inproc://myserver.frontend");
   }

@@ -129,18 +129,19 @@ void WorkerThread(ConnectionManager* connection_manager,
       case kRunClosure:
         InterpretMessage<Closure*>(iter.next())->Run();
         break;
-      case kRunServerFunction:
+      case kRunServerFunction: {
         zmq_message sf_msg = iter.next();
         ConnectionManager::ServerFunction& sf =
             InterpretMessage<ConnectionManager::ServerFunction>(sf_msg);
         uint64 socket_id = InterpretMessage<uint64>(iter.next());
-        std::string sender = MessageToString(iter.next());
+        std::string sender(MessageToString(iter.next()));
         if (iter.next().size() != 0) {
           break;
         }
         std::string event_id(MessageToString(iter.next()));
         sf(ClientConnection(connection_manager, socket_id, sender, event_id),
            iter);
+      }
         break;
     }
   }

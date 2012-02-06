@@ -74,6 +74,8 @@ class Service {
  public:
   Service() { };
 
+  virtual ~Service() {};
+
   virtual const google::protobuf::ServiceDescriptor* GetDescriptor() = 0;
 
   virtual const google::protobuf::Message& GetRequestPrototype(
