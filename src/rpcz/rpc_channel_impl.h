@@ -46,7 +46,9 @@ class RpcChannelImpl: public RpcChannel {
       std::string* response, RPC* rpc, Closure* done);
 
  private:
-  virtual void HandleClientResponse(RpcResponseContext *response_context);
+  virtual void HandleClientResponse(
+      RpcResponseContext response_context, ConnectionManager::Status status,
+      MessageIterator& iter);
 
   void CallMethodFull(
     const std::string& service_name,

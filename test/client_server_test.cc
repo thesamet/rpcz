@@ -66,11 +66,16 @@ class SearchServiceImpl : public SearchService {
                                                               reply));
       return;
     } else if (request.query() == "timeout") {
-      // We lose the request. We are going to reply only when we get a request
+      // We "lose" the request. We are going to reply only when we get a request
       // for the query "delayed".
+      LOG(INFO) << "T";
+      boost::unique_lock<boost::mutex> lock(mu_);
       delayed_reply_ = reply;
+      timeout_request_received.Signal();
       return;
     } else if (request.query() == "delayed") {
+      LOG(INFO) << "D";
+      boost::unique_lock<boost::mutex> lock(mu_);
       delayed_reply_.Send(SearchResponse());
       reply.Send(SearchResponse());
     } else {
@@ -81,8 +86,11 @@ class SearchServiceImpl : public SearchService {
     }
   }
 
+  SyncEvent timeout_request_received;
+
  private:
   scoped_ptr<SearchService_Stub> backend_;
+  boost::mutex mu_;
   Reply<SearchResponse> delayed_reply_;
 };
 
@@ -127,7 +135,7 @@ class ServerTest : public ::testing::Test {
     backend_connection_ = cm_->Connect("inproc://myserver.backend");
 
     frontend_server_.RegisterService(
-        new SearchServiceImpl(
+        frontend_service = new SearchServiceImpl(
             new SearchService_Stub(
                 RpcChannel::Create(backend_connection_), true)));
     frontend_server_.Bind("inproc://myserver.frontend");
@@ -154,6 +162,7 @@ class ServerTest : public ::testing::Test {
   Connection backend_connection_;
   Server frontend_server_;
   Server backend_server_;
+  SearchServiceImpl* frontend_service;
 };
 
 TEST_F(ServerTest, SimpleRequest) {
@@ -200,14 +209,6 @@ TEST_F(ServerTest, SimpleRequestWithTimeout) {
   stub.Search(request, &response, &rpc, NULL);
   rpc.Wait();
   ASSERT_EQ(RpcResponseHeader::DEADLINE_EXCEEDED, rpc.GetStatus());
-  // Now we clean up the closure we kept aside.
-  {
-    RPC rpc;
-    request.set_query("delayed");
-    stub.Search(request, &response, &rpc, NULL);
-    rpc.Wait();
-    ASSERT_TRUE(rpc.OK());
-  }
 }
 
 TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
@@ -223,14 +224,6 @@ TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
                 NewCallback(&event, &SyncEvent::Signal));
     event.Wait();
     ASSERT_EQ(RpcResponseHeader::DEADLINE_EXCEEDED, rpc.GetStatus());
-  }
-  // Now we clean up the closure we kept aside.
-  {
-    RPC rpc;
-    request.set_query("delayed");
-    stub.Search(request, &response, &rpc, NULL);
-    rpc.Wait();
-    ASSERT_TRUE(rpc.OK());
   }
 }
 
@@ -280,6 +273,9 @@ TEST_F(ServerTest, EasyBlockingRequestWithTimeout) {
   } catch (RpcError &error) {
     ASSERT_EQ(status::DEADLINE_EXCEEDED, error.GetStatus());
   }
+  // We may get here before the timing out request was processed, and if we
+  // just send delay right away, the server may be unable to reply.
+  frontend_service->timeout_request_received.Wait();
   request.set_query("delayed");
   stub.Search(request, &response);
 }

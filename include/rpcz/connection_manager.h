@@ -66,8 +66,18 @@ struct ThreadContext;
 // ConnectionManager and Connection are thread-safe.
 class ConnectionManager {
  public:
+  enum Status {
+    INACTIVE = 0,
+    ACTIVE = 1,
+    DONE = 2,
+    DEADLINE_EXCEEDED = 3,
+  };
+
   typedef boost::function<void(const ClientConnection&, MessageIterator&)>
       ServerFunction;
+  typedef boost::function<void(Status status, MessageIterator&)>
+      ClientRequestCallback;
+
   // Constructs a ConnectionManager that has nthreads worker threads. The
   // ConnectionManager does not take ownership of the given ZeroMQ context.
   ConnectionManager(zmq::context_t* context, int nthreads);
@@ -119,26 +129,21 @@ void InstallSignalHandler();
 // Represents a connection to a server. Thread-safe.
 class Connection {
  public:
+  Connection() : manager_((ConnectionManager*)0xbadecafe), connection_id_(0) {}
+
   // Asynchronously sends a request over the connection.
   // request: a vector of messages to be sent. Does not take ownership of the
   //          request. The vector has to live valid at least until the request
   //          completes. It can be safely de-allocated inside the provided
   //          closure or after remote_response->Wait() returns.
-  // response: points to a RemoteResponse object that will receive the response.
-  //           this object must live at least until when the closure has been
-  //           ran (and may be deleted by the closure).
   // deadline_ms - milliseconds before giving up on this request. -1 means
   //               forever.
-  // closure - a closure that will be ran on one of the worker threads when a
-  //           response arrives. The closure gets called also if the request
-  //           times out. Hence, it is necessary to check response->status.
-  Connection() : manager_((ConnectionManager*)0xbadecafe), connection_id_(0) {}
-
+  // callback - a closure that will be ran on one of the worker threads when a
+  //           response arrives or it timeouts.
   void SendRequest(
       MessageVector& request,
-      RemoteResponse* remote_response,
       int64 deadline_ms,
-      Closure* closure);
+      ConnectionManager::ClientRequestCallback callback);
 
  private:
   Connection(ConnectionManager *manager, uint64 connection_id) :

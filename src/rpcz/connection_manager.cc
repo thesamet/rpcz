@@ -70,33 +70,30 @@ const char kReply = 0x05;
 const char kRunClosure = 0x06;
 const char kReady = 0x07;
 const char kRunServerFunction = 0x08;
+const char kInvokeClientRequestCallback = 0x09;
 const char kQuit = 0xff;
 }  // unnamed namespace
 
 struct RemoteResponseWrapper {
-  RemoteResponse* remote_response;
   int64 deadline_ms;
   uint64 start_time;
-  Closure* closure;
-  MessageVector return_path;
+  ConnectionManager::ClientRequestCallback callback;
 };
 
 void Connection::SendRequest(
     MessageVector& request,
-    RemoteResponse* response,
     int64 deadline_ms,
-    Closure* closure) {
-  RemoteResponseWrapper* wrapper = new RemoteResponseWrapper;
-  wrapper->remote_response = response;
-  wrapper->start_time = zclock_time();
-  wrapper->deadline_ms = deadline_ms;
-  wrapper->closure = closure;
+    ConnectionManager::ClientRequestCallback callback) {
+  RemoteResponseWrapper wrapper;
+  wrapper.start_time = zclock_time();
+  wrapper.deadline_ms = deadline_ms;
+  wrapper.callback = callback;
 
   zmq::socket_t& socket = manager_->GetFrontendSocket();
   SendEmptyMessage(&socket, ZMQ_SNDMORE);
   SendChar(&socket, kRequest, ZMQ_SNDMORE);
   SendUint64(&socket, connection_id_, ZMQ_SNDMORE);
-  SendPointer(&socket, wrapper, ZMQ_SNDMORE);
+  SendObject(&socket, wrapper, ZMQ_SNDMORE);
   WriteVectorToSocket(&socket, request);
 }
 
@@ -140,8 +137,16 @@ void WorkerThread(ConnectionManager* connection_manager,
         std::string event_id(MessageToString(iter.next()));
         sf(ClientConnection(connection_manager, socket_id, sender, event_id),
            iter);
-      }
+        }
         break;
+      case kInvokeClientRequestCallback: {
+        ConnectionManager::ClientRequestCallback cb =
+            InterpretMessage<ConnectionManager::ClientRequestCallback>(
+                iter.next());
+        ConnectionManager::Status status = ConnectionManager::Status(
+            InterpretMessage<uint64>(iter.next()));
+        cb(status, iter);
+      }
     }
   }
 }
@@ -283,37 +288,16 @@ class ConnectionManagerThread {
     ForwardMessages(iter, *frontend_socket_);
   }
 
-  void HandleClientSocket(zmq::socket_t* socket) {
-    MessageVector messages;
-    CHECK(ReadMessageToVector(socket, &messages));
-    CHECK(messages.size() >= 1);
-    CHECK(messages[0].size() == 0);
-    EventId event_id(InterpretMessage<EventId>(messages[1]));
-    RemoteResponseMap::iterator iter = remote_response_map_.find(event_id);
-    if (iter == remote_response_map_.end()) {
-      return;
-    }
-    RemoteResponseWrapper*& remote_response_wrapper = iter->second;
-    RemoteResponse*& remote_response = remote_response_wrapper->remote_response;
-    remote_response->reply.transfer(2, messages.size(), messages);
-    remote_response->status = RemoteResponse::DONE;
-    if (remote_response_wrapper->closure) {
-      AddClosure(remote_response_wrapper->closure);
-    }
-    delete remote_response_wrapper;
-    remote_response_map_.erase(iter);
-  }
-
   inline void SendRequest(MessageIterator& iter) {
     uint64 connection_id = InterpretMessage<uint64>(iter.next());
-    RemoteResponseWrapper* remote_response_wrapper =
-        InterpretMessage<RemoteResponseWrapper*>(iter.next());
+    RemoteResponseWrapper remote_response_wrapper =
+        InterpretMessage<RemoteResponseWrapper>(iter.next());
     EventId event_id = event_id_generator_.GetNext();
-    remote_response_map_[event_id] = remote_response_wrapper;
-    if (remote_response_wrapper->deadline_ms != -1) {
+    remote_response_map_[event_id] = remote_response_wrapper.callback;
+    if (remote_response_wrapper.deadline_ms != -1) {
       reactor_.RunClosureAt(
-          remote_response_wrapper->start_time +
-              remote_response_wrapper->deadline_ms,
+          remote_response_wrapper.start_time +
+              remote_response_wrapper.deadline_ms,
           NewCallback(this, &ConnectionManagerThread::HandleTimeout, event_id));
     }
     zmq::socket_t*& socket = connections_[connection_id];
@@ -322,29 +306,48 @@ class ConnectionManagerThread {
     ForwardMessages(iter, *socket);
   }
 
+  void HandleClientSocket(zmq::socket_t* socket) {
+    MessageIterator iter(*socket);
+    if (!iter.next().size() == 0) {
+      return;
+    }
+    if (!iter.has_more()) {
+      return;
+    }
+    EventId event_id(InterpretMessage<EventId>(iter.next()));
+    RemoteResponseMap::iterator response_iter = remote_response_map_.find(event_id);
+    if (response_iter == remote_response_map_.end()) {
+      return;
+    }
+    ConnectionManager::ClientRequestCallback& callback = response_iter->second;
+    BeginWorkerCommand(kInvokeClientRequestCallback);
+    SendObject(frontend_socket_, callback, ZMQ_SNDMORE);
+    SendUint64(frontend_socket_, ConnectionManager::DONE, ZMQ_SNDMORE);
+    ForwardMessages(iter, *frontend_socket_);
+    remote_response_map_.erase(response_iter);
+  }
+
+  void HandleTimeout(EventId event_id) {
+    RemoteResponseMap::iterator response_iter = remote_response_map_.find(event_id);
+    if (response_iter == remote_response_map_.end()) {
+      return;
+    }
+    ConnectionManager::ClientRequestCallback& callback = response_iter->second;
+    BeginWorkerCommand(kInvokeClientRequestCallback);
+    SendObject(frontend_socket_, callback, ZMQ_SNDMORE);
+    SendUint64(frontend_socket_, ConnectionManager::DEADLINE_EXCEEDED, 0);
+    remote_response_map_.erase(response_iter);
+  }
+
   inline void SendReply(MessageIterator& iter) {
     uint64 socket_id = InterpretMessage<uint64>(iter.next());
     zmq::socket_t* socket = server_sockets_[socket_id];
     ForwardMessages(iter, *socket);
   }
 
-  void HandleTimeout(EventId event_id) {
-    RemoteResponseMap::iterator iter = remote_response_map_.find(event_id);
-    if (iter == remote_response_map_.end()) {
-      return;
-    }
-    RemoteResponseWrapper*& remote_response_wrapper = iter->second;
-    RemoteResponse*& remote_response = remote_response_wrapper->remote_response;
-    remote_response->status = RemoteResponse::DEADLINE_EXCEEDED;
-    if (remote_response_wrapper->closure) {
-      AddClosure(remote_response_wrapper->closure);
-    }
-    delete remote_response_wrapper;
-    remote_response_map_.erase(iter);
-  }
-
  private:
-  typedef std::map<EventId, RemoteResponseWrapper*> RemoteResponseMap;
+  typedef std::map<EventId, ConnectionManager::ClientRequestCallback>
+      RemoteResponseMap;
   typedef std::map<uint64, EventId> DeadlineMap;
   ConnectionManager* connection_manager_;
   RemoteResponseMap remote_response_map_;

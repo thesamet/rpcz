@@ -95,9 +95,10 @@ void CheckResponse(RemoteResponse* response, SyncEvent* sync) {
   sync->Signal();
 }
 
-void ExpectTimeout(RemoteResponse* response, SyncEvent* sync) {
-  ASSERT_EQ(RemoteResponse::DEADLINE_EXCEEDED, response->status);
-  ASSERT_EQ(0, response->reply.size());
+void ExpectTimeout(ConnectionManager::Status status, MessageIterator& iter,
+                   SyncEvent* sync) {
+  ASSERT_EQ(ConnectionManager::DEADLINE_EXCEEDED, status);
+  ASSERT_FALSE(iter.has_more());
   sync->Signal();
 }
 
@@ -108,21 +109,18 @@ TEST_F(ConnectionManagerTest, TestTimeoutAsync) {
   ConnectionManager cm(&context, 4);
   Connection connection(cm.Connect("inproc://server.test"));
   scoped_ptr<MessageVector> request(CreateSimpleRequest());
-  RemoteResponse response;
 
   SyncEvent event;
-  connection.SendRequest(*request, &response, 0,
-                         NewCallback(ExpectTimeout, &response, &event));
+  connection.SendRequest(*request, 0,
+                         boost::bind(&ExpectTimeout, _1, _2, &event));
   event.Wait();
-  ASSERT_EQ(RemoteResponse::DEADLINE_EXCEEDED, response.status);
-  ASSERT_EQ(0, response.reply.size());
 }
 
-class BarrierClosure : public Closure {
+class BarrierClosure : public ConnectionManager::ClientRequestCallback {
  public:
   BarrierClosure() : count_(0) {}
 
-  virtual void Run() {
+  void Run(ConnectionManager::Status status, MessageIterator& iter) {
     boost::unique_lock<boost::mutex> lock(mutex_);
     ++count_;
     cond_.notify_all();
@@ -142,7 +140,6 @@ class BarrierClosure : public Closure {
 };
 
 void SendManyMessages(Connection connection, int thread_id) {
-  boost::ptr_vector<RemoteResponse> responses;
   boost::ptr_vector<MessageVector> requests;
   const int request_count = 100;
   BarrierClosure barrier;
@@ -150,10 +147,8 @@ void SendManyMessages(Connection connection, int thread_id) {
     MessageVector* request = CreateSimpleRequest(
         thread_id * request_count * 17 + i);
     requests.push_back(request);
-    RemoteResponse* response = new RemoteResponse;
-    responses.push_back(response);
-    connection.SendRequest(*request, response, -1,
-                           &barrier);
+    connection.SendRequest(*request, -1,
+                           bind(&BarrierClosure::Run, &barrier, _1, _2));
   }
   barrier.Wait(request_count);
 }
@@ -170,10 +165,9 @@ TEST_F(ConnectionManagerTest, ManyClientsTest) {
   }
   group.join_all();
   scoped_ptr<MessageVector> request(CreateQuitRequest());
-  RemoteResponse response;
   SyncEvent event;
-  connection.SendRequest(*request, &response, -1,
-                         NewCallback(&event, &SyncEvent::Signal));
+  connection.SendRequest(*request, -1,
+                         boost::bind(&SyncEvent::Signal, &event));
   event.Wait();
   thread.join();
 }
@@ -186,19 +180,24 @@ void HandleRequest(ClientConnection connection,
   connection.Reply(&v);
 }
 
+void HandleServerResponse(SyncEvent* sync,
+                          ConnectionManager::Status status,
+                          MessageIterator& iter) {
+  CHECK_EQ(ConnectionManager::DONE, status);
+  CHECK_EQ("318", MessageToString(iter.next()));
+  sync->Signal();
+}
+
 TEST_F(ConnectionManagerTest, TestBindServer) {
   ConnectionManager cm(&context, 4);
   cm.Bind("inproc://server.point", &HandleRequest);
   Connection c = cm.Connect("inproc://server.point");
   MessageVector v;
   v.push_back(StringToMessage("317"));
-  RemoteResponse response;
   SyncEvent event;
-  c.SendRequest(v, &response, -1,
-                NewCallback(&event, &SyncEvent::Signal));
+  c.SendRequest(v, -1,
+                boost::bind(&HandleServerResponse, &event, _1, _2));
   event.Wait();
-  CHECK_EQ(1, response.reply.size());
-  CHECK_EQ("318", MessageToString(response.reply[0]));
 }
 
 const static char* kEndpoint = "inproc://test";

@@ -42,7 +42,6 @@ struct RpcResponseContext {
   ::google::protobuf::Message* response_msg;
   std::string* response_str;
   Closure* user_closure;
-  RemoteResponse remote_response;
 };
 
 void RpcChannelImpl::CallMethodFull(
@@ -79,19 +78,18 @@ void RpcChannelImpl::CallMethodFull(
   msg_vector.push_back(msg_out.release());
   msg_vector.push_back(payload_out.release());
 
-  RpcResponseContext *response_context = new RpcResponseContext;
-  response_context->rpc = rpc;
-  response_context->user_closure = done;
-  response_context->response_str = response_str;
-  response_context->response_msg = response_msg;
+  RpcResponseContext response_context;
+  response_context.rpc = rpc;
+  response_context.user_closure = done;
+  response_context.response_str = response_str;
+  response_context.response_msg = response_msg;
   rpc->SetStatus(status::ACTIVE);
 
-  connection_.SendRequest(msg_vector,
-                          &response_context->remote_response,
-                          rpc->GetDeadlineMs(),
-                          NewCallback(
-                              this, &RpcChannelImpl::HandleClientResponse,
-                              response_context));
+  connection_.SendRequest(
+      msg_vector,
+      rpc->GetDeadlineMs(),
+      bind(&RpcChannelImpl::HandleClientResponse, this,
+           response_context, _1, _2));
 }
 
 void RpcChannelImpl::CallMethod0(const std::string& service_name,
@@ -128,36 +126,45 @@ void RpcChannelImpl::CallMethod(
 }
 
 void RpcChannelImpl::HandleClientResponse(
-    RpcResponseContext* response_context) {
-  RemoteResponse& remote_response = response_context->remote_response;
-  switch (remote_response.status) {
-    case RemoteResponse::DEADLINE_EXCEEDED:
-      response_context->rpc->SetStatus(
+    RpcResponseContext response_context, ConnectionManager::Status status,
+    MessageIterator& iter) {
+  switch (status) {
+    case ConnectionManager::DEADLINE_EXCEEDED:
+      response_context.rpc->SetStatus(
           status::DEADLINE_EXCEEDED);
       break;
-    case RemoteResponse::DONE: {
-        if (remote_response.reply.size() != 2) {
-          response_context->rpc->SetFailed(application_error::INVALID_MESSAGE,
+    case ConnectionManager::DONE: {
+        if (!iter.has_more()) {
+          response_context.rpc->SetFailed(application_error::INVALID_MESSAGE,
                                            "");
           break;
         }
         RpcResponseHeader generic_response;
-        zmq::message_t& msg_in = response_context->remote_response.reply[0];
-        CHECK(generic_response.ParseFromArray(msg_in.data(), msg_in.size()));
+        zmq::message_t& msg_in = iter.next();
+        if (!generic_response.ParseFromArray(msg_in.data(), msg_in.size())) {
+          response_context.rpc->SetFailed(application_error::INVALID_MESSAGE,
+                                           "");
+          break;
+        }
         if (generic_response.status() != status::OK) {
-          response_context->rpc->SetFailed(generic_response.application_error(),
+          response_context.rpc->SetFailed(generic_response.application_error(),
                                            generic_response.error());
         } else {
-          response_context->rpc->SetStatus(status::OK);
-          if (response_context->response_msg) {
-            CHECK(response_context->response_msg->ParseFromArray(
-                    response_context->remote_response.reply[1].data(),
-                    response_context->remote_response.reply[1].size()));
-          } else if (response_context->response_str) {
-            response_context->response_str->assign(
+          response_context.rpc->SetStatus(status::OK);
+          zmq::message_t& payload = iter.next();
+          if (response_context.response_msg) {
+            if (!response_context.response_msg->ParseFromArray(
+                    payload.data(),
+                    payload.size())) {
+              response_context.rpc->SetFailed(application_error::INVALID_MESSAGE,
+                                              "");
+              break;
+            }
+          } else if (response_context.response_str) {
+            response_context.response_str->assign(
                 static_cast<char*>(
-                    response_context->remote_response.reply[1].data()),
-                response_context->remote_response.reply[1].size());
+                    payload.data()),
+                payload.size());
           }
         }
       }
@@ -166,14 +173,13 @@ void RpcChannelImpl::HandleClientResponse(
     case RemoteResponse::INACTIVE:
     default:
       CHECK(false) << "Unexpected RemoteResponse state: "
-                   << remote_response.status;
+                   << status;
   }
   // We call Signal() before we execute closure since the closure may delete
   // the RPC object (which contains the sync_event).
-  response_context->rpc->sync_event_->Signal();
-  if (response_context->user_closure) {
-    response_context->user_closure->Run();
+  response_context.rpc->sync_event_->Signal();
+  if (response_context.user_closure) {
+    response_context.user_closure->Run();
   }
-  delete response_context;
 }
 }  // namespace rpcz
