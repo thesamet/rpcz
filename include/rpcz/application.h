@@ -36,8 +36,7 @@ class Application {
  public:
   class Options {
    public:
-    Options() : connection_manager_threads(1),
-                event_manager_threads(10),
+    Options() : connection_manager_threads(10),
                 zeromq_context(NULL),
                 zeromq_io_threads(1) {}
 

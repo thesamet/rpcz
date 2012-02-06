@@ -48,11 +48,9 @@ void Application::Init(const Application::Options& options) {
     context_ = new zmq::context_t(options.zeromq_io_threads);
     owns_context_ = true;
   }
-  event_manager_.reset(new EventManager(context_,
-                                        options.event_manager_threads));
   connection_manager_.reset(new ConnectionManager(
           context_,
-          event_manager_.get()));
+          options.connection_manager_threads));
 }
 
 RpcChannel* Application::CreateRpcChannel(const std::string& endpoint) {

@@ -108,8 +108,7 @@ class ServerTest : public ::testing::Test {
  public:
   ServerTest() :
       context_(new zmq::context_t(1)),
-      em_(new EventManager(context_.get(), 10)),
-      cm_(new ConnectionManager(context_.get(), em_.get())) {
+      cm_(new ConnectionManager(context_.get(), 10)) {
     StartServer();
   }
 

@@ -207,6 +207,20 @@ inline bool SendPointer(zmq::socket_t* socket, T* ptr, int flags=0) {
   return socket->send(msg, flags);
 }
 
+namespace internal {
+template<typename T>
+void DeleteT(void* data, void* hint) {
+  delete (T*)data;
+}
+}
+
+template<typename T>
+inline bool SendObject(zmq::socket_t* socket, const T& object, int flags=0) {
+  T* clone = new T(object);
+  zmq::message_t msg(clone, sizeof(*clone), &rpcz::internal::DeleteT<T>);
+  return socket->send(msg, flags);
+}
+
 inline bool SendChar(zmq::socket_t* socket, char ch, int flags=0) {
   zmq::message_t msg(1);
   *(char*)msg.data() = ch;
@@ -214,5 +228,12 @@ inline bool SendChar(zmq::socket_t* socket, char ch, int flags=0) {
 }
 
 void LogMessageVector(MessageVector& vector);
+
+inline void ForwardMessages(MessageIterator& iter, zmq::socket_t& socket) {
+  while (iter.has_more()) {
+    zmq::message_t& msg = iter.next();
+    socket.send(msg, iter.has_more() ? ZMQ_SNDMORE : 0);
+  }
+}
 }  // namespace rpcz
 #endif

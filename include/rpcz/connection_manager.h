@@ -18,6 +18,7 @@
 #define RPCZ_CONNECTION_MANAGER_H
 
 #include <string>
+#include <boost/function.hpp>
 #include <boost/thread.hpp>
 #include "rpcz/event_manager.h"
 #include "rpcz/macros.h"
@@ -56,13 +57,14 @@ struct ThreadContext;
 // ConnectionManager and Connection are thread-safe.
 class ConnectionManager {
  public:
-  typedef void(*ServerFunction)(ClientConnection, MessageIterator&);
+  typedef boost::function<void(ClientConnection, MessageIterator&)>
+      ServerFunction;
   // Constructs an EventManager that uses the provided ZeroMQ context and
   // has nthreads worker threads. The ConnectionManager does not take ownership
   // of the given ZeroMQ context and event manager. The provided event_manager
   // is used for executing user-supplied closures. If the event_manager is NULL
   // then the closure parameter supplied to SendRequest must be NULL.
-  ConnectionManager(zmq::context_t* context, EventManager* event_manager);
+  ConnectionManager(zmq::context_t* context, int nthreads);
 
   virtual ~ConnectionManager();
 
@@ -72,6 +74,8 @@ class ConnectionManager {
   virtual Connection Connect(const std::string& endpoint);
 
   virtual void Bind(const std::string& endpoint, ServerFunction function);
+
+  virtual void Add(Closure* closure);
 
  private:
   zmq::context_t* context_;
@@ -83,12 +87,14 @@ class ConnectionManager {
 
   inline zmq::socket_t& GetFrontendSocket();
 
-  boost::thread thread_;
+  boost::thread broker_thread_;
+  boost::thread_group worker_threads_;
   boost::thread_specific_ptr<zmq::socket_t> socket_;
+  std::string frontend_endpoint_;
+
+  DISALLOW_COPY_AND_ASSIGN(ConnectionManager);
   friend class Connection;
   friend class ClientConnection;
-  std::string frontend_endpoint_;
-  DISALLOW_COPY_AND_ASSIGN(ConnectionManager);
 };
 
 // Installs a SIGINT and SIGTERM handlers that causes all RPCZ's event loops
@@ -142,7 +148,7 @@ class ClientConnection {
   uint64 socket_id_;
   const std::string sender_;
   const std::string event_id_;
-  friend class ConnectionManagerThread;
+  friend void WorkerThread(ConnectionManager*, zmq::context_t*, std::string);
 };
 }  // namespace rpcz
 #endif

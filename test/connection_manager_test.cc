@@ -43,7 +43,7 @@ class ConnectionManagerTest : public ::testing::Test {
 };
 
 TEST_F(ConnectionManagerTest, TestStartsAndFinishes) {
-  ConnectionManager cm(&context, NULL);
+  ConnectionManager cm(&context, 4);
 }
 
 void EchoServer(zmq::socket_t *socket) {
@@ -106,8 +106,7 @@ TEST_F(ConnectionManagerTest, TestTimeoutAsync) {
   zmq::socket_t server(context, ZMQ_DEALER);
   server.bind("inproc://server.test");
 
-  EventManager em(&context, 5);
-  ConnectionManager cm(&context, &em);
+  ConnectionManager cm(&context, 4);
   Connection connection(cm.Connect("inproc://server.test"));
   scoped_ptr<MessageVector> request(CreateSimpleRequest());
   RemoteResponse response;
@@ -159,12 +158,9 @@ void SendManyMessages(Connection connection, int thread_id) {
   }
   barrier.Wait(request_count);
 }
-
 TEST_F(ConnectionManagerTest, ManyClientsTest) {
   boost::thread thread(StartServer(&context));
-
-  EventManager em(&context, 5);
-  ConnectionManager cm(&context, &em);
+  ConnectionManager cm(&context, 4);
 
   Connection connection(cm.Connect("inproc://server.test"));
   boost::thread_group group;
@@ -191,8 +187,7 @@ void HandleRequest(ClientConnection connection,
 }
 
 TEST_F(ConnectionManagerTest, TestBindServer) {
-  EventManager em(&context, 5);
-  ConnectionManager cm(&context, &em);
+  ConnectionManager cm(&context, 4);
   cm.Bind("inproc://server.point", &HandleRequest);
   Connection c = cm.Connect("inproc://server.point");
   MessageVector v;
@@ -202,5 +197,64 @@ TEST_F(ConnectionManagerTest, TestBindServer) {
   c.SendRequest(&v, &response, -1,
                 NewCallback(&event, &SyncEvent::Signal));
   event.Wait();
+  CHECK_EQ(1, response.reply.size());
+  CHECK_EQ("318", MessageToString(response.reply[0]));
+}
+
+const static char* kEndpoint = "inproc://test";
+const static char* kReply = "gotit";
+
+void DoThis(zmq::context_t* context) {
+  LOG(INFO)<<"Creating socket. Context="<<context;
+  zmq::socket_t socket(*context, ZMQ_PUSH);
+  socket.connect(kEndpoint);
+  SendString(&socket, kReply);
+  socket.close();
+  LOG(INFO)<<"socket closed";
+}
+
+TEST_F(ConnectionManagerTest, ProcessesSingleCallback) {
+  ConnectionManager cm(&context, 4);
+  zmq::socket_t socket(context, ZMQ_PULL);
+  socket.bind(kEndpoint);
+  cm.Add(NewCallback(&DoThis, &context));
+  MessageVector messages;
+  CHECK(ReadMessageToVector(&socket, &messages));
+  ASSERT_EQ(1, messages.size());
+  CHECK_EQ(kReply, MessageToString(messages[0]));
+}
+
+void Increment(boost::mutex* mu,
+               boost::condition_variable* cond, int* x) {
+  mu->lock();
+  (*x)++;
+  cond->notify_one();
+  mu->unlock();
+}
+
+void AddManyClosures(ConnectionManager* cm) {
+  boost::mutex mu;
+  boost::condition_variable cond;
+  boost::unique_lock<boost::mutex> lock(mu);
+  int x = 0;
+  const int kMany = 137;
+  for (int i = 0; i < kMany; ++i) {
+    cm->Add(NewCallback(&Increment, &mu, &cond, &x));
+  }
+  CHECK_EQ(0, x);  // since we are holding the lock
+  while (x != kMany) {
+    cond.wait(lock);
+  }
+}
+
+TEST_F(ConnectionManagerTest, ProcessesManyCallbacksFromManyThreads) {
+  const int thread_count = 10;
+  ConnectionManager cm(&context, thread_count);
+  boost::thread_group thread_group;
+  for (int i = 0; i < thread_count; ++i) {
+    thread_group.add_thread(
+        new boost::thread(boost::bind(AddManyClosures, &cm)));
+  }
+  thread_group.join_all();
 }
 }  // namespace rpcz
