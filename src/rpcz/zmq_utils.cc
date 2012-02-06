@@ -107,7 +107,8 @@ bool SendEmptyMessage(zmq::socket_t* socket,
 bool SendString(zmq::socket_t* socket,
                 const std::string& str,
                 int flags) {
-  zmq_message msg(zmq_message::FromString(str));
+  zmq::message_t msg(str.size());
+  str.copy((char*)msg.data(), str.size(), 0);
   return socket->send(msg, flags);
 }
 

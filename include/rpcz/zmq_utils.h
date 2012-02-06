@@ -19,7 +19,6 @@
 
 #include <string>
 #include "boost/ptr_container/ptr_vector.hpp"
-#include "boost/move/move.hpp"
 #include "zmq.hpp"
 #include "rpcz/macros.h"
 
@@ -29,70 +28,6 @@ class message_t;
 }
 
 namespace rpcz {
-
-class zmq_message : public zmq::message_t {
- public:
-  zmq_message() : zmq::message_t() {}
-
-  explicit zmq_message(size_t size) : zmq::message_t(size) {}
-
-  // Copy constructor makes hard copy
-  zmq_message(const zmq_message& other) : zmq::message_t(other.size()) {
-    memcpy(data(), other.data(), other.size());
-  }
-
-  // Copy assignment (hard copy)
-  inline zmq_message& operator=(BOOST_COPY_ASSIGN_REF(zmq_message) other) {
-    if (this != &other) {
-      size_t size = other.size();
-      zmq::message_t new_msg(size);
-      memcpy(new_msg.data(), other.data(), size);
-      move(&new_msg);
-    }
-    return *this;
-  }
-
-  // Move constructor
-  zmq_message(BOOST_RV_REF(zmq_message) other) {
-    move(&other);
-  }
-
-  // Move assignment
-  zmq_message& operator=(BOOST_RV_REF(zmq_message) other) {
-    if (this != &other) {
-      move(&other);
-    }
-    return *this;
-  }
-
-  inline void* data() {
-    return zmq::message_t::data();
-  }
-
-  inline const void* data() const {
-    return const_cast<zmq_message*>(this)->data();
-  }
-
-  inline size_t size() const {
-    return static_cast<zmq::message_t*>(
-        const_cast<zmq_message*>(this))->size();
-  }
-
-  std::string ToString() const {
-    std::string s(static_cast<const char*>(data()), size());
-    return s;
-  }
-
-  static zmq_message FromString(const std::string& str) {
-    zmq_message msg(str.size());
-    str.copy(static_cast<char*>(msg.data()), str.size(), 0);
-    return msg;
-  }
-
- private:
-  zmq_msg_t msg_;
-  BOOST_COPYABLE_AND_MOVABLE(zmq_message);
-};
 
 class MessageIterator {
  public:
@@ -111,7 +46,7 @@ class MessageIterator {
 
   inline bool has_more() { return has_more_; }
 
-  inline zmq_message& next() {
+  inline zmq::message_t& next() {
     socket_.recv(&message_, 0);
     socket_.getsockopt(ZMQ_RCVMORE, &has_more_, &more_size_);
     return message_;
@@ -119,7 +54,7 @@ class MessageIterator {
 
  private:
   zmq::socket_t& socket_;
-  zmq_message message_;
+  zmq::message_t message_;
   int64_t has_more_;
   size_t more_size_;
 

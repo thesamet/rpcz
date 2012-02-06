@@ -173,23 +173,25 @@ void Server::HandleRequest(const ClientConnection& connection,
   if (!iter.has_more()) {
     return;
   }
-  zmq_message request = iter.next();
+  RpcRequestHeader rpc_request_header;
+  scoped_ptr<ServerChannel> channel(new ServerChannelImpl(connection));
+  {
+    zmq::message_t& msg = iter.next();
+    if (!rpc_request_header.ParseFromArray(msg.data(), msg.size())) {
+      // Handle bad RPC.
+      DLOG(INFO) << "Received bad header.";
+      channel->SendError(application_error::INVALID_HEADER);
+      return;
+    };
+  }
   if (!iter.has_more()) {
     return;
   }
-  zmq_message payload = iter.next();
+  zmq::message_t& payload = iter.next();
   if (iter.has_more()) {
     return;
   }
-  scoped_ptr<ServerChannel> channel(new ServerChannelImpl(connection));
 
-  RpcRequestHeader rpc_request_header;
-  if (!rpc_request_header.ParseFromArray(request.data(), request.size())) {
-    // Handle bad RPC.
-    DLOG(INFO) << "Received bad header.";
-    channel->SendError(application_error::INVALID_HEADER);
-    return;
-  };
   RpcServiceMap::const_iterator service_it = service_map_.find(
       rpc_request_header.service());
   if (service_it == service_map_.end()) {
@@ -199,8 +201,8 @@ void Server::HandleRequest(const ClientConnection& connection,
     return;
   }
   rpcz::RpcService* service = service_it->second;
-  service->DispatchRequest(rpc_request_header.method(), payload.data(),
-                           payload.size(),
+  service->DispatchRequest(rpc_request_header.method(),
+                           payload.data(), payload.size(),
                            channel.release());
 }
 }  // namespace
