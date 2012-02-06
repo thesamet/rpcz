@@ -25,7 +25,6 @@
 #include "gtest/gtest.h"
 #include "rpcz/callback.h"
 #include "rpcz/connection_manager.h"
-#include "rpcz/event_manager.h"
 #include "rpcz/macros.h"
 #include "rpcz/remote_response.h"
 #include "rpcz/sync_event.h"

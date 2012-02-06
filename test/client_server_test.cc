@@ -22,7 +22,6 @@
 
 #include "rpcz/callback.h"
 #include "rpcz/connection_manager.h"
-#include "rpcz/event_manager.h"
 #include "rpcz/rpc_channel.h"
 #include "rpcz/rpc.h"
 #include "rpcz/server.h"
@@ -95,20 +94,13 @@ class BackendSearchServiceImpl : public SearchService {
   }
 };
 
-void ServerThread(zmq::socket_t* socket,
-                  SearchService *service,
-                  EventManager* em) {
-  Server server(socket, em);
-  server.RegisterService(service);
-  server.Start();
-  delete service;
-}
-
 class ServerTest : public ::testing::Test {
  public:
   ServerTest() :
       context_(new zmq::context_t(1)),
-      cm_(new ConnectionManager(context_.get(), 10)) {
+      cm_(new ConnectionManager(context_.get(), 10)),
+      frontend_server_(cm_.get()),
+      backend_server_(cm_.get()) {
     StartServer();
   }
 
@@ -120,32 +112,22 @@ class ServerTest : public ::testing::Test {
     SendBlockingRequest(frontend_connection_, "simple");
     SendBlockingRequest(backend_connection_, "simple");
     // Terminate the context, which will cause the thread to quit.
-    em_.reset(NULL);
     cm_.reset(NULL);
     context_.reset(NULL);
-    server_thread_.join();
-    backend_thread_.join();
   }
 
   void StartServer() {
-    zmq::socket_t *backend_socket = new zmq::socket_t(*context_, ZMQ_ROUTER);
-    backend_socket->bind("inproc://myserver.backend");
-    server_thread_ = boost::thread(
-        boost::bind(ServerThread, backend_socket, new BackendSearchServiceImpl,
-                    em_.get()));
-
+    backend_server_.RegisterService(
+        new BackendSearchServiceImpl);
+    backend_server_.Bind("inproc://myserver.backend");
     backend_connection_ = cm_->Connect("inproc://myserver.backend");
-    zmq::socket_t *frontend_socket = new zmq::socket_t(*context_, ZMQ_ROUTER);
-    frontend_socket->bind("inproc://myserver.frontend");
-    backend_thread_ = boost::thread(
-        boost::bind(ServerThread,
-                    frontend_socket,
-                    new SearchServiceImpl(
-                        new SearchService_Stub(
-                            RpcChannel::Create(backend_connection_),
-                        true)),
-                    em_.get()));
-    frontend_connection_= cm_->Connect("inproc://myserver.frontend");
+
+    frontend_server_.RegisterService(
+        new SearchServiceImpl(
+            new SearchService_Stub(
+                RpcChannel::Create(backend_connection_))));
+    frontend_server_.Bind("inproc://myserver.frontend");
+    frontend_connection_ = cm_->Connect("inproc://myserver.frontend");
   }
 
   SearchResponse SendBlockingRequest(Connection connection,
@@ -163,12 +145,11 @@ class ServerTest : public ::testing::Test {
 
  protected:
   scoped_ptr<zmq::context_t> context_;
-  scoped_ptr<EventManager> em_;
   scoped_ptr<ConnectionManager> cm_;
   Connection frontend_connection_;
   Connection backend_connection_;
-  boost::thread server_thread_;
-  boost::thread backend_thread_;
+  Server frontend_server_;
+  Server backend_server_;
 };
 
 TEST_F(ServerTest, SimpleRequest) {

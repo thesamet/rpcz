@@ -25,10 +25,11 @@ class socket_t;
 };
 
 namespace rpcz {
-class EventManager;
+class ClientConnection;
+class ConnectionManager;
+class MessageIterator;
 class RpcService;
 class ServerChannel;
-class ServerImpl;
 class Service;
 
 // Server receives incoming RPC requests on a socket. When such a request
@@ -41,7 +42,7 @@ class Server {
   // already been bound to some endpoint. We assume that the socket is of ROUTER
   // type. The provided event manager will be used to handle the requests.
   // The Server takes ownership of the socket, but not of event_manager.
-  Server(zmq::socket_t* socket, EventManager* event_manager);
+  Server(ConnectionManager* connection_manager);
 
   ~Server();
 
@@ -52,6 +53,8 @@ class Server {
   // provided service.
   void RegisterService(Service* service);
   void RegisterService(Service* service, const std::string& name);
+
+  void Bind(const std::string& endpoint);
 
   // Registers a low-level RpcService.
   void RegisterService(RpcService* rpc_service, const std::string& name);
@@ -66,7 +69,12 @@ class Server {
   void Start();
 
  private:
-  scoped_ptr<ServerImpl> server_impl_;
+  void HandleRequest(const ClientConnection& connection,
+                     MessageIterator& iter);
+
+  ConnectionManager* connection_manager_;
+  typedef std::map<std::string, rpcz::RpcService*> RpcServiceMap;
+  RpcServiceMap service_map_;
   DISALLOW_COPY_AND_ASSIGN(Server);
 };
 

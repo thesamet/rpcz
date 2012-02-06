@@ -39,7 +39,6 @@
 #include "rpcz/macros.h"
 #include "rpcz/reactor.h"
 #include "rpcz/remote_response.h"
-#include "rpcz/sync_event.h"
 
 namespace rpcz {
 namespace {
@@ -366,6 +365,8 @@ ConnectionManager::ConnectionManager(zmq::context_t* context, int nthreads)
                        boost::lexical_cast<std::string>(this) + ".cm.frontend")
 {
   zmq::socket_t* frontend_socket = new zmq::socket_t(*context, ZMQ_ROUTER);
+  int linger_ms = 0;
+  frontend_socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
   frontend_socket->bind(frontend_endpoint_.c_str());
   for (int i = 0; i < nthreads; ++i) {
     worker_threads_.add_thread(
@@ -382,6 +383,8 @@ zmq::socket_t& ConnectionManager::GetFrontendSocket() {
   zmq::socket_t* socket = socket_.get();
   if (socket == NULL) {
     socket = new zmq::socket_t(*context_, ZMQ_DEALER);
+    int linger_ms = 0;
+    socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
     socket->connect(frontend_endpoint_.c_str());
     socket_.reset(socket);
   }
@@ -421,10 +424,19 @@ void ConnectionManager::Add(Closure* closure) {
   return;
 }
  
-ConnectionManager::~ConnectionManager() {
+void ConnectionManager::Run() {
+  broker_thread_.join();
+  worker_threads_.join_all();
+}
+
+void ConnectionManager::Terminate() {
   zmq::socket_t& socket = GetFrontendSocket();
   SendEmptyMessage(&socket, ZMQ_SNDMORE);
   SendChar(&socket, kQuit, 0);
+}
+
+ConnectionManager::~ConnectionManager() {
+  Terminate();
   broker_thread_.join();
   worker_threads_.join_all();
   socket_.reset(NULL);
