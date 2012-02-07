@@ -17,7 +17,6 @@
 #include <string>
 #include "zmq.hpp"
 #include "rpcz/application.h"
-#include "rpcz/event_manager.h"
 #include "rpcz/connection_manager.h"
 #include "rpcz/rpc_channel.h"
 #include "rpcz/server.h"
@@ -34,7 +33,6 @@ Application::Application(const Application::Options& options) {
 
 Application::~Application() {
   connection_manager_.reset();
-  event_manager_.reset();
   if (owns_context_) {
     delete context_;
   }
@@ -48,23 +46,26 @@ void Application::Init(const Application::Options& options) {
     context_ = new zmq::context_t(options.zeromq_io_threads);
     owns_context_ = true;
   }
-  event_manager_.reset(new EventManager(context_,
-                                        options.event_manager_threads));
   connection_manager_.reset(new ConnectionManager(
           context_,
-          event_manager_.get(),
           options.connection_manager_threads));
 }
 
 RpcChannel* Application::CreateRpcChannel(const std::string& endpoint) {
   return RpcChannel::Create(
-      connection_manager_->Connect(endpoint), true);
+      connection_manager_->Connect(endpoint));
 }
 
-Server* Application::CreateServer(const std::string& endpoint) {
-  zmq::socket_t* socket = new zmq::socket_t(*context_, ZMQ_ROUTER);
-  socket->bind(endpoint.c_str());
-  Server* server = new Server(socket, event_manager_.get());
+Server* Application::CreateServer() {
+  Server* server = new Server(connection_manager_.get());
   return server;
+}
+
+void Application::Run() {
+  connection_manager_->Run();
+}
+
+void Application::Terminate() {
+  connection_manager_->Terminate();
 }
 }  // namespace rpcz

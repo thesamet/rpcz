@@ -22,7 +22,6 @@
 
 #include "rpcz/callback.h"
 #include "rpcz/connection_manager.h"
-#include "rpcz/event_manager.h"
 #include "rpcz/rpc_channel.h"
 #include "rpcz/rpc.h"
 #include "rpcz/server.h"
@@ -47,6 +46,10 @@ class SearchServiceImpl : public SearchService {
   SearchServiceImpl(SearchService_Stub* backend)
       : backend_(backend), delayed_reply_(NULL) {};
 
+  ~SearchServiceImpl() {
+    LOG(INFO) << "Terminating";
+  }
+
   virtual void Search(
       const SearchRequest& request,
       Reply<SearchResponse> reply) {
@@ -63,11 +66,16 @@ class SearchServiceImpl : public SearchService {
                                                               reply));
       return;
     } else if (request.query() == "timeout") {
-      // We lose the request. We are going to reply only when we get a request
+      // We "lose" the request. We are going to reply only when we get a request
       // for the query "delayed".
+      LOG(INFO) << "T";
+      boost::unique_lock<boost::mutex> lock(mu_);
       delayed_reply_ = reply;
+      timeout_request_received.Signal();
       return;
     } else if (request.query() == "delayed") {
+      LOG(INFO) << "D";
+      boost::unique_lock<boost::mutex> lock(mu_);
       delayed_reply_.Send(SearchResponse());
       reply.Send(SearchResponse());
     } else {
@@ -78,8 +86,11 @@ class SearchServiceImpl : public SearchService {
     }
   }
 
+  SyncEvent timeout_request_received;
+
  private:
   scoped_ptr<SearchService_Stub> backend_;
+  boost::mutex mu_;
   Reply<SearchResponse> delayed_reply_;
 };
 
@@ -95,23 +106,14 @@ class BackendSearchServiceImpl : public SearchService {
   }
 };
 
-void ServerThread(zmq::socket_t* socket,
-                  SearchService *service,
-                  EventManager* em) {
-  Server server(socket, em);
-  server.RegisterService(service);
-  server.Start();
-  delete service;
-}
-
 class ServerTest : public ::testing::Test {
  public:
   ServerTest() :
       context_(new zmq::context_t(1)),
-      em_(new EventManager(context_.get(), 10)),
-      cm_(new ConnectionManager(context_.get(), em_.get(), 1)),
-      frontend_connection_(cm_->Connect("inproc://myserver.frontend")),
-      backend_connection_(cm_->Connect("inproc://myserver.backend")) {
+      cm_(new ConnectionManager(context_.get(), 10)),
+      frontend_server_(cm_.get()),
+      backend_server_(cm_.get()) {
+    StartServer();
   }
 
   ~ServerTest() {
@@ -119,38 +121,28 @@ class ServerTest : public ::testing::Test {
     // managers (since the servers will try to connect to it).
     // The way we accomplish that here is by sending them a request and
     // waiting for a response.
-    SendBlockingRequest(frontend_connection_.get(), "simple");
-    SendBlockingRequest(backend_connection_.get(), "simple");
-    frontend_connection_.reset(NULL);
-    backend_connection_.reset(NULL);
+    SendBlockingRequest(frontend_connection_, "simple");
+    SendBlockingRequest(backend_connection_, "simple");
     // Terminate the context, which will cause the thread to quit.
-    em_.reset(NULL);
     cm_.reset(NULL);
     context_.reset(NULL);
-    server_thread_.join();
-    backend_thread_.join();
   }
 
   void StartServer() {
-    zmq::socket_t *backend_socket = new zmq::socket_t(*context_, ZMQ_ROUTER);
-    backend_socket->bind("inproc://myserver.backend");
-    server_thread_ = boost::thread(
-        boost::bind(ServerThread, backend_socket, new BackendSearchServiceImpl,
-                    em_.get()));
+    backend_server_.RegisterService(
+        new BackendSearchServiceImpl);
+    backend_server_.Bind("inproc://myserver.backend");
+    backend_connection_ = cm_->Connect("inproc://myserver.backend");
 
-    zmq::socket_t *frontend_socket = new zmq::socket_t(*context_, ZMQ_ROUTER);
-    frontend_socket->bind("inproc://myserver.frontend");
-    backend_thread_ = boost::thread(
-        boost::bind(ServerThread,
-                    frontend_socket,
-                    new SearchServiceImpl(
-                        new SearchService_Stub(
-                            RpcChannel::Create(backend_connection_.get()),
-                        true)),
-                    em_.get()));
+    frontend_server_.RegisterService(
+        frontend_service = new SearchServiceImpl(
+            new SearchService_Stub(
+                RpcChannel::Create(backend_connection_), true)));
+    frontend_server_.Bind("inproc://myserver.frontend");
+    frontend_connection_ = cm_->Connect("inproc://myserver.frontend");
   }
 
-  SearchResponse SendBlockingRequest(Connection* connection,
+  SearchResponse SendBlockingRequest(Connection connection,
                                      const std::string& query) {
     SearchService_Stub stub(RpcChannel::Create(connection), true);
     SearchRequest request;
@@ -165,25 +157,23 @@ class ServerTest : public ::testing::Test {
 
  protected:
   scoped_ptr<zmq::context_t> context_;
-  scoped_ptr<EventManager> em_;
   scoped_ptr<ConnectionManager> cm_;
-  scoped_ptr<Connection> frontend_connection_;
-  scoped_ptr<Connection> backend_connection_;
-  boost::thread server_thread_;
-  boost::thread backend_thread_;
+  Connection frontend_connection_;
+  Connection backend_connection_;
+  Server frontend_server_;
+  Server backend_server_;
+  SearchServiceImpl* frontend_service;
 };
 
 TEST_F(ServerTest, SimpleRequest) {
-  StartServer();
   SearchResponse response =
-      SendBlockingRequest(frontend_connection_.get(), "happiness");
+      SendBlockingRequest(frontend_connection_, "happiness");
   ASSERT_EQ(2, response.results_size());
   ASSERT_EQ("The search for happiness", response.results(0));
 }
 
 TEST_F(ServerTest, SimpleRequestAsync) {
-  StartServer();
-  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_), true);
   SearchRequest request;
   SearchResponse response;
   RPC rpc;
@@ -198,8 +188,7 @@ TEST_F(ServerTest, SimpleRequestAsync) {
 }
 
 TEST_F(ServerTest, SimpleRequestWithError) {
-  StartServer();
-  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_), true);
   SearchRequest request;
   request.set_query("foo");
   SearchResponse response;
@@ -211,8 +200,7 @@ TEST_F(ServerTest, SimpleRequestWithError) {
 }
 
 TEST_F(ServerTest, SimpleRequestWithTimeout) {
-  StartServer();
-  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_), true);
   SearchRequest request;
   SearchResponse response;
   RPC rpc;
@@ -221,19 +209,10 @@ TEST_F(ServerTest, SimpleRequestWithTimeout) {
   stub.Search(request, &response, &rpc, NULL);
   rpc.Wait();
   ASSERT_EQ(RpcResponseHeader::DEADLINE_EXCEEDED, rpc.GetStatus());
-  // Now we clean up the closure we kept aside.
-  {
-    RPC rpc;
-    request.set_query("delayed");
-    stub.Search(request, &response, &rpc, NULL);
-    rpc.Wait();
-    ASSERT_TRUE(rpc.OK());
-  }
 }
 
 TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
-  StartServer();
-  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_), true);
   SearchRequest request;
   SearchResponse response;
   {
@@ -246,19 +225,10 @@ TEST_F(ServerTest, SimpleRequestWithTimeoutAsync) {
     event.Wait();
     ASSERT_EQ(RpcResponseHeader::DEADLINE_EXCEEDED, rpc.GetStatus());
   }
-  // Now we clean up the closure we kept aside.
-  {
-    RPC rpc;
-    request.set_query("delayed");
-    stub.Search(request, &response, &rpc, NULL);
-    rpc.Wait();
-    ASSERT_TRUE(rpc.OK());
-  }
 }
 
 TEST_F(ServerTest, DelegatedRequest) {
-  StartServer();
-  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_), true);
   SearchRequest request;
   SearchResponse response;
   RPC rpc;
@@ -270,8 +240,7 @@ TEST_F(ServerTest, DelegatedRequest) {
 }
 
 TEST_F(ServerTest, EasyBlockingRequestUsingDelegate) {
-  StartServer();
-  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_), true);
   SearchRequest request;
   SearchResponse response;
   request.set_query("delegate");
@@ -280,8 +249,7 @@ TEST_F(ServerTest, EasyBlockingRequestUsingDelegate) {
 }
 
 TEST_F(ServerTest, EasyBlockingRequestRaisesExceptions) {
-  StartServer();
-  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_), true);
   SearchRequest request;
   SearchResponse response;
   request.set_query("foo");
@@ -295,8 +263,7 @@ TEST_F(ServerTest, EasyBlockingRequestRaisesExceptions) {
 }
 
 TEST_F(ServerTest, EasyBlockingRequestWithTimeout) {
-  StartServer();
-  SearchService_Stub stub(RpcChannel::Create(frontend_connection_.get()), true);
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_), true);
   SearchRequest request;
   SearchResponse response;
   request.set_query("timeout");
@@ -306,6 +273,9 @@ TEST_F(ServerTest, EasyBlockingRequestWithTimeout) {
   } catch (RpcError &error) {
     ASSERT_EQ(status::DEADLINE_EXCEEDED, error.GetStatus());
   }
+  // We may get here before the timing out request was processed, and if we
+  // just send delay right away, the server may be unable to reply.
+  frontend_service->timeout_request_received.Wait();
   request.set_query("delayed");
   stub.Search(request, &response);
 }

@@ -40,10 +40,11 @@ class SearchServiceImpl : public SearchService {
 
 int main() {
   rpcz::Application application;
-  rpcz::Server* server = application.CreateServer("tcp://*:5555");
+  rpcz::Server* server = application.CreateServer();
   examples::SearchServiceImpl search_service;
   server->RegisterService(&search_service);
   cout << "Serving requests on port 5555." << endl;
-  server->Start();
+  server->Bind("tcp://*:5555");
+  application.Run();
   delete server;
 }

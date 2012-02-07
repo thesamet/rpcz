@@ -25,10 +25,11 @@ class socket_t;
 };
 
 namespace rpcz {
-class EventManager;
+class ClientConnection;
+class ConnectionManager;
+class MessageIterator;
 class RpcService;
 class ServerChannel;
-class ServerImpl;
 class Service;
 
 // Server receives incoming RPC requests on a socket. When such a request
@@ -41,32 +42,30 @@ class Server {
   // already been bound to some endpoint. We assume that the socket is of ROUTER
   // type. The provided event manager will be used to handle the requests.
   // The Server takes ownership of the socket, but not of event_manager.
-  Server(zmq::socket_t* socket, EventManager* event_manager);
+  Server(ConnectionManager* connection_manager);
 
   ~Server();
 
   // Registers an RPC Service with this server. All registrations must occur
-  // before Start() is called. The name parameter identifies the service for
+  // before Bind() is called. The name parameter identifies the service for
   // external clients. If you use the first form, the service name from the
   // protocol buffer definition will be used. Does not take ownership of the
   // provided service.
   void RegisterService(Service* service);
   void RegisterService(Service* service, const std::string& name);
 
+  void Bind(const std::string& endpoint);
+
   // Registers a low-level RpcService.
   void RegisterService(RpcService* rpc_service, const std::string& name);
 
-  // Starts serving requests. The calling thread starts forwarding requests
-  // from the socket to the event manager for processings. Only one thread may
-  // call this function. The calling thread gets blocked until this function
-  // returns. 
-  // Currently, the only way to get the control back to the executing thread is
-  // call InstallSignalHandler() and send the process a SIGTERM or SIGINT
-  // (Ctrl-C).
-  void Start();
-
  private:
-  scoped_ptr<ServerImpl> server_impl_;
+  void HandleRequest(const ClientConnection& connection,
+                     MessageIterator& iter);
+
+  ConnectionManager* connection_manager_;
+  typedef std::map<std::string, rpcz::RpcService*> RpcServiceMap;
+  RpcServiceMap service_map_;
   DISALLOW_COPY_AND_ASSIGN(Server);
 };
 
@@ -74,6 +73,8 @@ class Server {
 // It is exposed here for language bindings. Do not use directly.
 class RpcService {
  public:
+  virtual ~RpcService() {}
+
   virtual void DispatchRequest(const std::string& method,
                                const void* payload, size_t payload_len,
                                ServerChannel* channel_) = 0;

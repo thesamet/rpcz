@@ -11,9 +11,9 @@ set(PROTO_SOURCES ${RPCZ_PB_SRCS} ${RPCZ_PB_HDRS})
 
 include_directories(${PROJECT_BINARY_DIR})
 set(RPCZ_SOURCES
-    application.cc clock.cc connection_manager.cc event_manager.cc
-    function_server.cc reactor.cc remote_response.cc rpc.cc
-    rpc_channel_impl.cc server.cc sync_event.cc zmq_utils.cc
+    application.cc clock.cc connection_manager.cc
+    reactor.cc rpc.cc rpc_channel_impl.cc server.cc
+    sync_event.cc zmq_utils.cc
     ${PROTO_SOURCES})
 set(RPCZ_LIB_DEPS ${ZeroMQ_LIBRARIES}
                   ${PROTOBUF_LIBRARY}

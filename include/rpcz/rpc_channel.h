@@ -53,7 +53,7 @@ class RpcChannel {
                            RPC* rpc,
                            Closure* done) = 0;
 
-  static RpcChannel* Create(Connection* connection, bool owns_connection=false);
+  static RpcChannel* Create(Connection connection);
 
   virtual ~RpcChannel() {};
 };

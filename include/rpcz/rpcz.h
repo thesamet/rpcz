@@ -21,7 +21,6 @@
 #include "rpcz/application.h"
 #include "rpcz/callback.h"
 #include "rpcz/connection_manager.h"
-#include "rpcz/event_manager.h"
 #include "rpcz/macros.h"
 #include "rpcz/rpc.h"
 #include "rpcz/rpc_channel.h"
@@ -33,5 +32,4 @@
 // headers being around and probably most people will not need this low-level
 // functionality. These files are:
 //    zmq_utils.h
-//    remote_response.h
 #endif

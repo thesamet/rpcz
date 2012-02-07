@@ -29,6 +29,38 @@ class message_t;
 
 namespace rpcz {
 
+class MessageIterator {
+ public:
+  explicit MessageIterator(zmq::socket_t& socket) :
+      socket_(socket), has_more_(true), more_size_(sizeof(has_more_)) { };
+
+  MessageIterator(const MessageIterator& other) :
+      socket_(other.socket_),
+      has_more_(other.has_more_),
+      more_size_(other.more_size_) {
+  }
+
+  ~MessageIterator() {
+    while (has_more()) next();
+  }
+
+  inline bool has_more() { return has_more_; }
+
+  inline zmq::message_t& next() {
+    socket_.recv(&message_, 0);
+    socket_.getsockopt(ZMQ_RCVMORE, &has_more_, &more_size_);
+    return message_;
+  }
+
+ private:
+  zmq::socket_t& socket_;
+  zmq::message_t message_;
+  int64_t has_more_;
+  size_t more_size_;
+
+  MessageIterator& operator=(const MessageIterator&);
+};
+
 class MessageVector {
  public:
   zmq::message_t& operator[](int index) {
@@ -82,14 +114,14 @@ std::string MessageToString(zmq::message_t& msg);
 
 zmq::message_t* StringToMessage(const std::string& str);
 
-void SendEmptyMessage(zmq::socket_t* socket,
+bool SendEmptyMessage(zmq::socket_t* socket,
                       int flags=0);
 
-void SendString(zmq::socket_t* socket,
+bool SendString(zmq::socket_t* socket,
                 const std::string& str,
                 int flags=0);
 
-void SendUint64(zmq::socket_t* socket,
+bool SendUint64(zmq::socket_t* socket,
                 uint64 value,
                 int flags=0);
 
@@ -101,6 +133,42 @@ inline T& InterpretMessage(Message& msg) {
   assert(msg.size() == sizeof(T));
   T &t = *static_cast<T*>(msg.data());
   return t;
+}
+
+template<typename T>
+inline bool SendPointer(zmq::socket_t* socket, T* ptr, int flags=0) {
+  zmq::message_t msg(sizeof(T*));
+  memcpy(msg.data(), &ptr, sizeof(T*));
+  return socket->send(msg, flags);
+}
+
+namespace internal {
+template<typename T>
+void DeleteT(void* data, void* hint) {
+  delete (T*)data;
+}
+}
+
+template<typename T>
+inline bool SendObject(zmq::socket_t* socket, const T& object, int flags=0) {
+  T* clone = new T(object);
+  zmq::message_t msg(clone, sizeof(*clone), &rpcz::internal::DeleteT<T>);
+  return socket->send(msg, flags);
+}
+
+inline bool SendChar(zmq::socket_t* socket, char ch, int flags=0) {
+  zmq::message_t msg(1);
+  *(char*)msg.data() = ch;
+  return socket->send(msg, flags);
+}
+
+void LogMessageVector(MessageVector& vector);
+
+inline void ForwardMessages(MessageIterator& iter, zmq::socket_t& socket) {
+  while (iter.has_more()) {
+    zmq::message_t& msg = iter.next();
+    socket.send(msg, iter.has_more() ? ZMQ_SNDMORE : 0);
+  }
 }
 }  // namespace rpcz
 #endif

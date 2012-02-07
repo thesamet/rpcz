@@ -18,9 +18,10 @@
 #define RPCZ_CONNECTION_MANAGER_H
 
 #include <string>
-
-#include "rpcz/event_manager.h"
+#include <boost/function.hpp>
+#include <boost/thread.hpp>
 #include "rpcz/macros.h"
+#include "rpcz/sync_event.h"
 
 namespace zmq {
 class context_t;
@@ -28,65 +29,96 @@ class message_t;
 class socket_t;
 }  // namespace zmq
 
-namespace boost {
-template <typename T>
-class thread_specific_ptr;
-}  // namespace boost
-
 namespace rpcz {
+class ClientConnection;
 class Closure;
 class Connection;
 class ConnectionThreadContext;
+class MessageIterator;
 class MessageVector;
-class RemoteResponse;
 
 namespace internal {
 struct ThreadContext;
 }  // namespace internal
 
-// A ConnectionManager is a multi-threaded asynchronous system for client-side
-// communication over ZeroMQ sockets. Each thread in a connection manager holds
-// a socket that is connected to each server we speak to.
-// The purpose of the ConnectionManager is to enable all threads in a program
-// to share a pool of connections in a lock-free manner.
+// A ConnectionManager is a multi-threaded asynchronous system for communication
+// over ZeroMQ sockets. A ConnectionManager can:
+//   1. Connect to a remote server and allow all threads the program to share
+//      the connection:
 //
-// ConnectionManager cm(2);
-// Connection* c = cm.Connect("tcp://localhost:5557");
+//          ConnectionManager cm(10);
+//          Connection c = cm.Connect("tcp://localhost:5557");
 // 
-// Now, it is possible to send requests to this backend fron any thread:
-// c->SendRequest(...);
+//      Now, it is possible to send requests to this backend fron any thread:
+//
+//          c.SendRequest(...);
+//
+//  2. Bind a socket and register a handler function. The handler function
+//     gets executed in one of the connection manager threads.
+//
+//          c.Bind("tcp://*:5555", &HandlerFunction);
+//
+//  3. Queue closures to be executed on one of the connection manager threads:
+//
+//          c.Add(closure)
 //
 // ConnectionManager and Connection are thread-safe.
 class ConnectionManager {
  public:
-  // Constructs an EventManager that uses the provided ZeroMQ context and
-  // has nthreads worker threads. The ConnectionManager does not take ownership
-  // of the given ZeroMQ context and event manager. The provided event_manager
-  // is used for executing user-supplied closures. If the event_manager is NULL
-  // then the closure parameter supplied to SendRequest must be NULL.
-  ConnectionManager(zmq::context_t* context, EventManager* event_manager,
-                    int nthreads=1);
+  enum Status {
+    INACTIVE = 0,
+    ACTIVE = 1,
+    DONE = 2,
+    DEADLINE_EXCEEDED = 3,
+  };
+
+  typedef boost::function<void(const ClientConnection&, MessageIterator&)>
+      ServerFunction;
+  typedef boost::function<void(Status status, MessageIterator&)>
+      ClientRequestCallback;
+
+  // Constructs a ConnectionManager that has nthreads worker threads. The
+  // ConnectionManager does not take ownership of the given ZeroMQ context.
+  ConnectionManager(zmq::context_t* context, int nthreads);
 
   virtual ~ConnectionManager();
 
   // Connects all ConnectionManager threads to the given endpoint. On success
   // this method returns a Connection object that can be used from any thread
-  // to communicate with this endpoint. Returns NULL in error.
-  virtual Connection* Connect(const std::string& endpoint);
+  // to communicate with this endpoint.
+  virtual Connection Connect(const std::string& endpoint);
 
-  scoped_ptr<boost::thread_specific_ptr<ConnectionThreadContext> >
-      thread_context_;
+  // Binds a socket to the given endpoint and registers ServerFunction as a
+  // handler for requests to this socket. The function gets executed on one of
+  // the worker threads. When the function returns, the endpoint is already
+  // bound.
+  virtual void Bind(const std::string& endpoint, ServerFunction function);
+
+  // Executes the closure on one of the worker threads.
+  virtual void Add(Closure* closure);
+
+  // Asks the connection manager to terminate. When the function returns the
+  // ConnectionManager may still be running. This function may be called
+  // multiple times.
+  virtual void Terminate();
+
+  // Returns after all ConnectionManager threads terminate.
+  virtual void Run();
 
  private:
   zmq::context_t* context_;
-  // The external event manager is used for running user-supplied closures when
-  // responses arrive (or exceed their deadline).
-  // The internal event manager is used as a container for the worker threads of
-  // this connection manager.
-  EventManager* external_event_manager_;
-  scoped_ptr<EventManager> internal_event_manager_;
-  friend class ConnectionImpl;
+
+  inline zmq::socket_t& GetFrontendSocket();
+
+  boost::thread broker_thread_;
+  boost::thread_group worker_threads_;
+  boost::thread_specific_ptr<zmq::socket_t> socket_;
+  std::string frontend_endpoint_;
+
   DISALLOW_COPY_AND_ASSIGN(ConnectionManager);
+  friend class Connection;
+  friend class ClientConnection;
+  friend class ConnectionManagerThread;
 };
 
 // Installs a SIGINT and SIGTERM handlers that causes all RPCZ's event loops
@@ -96,35 +128,45 @@ void InstallSignalHandler();
 // Represents a connection to a server. Thread-safe.
 class Connection {
  public:
+  Connection() : manager_((ConnectionManager*)0xbadecafe), connection_id_(0) {}
+
   // Asynchronously sends a request over the connection.
   // request: a vector of messages to be sent. Does not take ownership of the
   //          request. The vector has to live valid at least until the request
   //          completes. It can be safely de-allocated inside the provided
   //          closure or after remote_response->Wait() returns.
-  // response: points to a RemoteResponse object that will receive the response.
-  //           this object must live at least until when the closure has been
-  //           ran (and may be deleted by the closure).
   // deadline_ms - milliseconds before giving up on this request. -1 means
   //               forever.
-  // closure - a closure that will be ran by the EventManager when a response
-  //           arrives. The closure gets called also if the request times out.
-  //           Hence, it is necessary to check response->status. If no
-  //           EventManager was provided to the constructor, this must be NULL.
-  virtual void SendRequest(
-      MessageVector* request,
-      RemoteResponse* remote_response,
+  // callback - a closure that will be ran on one of the worker threads when a
+  //           response arrives or it timeouts.
+  void SendRequest(
+      MessageVector& request,
       int64 deadline_ms,
-      Closure* closure) = 0;
-
-  virtual ~Connection() {};
-
-  virtual zmq::socket_t* CreateConnectedSocket(zmq::context_t* context) = 0;
-
- protected:
-  Connection() {};
+      ConnectionManager::ClientRequestCallback callback);
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(Connection);
+  Connection(ConnectionManager *manager, uint64 connection_id) :
+      manager_(manager), connection_id_(connection_id) {}
+  ConnectionManager* manager_;
+  uint64 connection_id_;
+  friend class ConnectionManager;
+};
+
+class ClientConnection {
+ public:
+  void Reply(MessageVector* v);
+
+ private:
+  ClientConnection(ConnectionManager* manager, uint64 socket_id,
+                   std::string& sender, std::string& event_id)
+      : manager_(manager), socket_id_(socket_id), sender_(sender),
+      event_id_(event_id) {}
+
+  ConnectionManager* manager_;
+  uint64 socket_id_;
+  const std::string sender_;
+  const std::string event_id_;
+  friend void WorkerThread(ConnectionManager*, zmq::context_t*, std::string);
 };
 }  // namespace rpcz
 #endif

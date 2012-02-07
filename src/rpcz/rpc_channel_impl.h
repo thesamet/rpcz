@@ -17,6 +17,7 @@
 #ifndef RPCZ_RPC_CHANNEL_IMPL_H
 #define RPCZ_RPC_CHANNEL_IMPL_H
 
+#include "rpcz/connection_manager.h"
 #include "rpcz/rpc_channel.h"
 
 namespace rpcz {
@@ -28,7 +29,7 @@ struct RpcResponseContext;
 
 class RpcChannelImpl: public RpcChannel {
  public:
-  RpcChannelImpl(Connection* connection, bool owns_connection=false);
+  RpcChannelImpl(Connection connection);
 
   virtual ~RpcChannelImpl();
 
@@ -45,8 +46,9 @@ class RpcChannelImpl: public RpcChannel {
       std::string* response, RPC* rpc, Closure* done);
 
  private:
-  virtual void HandleClientResponse(MessageVector* request,
-                                    RpcResponseContext *response_context);
+  virtual void HandleClientResponse(
+      RpcResponseContext response_context, ConnectionManager::Status status,
+      MessageIterator& iter);
 
   void CallMethodFull(
     const std::string& service_name,
@@ -58,8 +60,7 @@ class RpcChannelImpl: public RpcChannel {
     RPC* rpc,
     Closure* done);
 
-  Connection* connection_;
-  bool owns_connection_;
+  Connection connection_;
 };
 } // namespace rpcz
 #endif /* RPCZ_SIMPLE_RPC_CHANNEL_IMPL_H_ */

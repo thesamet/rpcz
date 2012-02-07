@@ -1,5 +1,5 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
-// 
+  // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,6 +17,7 @@
 #include "rpcz/connection_manager.h"
 
 #include <algorithm>
+#include "boost/lexical_cast.hpp"
 #include "boost/thread/thread.hpp"
 #include "boost/thread/tss.hpp"
 #include <map>
@@ -34,18 +35,15 @@
 #include "google/protobuf/stubs/common.h"
 #include "rpcz/callback.h"
 #include "rpcz/clock.h"
-#include "rpcz/event_manager.h"
-#include "rpcz/function_server.h"
 #include "rpcz/logging.h"
 #include "rpcz/macros.h"
 #include "rpcz/reactor.h"
-#include "rpcz/remote_response.h"
-#include "rpcz/sync_event.h"
+#include "rpcz/zmq_utils.h"
 
 namespace rpcz {
 namespace {
-static const uint64 kLargePrime = (1ULL << 63) - 165;
-static const uint64 kGenerator = 2;
+const uint64 kLargePrime = (1ULL << 63) - 165;
+const uint64 kGenerator = 2;
 
 typedef uint64 EventId;
 
@@ -64,211 +62,385 @@ class EventIdGenerator {
   uint64 state_;
   DISALLOW_COPY_AND_ASSIGN(EventIdGenerator);
 };
+
+const char kRequest = 0x02;
+const char kConnect = 0x03;
+const char kBind = 0x04;
+const char kReply = 0x05;
+const char kRunClosure = 0x06;
+const char kReady = 0x07;
+const char kRunServerFunction = 0x08;
+const char kInvokeClientRequestCallback = 0x09;
+const char kQuit = 0xff;
 }  // unnamed namespace
 
 struct RemoteResponseWrapper {
-  RemoteResponse* remote_response;
   int64 deadline_ms;
   uint64 start_time;
-  Closure* closure;
-  MessageVector return_path;
+  ConnectionManager::ClientRequestCallback callback;
 };
 
-class ConnectionThreadContext {
+void Connection::SendRequest(
+    MessageVector& request,
+    int64 deadline_ms,
+    ConnectionManager::ClientRequestCallback callback) {
+  RemoteResponseWrapper wrapper;
+  wrapper.start_time = zclock_time();
+  wrapper.deadline_ms = deadline_ms;
+  wrapper.callback = callback;
+
+  zmq::socket_t& socket = manager_->GetFrontendSocket();
+  SendEmptyMessage(&socket, ZMQ_SNDMORE);
+  SendChar(&socket, kRequest, ZMQ_SNDMORE);
+  SendUint64(&socket, connection_id_, ZMQ_SNDMORE);
+  SendObject(&socket, wrapper, ZMQ_SNDMORE);
+  WriteVectorToSocket(&socket, request);
+}
+
+void ClientConnection::Reply(MessageVector* v) {
+  zmq::socket_t& socket = manager_->GetFrontendSocket();
+  SendEmptyMessage(&socket, ZMQ_SNDMORE);
+  SendChar(&socket, kReply, ZMQ_SNDMORE);
+  SendUint64(&socket, socket_id_, ZMQ_SNDMORE);
+  SendString(&socket, sender_, ZMQ_SNDMORE);
+  SendEmptyMessage(&socket, ZMQ_SNDMORE);
+  SendString(&socket, event_id_, ZMQ_SNDMORE);
+  WriteVectorToSocket(&socket, *v);
+}
+
+void WorkerThread(ConnectionManager* connection_manager,
+                  zmq::context_t* context, std::string endpoint) {
+  zmq::socket_t socket(*context, ZMQ_DEALER);
+  socket.connect(endpoint.c_str());
+  SendEmptyMessage(&socket, ZMQ_SNDMORE);
+  SendChar(&socket, kReady);
+  bool should_quit = false;
+  while (!should_quit) {
+    MessageIterator iter(socket);
+    CHECK_EQ(0, iter.next().size());
+    char command(InterpretMessage<char>(iter.next()));
+    switch (command) {
+      case kQuit:
+        should_quit = true;
+        break;
+      case kRunClosure:
+        InterpretMessage<Closure*>(iter.next())->Run();
+        break;
+      case kRunServerFunction: {
+        ConnectionManager::ServerFunction sf =
+            InterpretMessage<ConnectionManager::ServerFunction>(iter.next());
+        uint64 socket_id = InterpretMessage<uint64>(iter.next());
+        std::string sender(MessageToString(iter.next()));
+        if (iter.next().size() != 0) {
+          break;
+        }
+        std::string event_id(MessageToString(iter.next()));
+        sf(ClientConnection(connection_manager, socket_id, sender, event_id),
+           iter);
+        }
+        break;
+      case kInvokeClientRequestCallback: {
+        ConnectionManager::ClientRequestCallback cb =
+            InterpretMessage<ConnectionManager::ClientRequestCallback>(
+                iter.next());
+        ConnectionManager::Status status = ConnectionManager::Status(
+            InterpretMessage<uint64>(iter.next()));
+        cb(status, iter);
+      }
+    }
+  }
+}
+
+class ConnectionManagerThread {
  public:
-  ConnectionThreadContext(
-      FunctionServer* function_server,
-      EventManager* external_event_manager,
-      internal::ThreadContext* thread_context) {
-    function_server_ = function_server;
-    external_event_manager_ = external_event_manager;
-    thread_context_ = thread_context;
+  ConnectionManagerThread(
+      zmq::context_t* context,
+      int nthreads,
+      SyncEvent* ready_event,
+      ConnectionManager* connection_manager,
+      zmq::socket_t* frontend_socket) : 
+    connection_manager_(connection_manager),
+    context_(context),
+    frontend_socket_(frontend_socket),
+    current_worker_(0) {
+      WaitForWorkersReadyReply(nthreads);
+      ready_event->Signal();
+      reactor_.AddSocket(
+          frontend_socket, NewPermanentCallback(
+              this, &ConnectionManagerThread::HandleFrontendSocket,
+              frontend_socket));
+    }
+
+  void WaitForWorkersReadyReply(int nthreads) {
+    for (int i = 0; i < nthreads; ++i) {
+      MessageIterator iter(*frontend_socket_);
+      std::string sender = MessageToString(iter.next());
+      CHECK_EQ(0, iter.next().size());
+      char command(InterpretMessage<char>(iter.next()));
+      CHECK_EQ(kReady, command) << "Got unexpected command " << (int)command;
+      workers_.push_back(sender);
+    }
+  }
+
+  static void Run(zmq::context_t* context,
+                  int nthreads,
+                  SyncEvent* ready_event,
+                  zmq::socket_t* frontend_socket,
+                  ConnectionManager* connection_manager) {
+    ConnectionManagerThread cmt(context, nthreads,
+                                ready_event,
+                                connection_manager, frontend_socket);
+    cmt.reactor_.Loop();
+  }
+
+  void HandleFrontendSocket(zmq::socket_t* frontend_socket) {
+    MessageIterator iter(*frontend_socket);
+    std::string sender = MessageToString(iter.next());
+    CHECK_EQ(0, iter.next().size());
+    char command(InterpretMessage<char>(iter.next()));
+    switch (command) {
+      case kQuit:
+        for (int i = 0; i < workers_.size(); ++i) {
+          SendString(frontend_socket_, workers_[i], ZMQ_SNDMORE);
+          SendEmptyMessage(frontend_socket_, ZMQ_SNDMORE);
+          SendChar(frontend_socket_, kQuit, 0);
+        }
+        reactor_.SetShouldQuit();
+        break;
+      case kConnect: 
+        HandleConnectCommand(sender, MessageToString(iter.next()));
+        break;
+      case kBind: 
+        HandleBindCommand(sender, MessageToString(iter.next()),
+                          InterpretMessage<ConnectionManager::ServerFunction>(
+                              iter.next()));
+        break;
+      case kRequest:
+        SendRequest(iter);
+        break;
+      case kReply:
+        SendReply(iter);
+        break;
+      case kReady:
+        CHECK(false);
+      case kRunClosure:
+        AddClosure(InterpretMessage<Closure*>(iter.next()));
+        break;
+    }
+  }
+
+  inline void BeginWorkerCommand(char command) {
+    SendString(frontend_socket_, workers_[current_worker_], ZMQ_SNDMORE);
+    SendEmptyMessage(frontend_socket_, ZMQ_SNDMORE);
+    SendChar(frontend_socket_, command, ZMQ_SNDMORE);
+    ++current_worker_;
+    if (current_worker_ == workers_.size()) {
+      current_worker_ = 0;
+    }
+  }
+
+  inline void AddClosure(Closure* closure) {
+    BeginWorkerCommand(kRunClosure);
+    SendPointer(frontend_socket_, closure, 0);
+  }
+
+  inline void HandleConnectCommand(const std::string& sender,
+                                   const std::string& endpoint) {
+    zmq::socket_t* socket = new zmq::socket_t(*context_, ZMQ_DEALER);
+    connections_.push_back(socket);
+    int linger_ms = 0;
+    socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
+    socket->connect(endpoint.c_str());
+    reactor_.AddSocket(socket, NewPermanentCallback(
+            this, &ConnectionManagerThread::HandleClientSocket,
+            socket));
+
+    SendString(frontend_socket_, sender, ZMQ_SNDMORE);
+    SendEmptyMessage(frontend_socket_, ZMQ_SNDMORE);
+    SendUint64(frontend_socket_, connections_.size() - 1, 0);
+  }
+
+  inline void HandleBindCommand(
+      const std::string& sender,
+      const std::string& endpoint,
+      ConnectionManager::ServerFunction server_function) {
+    zmq::socket_t* socket = new zmq::socket_t(*context_, ZMQ_ROUTER);
+    int linger_ms = 0;
+    socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
+    socket->bind(endpoint.c_str());
+    uint64 socket_id = server_sockets_.size();
+    server_sockets_.push_back(socket);
+    reactor_.AddSocket(socket, NewPermanentCallback(
+            this, &ConnectionManagerThread::HandleServerSocket,
+            socket_id, server_function));
+
+    SendString(frontend_socket_, sender, ZMQ_SNDMORE);
+    SendEmptyMessage(frontend_socket_, ZMQ_SNDMORE);
+    SendEmptyMessage(frontend_socket_, 0);
+  }
+
+  void HandleServerSocket(uint64 socket_id,
+                          ConnectionManager::ServerFunction server_function) {
+    MessageIterator iter(*server_sockets_[socket_id]);
+    BeginWorkerCommand(kRunServerFunction);
+    SendObject(frontend_socket_, server_function, ZMQ_SNDMORE);
+    SendUint64(frontend_socket_, socket_id, ZMQ_SNDMORE);
+    ForwardMessages(iter, *frontend_socket_);
+  }
+
+  inline void SendRequest(MessageIterator& iter) {
+    uint64 connection_id = InterpretMessage<uint64>(iter.next());
+    RemoteResponseWrapper remote_response_wrapper =
+        InterpretMessage<RemoteResponseWrapper>(iter.next());
+    EventId event_id = event_id_generator_.GetNext();
+    remote_response_map_[event_id] = remote_response_wrapper.callback;
+    if (remote_response_wrapper.deadline_ms != -1) {
+      reactor_.RunClosureAt(
+          remote_response_wrapper.start_time +
+              remote_response_wrapper.deadline_ms,
+          NewCallback(this, &ConnectionManagerThread::HandleTimeout, event_id));
+    }
+    zmq::socket_t*& socket = connections_[connection_id];
+    SendString(socket, "", ZMQ_SNDMORE);
+    SendUint64(socket, event_id, ZMQ_SNDMORE);
+    ForwardMessages(iter, *socket);
   }
 
   void HandleClientSocket(zmq::socket_t* socket) {
-    MessageVector messages;
-    CHECK(ReadMessageToVector(socket, &messages));
-    CHECK(messages.size() >= 1);
-    CHECK(messages[0].size() == 0);
-    EventId event_id(InterpretMessage<EventId>(messages[1]));
-    RemoteResponseMap::iterator iter = remote_response_map_.find(event_id);
-    if (iter == remote_response_map_.end()) {
+    MessageIterator iter(*socket);
+    if (!iter.next().size() == 0) {
       return;
     }
-    RemoteResponseWrapper*& remote_response_wrapper = iter->second;
-    RemoteResponse*& remote_response = remote_response_wrapper->remote_response;
-    remote_response->reply.transfer(2, messages.size(), messages);
-    remote_response->status = RemoteResponse::DONE;
-    if (remote_response_wrapper->closure) {
-      if (external_event_manager_) {
-        external_event_manager_->Add(remote_response_wrapper->closure);
-      } else {
-        LOG(ERROR) << "Can't run closure: no event manager supplied.";
-        delete remote_response_wrapper->closure;
-      }
+    if (!iter.has_more()) {
+      return;
     }
-    delete remote_response_wrapper;
-    remote_response_map_.erase(iter);
-  }
-
-  inline zmq::socket_t* GetSocketForConnection(
-      Connection* connection) {
-    ConnectionThreadContext::ConnectionMap::const_iterator it =
-        connection_map_.find(
-      connection);
-    if (it != connection_map_.end()) {
-      return it->second;
+    EventId event_id(InterpretMessage<EventId>(iter.next()));
+    RemoteResponseMap::iterator response_iter = remote_response_map_.find(event_id);
+    if (response_iter == remote_response_map_.end()) {
+      return;
     }
-    zmq::socket_t *socket = connection->CreateConnectedSocket(
-        thread_context_->zmq_context);
-    connection_map_[connection] = socket;
-    thread_context_->reactor->AddSocket(
-        socket, NewPermanentCallback(
-            this, &ConnectionThreadContext::HandleClientSocket, socket));
-    return socket;
-  }
-
-  void SendRequest(Connection* connection,
-                   MessageVector* request,
-                   RemoteResponseWrapper* remote_response_wrapper) {
-    zmq::socket_t* socket = CHECK_NOTNULL(GetSocketForConnection(connection));
-    EventId event_id = event_id_generator_.GetNext();
-    remote_response_map_[event_id] = remote_response_wrapper;
-    if (remote_response_wrapper->deadline_ms != -1) {
-      thread_context_->reactor->RunClosureAt(
-          remote_response_wrapper->start_time +
-              remote_response_wrapper->deadline_ms,
-          NewCallback(this, &ConnectionThreadContext::HandleTimeout, event_id));
-    }
-
-    SendString(socket, "", ZMQ_SNDMORE);
-    SendUint64(socket, event_id, ZMQ_SNDMORE);
-    WriteVectorToSocket(socket, *request); 
+    ConnectionManager::ClientRequestCallback& callback = response_iter->second;
+    BeginWorkerCommand(kInvokeClientRequestCallback);
+    SendObject(frontend_socket_, callback, ZMQ_SNDMORE);
+    SendUint64(frontend_socket_, ConnectionManager::DONE, ZMQ_SNDMORE);
+    ForwardMessages(iter, *frontend_socket_);
+    remote_response_map_.erase(response_iter);
   }
 
   void HandleTimeout(EventId event_id) {
-    RemoteResponseMap::iterator iter = remote_response_map_.find(event_id);
-    if (iter == remote_response_map_.end()) {
+    RemoteResponseMap::iterator response_iter = remote_response_map_.find(event_id);
+    if (response_iter == remote_response_map_.end()) {
       return;
     }
-    RemoteResponseWrapper*& remote_response_wrapper = iter->second;
-    RemoteResponse*& remote_response = remote_response_wrapper->remote_response;
-    remote_response->status = RemoteResponse::DEADLINE_EXCEEDED;
-    if (remote_response_wrapper->closure) {
-      if (external_event_manager_) {
-        external_event_manager_->Add(remote_response_wrapper->closure);
-      } else {
-        LOG(ERROR) << "Can't run closure: no event manager supplied.";
-        delete remote_response_wrapper->closure;
-      }
-    }
-    delete remote_response_wrapper;
-    remote_response_map_.erase(iter);
+    ConnectionManager::ClientRequestCallback& callback = response_iter->second;
+    BeginWorkerCommand(kInvokeClientRequestCallback);
+    SendObject(frontend_socket_, callback, ZMQ_SNDMORE);
+    SendUint64(frontend_socket_, ConnectionManager::DEADLINE_EXCEEDED, 0);
+    remote_response_map_.erase(response_iter);
+  }
+
+  inline void SendReply(MessageIterator& iter) {
+    uint64 socket_id = InterpretMessage<uint64>(iter.next());
+    zmq::socket_t* socket = server_sockets_[socket_id];
+    ForwardMessages(iter, *socket);
   }
 
  private:
-  typedef std::map<Connection*, zmq::socket_t*> ConnectionMap;
-  typedef std::map<EventId, RemoteResponseWrapper*> RemoteResponseMap;
+  typedef std::map<EventId, ConnectionManager::ClientRequestCallback>
+      RemoteResponseMap;
   typedef std::map<uint64, EventId> DeadlineMap;
-  ConnectionMap connection_map_;
+  ConnectionManager* connection_manager_;
   RemoteResponseMap remote_response_map_;
   DeadlineMap deadline_map_;
   EventIdGenerator event_id_generator_;
-  FunctionServer* function_server_;
-  EventManager* external_event_manager_;
-  internal::ThreadContext* thread_context_;
+  Reactor reactor_;
+  std::vector<zmq::socket_t*> connections_;
+  std::vector<zmq::socket_t*> server_sockets_;
+  zmq::context_t* context_;
+  zmq::socket_t* frontend_socket_;
+  std::vector<std::string> workers_;
+  int current_worker_;
 };
 
-// Initializes a connection manager's thread.
-void InitContext(
-    FunctionServer* fs,
-    internal::ThreadContext* context,
-    EventManager* external_event_manager,
-    boost::thread_specific_ptr<ConnectionThreadContext>*
-         thread_context_registry) {
-  ConnectionThreadContext* conn_context = new ConnectionThreadContext(
-      fs, external_event_manager, context);
-  thread_context_registry->reset(conn_context);
-}
-
-ConnectionManager::ConnectionManager(
-    zmq::context_t* context, EventManager* event_manager,
-    int nthreads)
-  : thread_context_(new boost::thread_specific_ptr<ConnectionThreadContext>()), 
-    context_(context),
-    external_event_manager_(event_manager) {
-  FunctionServer* fs = new FunctionServer(context, nthreads,
-                                          boost::bind(InitContext,
-                                                      _1, _2,
-                                                      event_manager,
-                                                      thread_context_.get()));
-  internal_event_manager_.reset(
-      new EventManager(fs));
-}
-
-namespace internal_thread {
-// This namespace is used to contain functions that run in a thread that belongs
-// to the internal event manager.
-void SendRequest(
-    ConnectionManager* connection_manager,
-    Connection* connection, 
-    MessageVector* request,
-    RemoteResponseWrapper* response_wrapper) {
-  CHECK_NOTNULL(connection_manager);
-  CHECK_NOTNULL(connection_manager->thread_context_->get());
-  connection_manager->thread_context_->get()->SendRequest(
-      connection, request, response_wrapper);
-}
-}  // namespace internal_thread
-
-class ConnectionImpl : public Connection {
- public:
-  ConnectionImpl(ConnectionManager* connection_manager,
-                 const std::string& endpoint)
-      : Connection(),
-        connection_manager_(connection_manager),
-        endpoint_(endpoint) {}
-
-  virtual ~ConnectionImpl() {}
-
-  virtual void SendRequest(
-      MessageVector* request,
-      RemoteResponse* response,
-      int64 deadline_ms,
-      Closure* closure) {
-    RemoteResponseWrapper* wrapper = new RemoteResponseWrapper;
-    wrapper->remote_response = response;
-    wrapper->start_time = zclock_time();
-    wrapper->deadline_ms = deadline_ms;
-    wrapper->closure = closure;
-
-    connection_manager_->internal_event_manager_->Add(
-        NewCallback(
-            &internal_thread::SendRequest,
-            connection_manager_,
-            static_cast<Connection*>(this), request, wrapper));
+ConnectionManager::ConnectionManager(zmq::context_t* context, int nthreads)
+  : context_(context),
+    frontend_endpoint_(
+        "inproc://" + boost::lexical_cast<std::string>(this) + ".cm.frontend") {
+  zmq::socket_t* frontend_socket = new zmq::socket_t(*context, ZMQ_ROUTER);
+  int linger_ms = 0;
+  frontend_socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
+  frontend_socket->bind(frontend_endpoint_.c_str());
+  for (int i = 0; i < nthreads; ++i) {
+    worker_threads_.add_thread(
+        new boost::thread(&WorkerThread, this, context, frontend_endpoint_));
   }
+  SyncEvent event;
+  broker_thread_ = boost::thread(&ConnectionManagerThread::Run,
+                                 context, nthreads, &event,
+                                 frontend_socket, this);
+  event.Wait();
+}
 
-  virtual zmq::socket_t* CreateConnectedSocket(zmq::context_t* context) {
-    zmq::socket_t* socket = new zmq::socket_t(*context, ZMQ_DEALER);
+zmq::socket_t& ConnectionManager::GetFrontendSocket() {
+  zmq::socket_t* socket = socket_.get();
+  if (socket == NULL) {
+    socket = new zmq::socket_t(*context_, ZMQ_DEALER);
     int linger_ms = 0;
     socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
-    socket->connect(endpoint_.c_str());
-    return socket;
+    socket->connect(frontend_endpoint_.c_str());
+    socket_.reset(socket);
   }
+  return *socket;
+}
 
- private:
-  ConnectionManager* connection_manager_;
-  std::string endpoint_;
-  DISALLOW_COPY_AND_ASSIGN(ConnectionImpl);
-};
+Connection ConnectionManager::Connect(const std::string& endpoint) {
+  zmq::socket_t& socket = GetFrontendSocket();
+  SendEmptyMessage(&socket, ZMQ_SNDMORE);
+  SendChar(&socket, kConnect, ZMQ_SNDMORE);
+  SendString(&socket, endpoint, 0);
+  zmq::message_t msg;
+  socket.recv(&msg);
+  socket.recv(&msg);
+  uint64 connection_id = InterpretMessage<uint64>(msg);
+  return Connection(this, connection_id);
+}
 
-Connection* ConnectionManager::Connect(const std::string& endpoint) {
-  Connection* connection = new ConnectionImpl(
-      this,
-      endpoint);
-  return connection;
+void ConnectionManager::Bind(const std::string& endpoint,
+                             ServerFunction function) {
+  zmq::socket_t& socket = GetFrontendSocket();
+  SendEmptyMessage(&socket, ZMQ_SNDMORE);
+  SendChar(&socket, kBind, ZMQ_SNDMORE);
+  SendString(&socket, endpoint, ZMQ_SNDMORE);
+  SendObject(&socket, function, 0);
+  zmq::message_t msg;
+  socket.recv(&msg);
+  socket.recv(&msg);
+  return;
+}
+
+void ConnectionManager::Add(Closure* closure) {
+  zmq::socket_t& socket = GetFrontendSocket();
+  SendEmptyMessage(&socket, ZMQ_SNDMORE);
+  SendChar(&socket, kRunClosure, ZMQ_SNDMORE);
+  SendPointer(&socket, closure, 0);
+  return;
 }
  
-ConnectionManager::~ConnectionManager() {}
+void ConnectionManager::Run() {
+  broker_thread_.join();
+  worker_threads_.join_all();
+}
+
+void ConnectionManager::Terminate() {
+  zmq::socket_t& socket = GetFrontendSocket();
+  SendEmptyMessage(&socket, ZMQ_SNDMORE);
+  SendChar(&socket, kQuit, 0);
+}
+
+ConnectionManager::~ConnectionManager() {
+  Terminate();
+  broker_thread_.join();
+  worker_threads_.join_all();
+  socket_.reset(NULL);
+}
 }  // namespace rpcz

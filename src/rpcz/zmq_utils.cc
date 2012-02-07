@@ -15,6 +15,8 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include "rpcz/zmq_utils.h"
+#include <boost/functional/hash.hpp>
+#include <sstream>
 #include <stddef.h>
 #include <string.h>
 #include <zmq.h>
@@ -96,25 +98,26 @@ void WriteVectorsToSocket(zmq::socket_t* socket,
   WriteVectorToSocket(socket, data, 0);
 }
 
-void SendEmptyMessage(zmq::socket_t* socket,
+bool SendEmptyMessage(zmq::socket_t* socket,
                       int flags) {
   zmq::message_t message(0);
-  socket->send(message, flags);
+  return socket->send(message, flags);
 }
 
-void SendString(zmq::socket_t* socket,
+bool SendString(zmq::socket_t* socket,
                 const std::string& str,
                 int flags) {
-  scoped_ptr<zmq::message_t> msg(StringToMessage(str));
-  socket->send(*msg, flags);
+  zmq::message_t msg(str.size());
+  str.copy((char*)msg.data(), str.size(), 0);
+  return socket->send(msg, flags);
 }
 
-void SendUint64(zmq::socket_t* socket,
+bool SendUint64(zmq::socket_t* socket,
                 google::protobuf::uint64 value,
                 int flags) {
   zmq::message_t msg(8);
   memcpy(msg.data(), &value, 8);
-  socket->send(msg, flags);
+  return socket->send(msg, flags);
 }
 
 bool ForwardMessage(zmq::socket_t &socket_in,
@@ -124,5 +127,19 @@ bool ForwardMessage(zmq::socket_t &socket_in,
   CHECK(!ReadMessageToVector(&socket_in, &routes, &data));
   WriteVectorToSocket(&socket_out, routes); 
   return true;
+}
+
+void LogMessageVector(MessageVector& vector) {
+  LOG(INFO) << "---- " << vector.size() << "----";
+  boost::hash<std::string> hash;
+  for (int i = 0; i < vector.size(); ++i) {
+    std::string message(MessageToString(vector[i]));
+    std::stringstream ss;
+    ss << std::hex << hash(message);
+    LOG(INFO) << "(" << vector[i].size() << "): " << "[" << ss.str()
+        << "]: "
+        << MessageToString(vector[i]);
+  }
+  LOG(INFO) << "----------";
 }
 }  // namespace

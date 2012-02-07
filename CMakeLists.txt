@@ -22,7 +22,7 @@ include_directories(${PROJECT_BINARY_DIR}/src)
 cmake_minimum_required (VERSION 2.8.0)
 set(CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-sign-compare -Wno-unused-parameter")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Werror")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g -Werror")
 set(CMAKE_OSX_ARCHITECTURES x86_64)
 
 add_subdirectory(src)
