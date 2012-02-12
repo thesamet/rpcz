@@ -18,7 +18,6 @@
 #include "zmq.hpp"
 #include "rpcz/application.h"
 #include "rpcz/connection_manager.h"
-#include "rpcz/logging.h"
 #include "rpcz/rpc_channel.h"
 #include "rpcz/server.h"
 
@@ -67,7 +66,6 @@ void Application::Run() {
 }
 
 void Application::Terminate() {
-  LOG(INFO) << "Terminate!";
   connection_manager_->Terminate();
 }
 }  // namespace rpcz

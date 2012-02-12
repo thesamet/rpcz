@@ -38,7 +38,7 @@
 #include "rpcz/logging.h"
 #include "rpcz/macros.h"
 #include "rpcz/reactor.h"
-#include "rpcz/remote_response.h"
+#include "rpcz/zmq_utils.h"
 
 namespace rpcz {
 namespace {

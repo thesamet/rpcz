@@ -36,7 +36,6 @@ class Connection;
 class ConnectionThreadContext;
 class MessageIterator;
 class MessageVector;
-class RemoteResponse;
 
 namespace internal {
 struct ThreadContext;

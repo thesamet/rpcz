@@ -26,7 +26,6 @@
 #include "rpcz/callback.h"
 #include "rpcz/connection_manager.h"
 #include "rpcz/macros.h"
-#include "rpcz/remote_response.h"
 #include "rpcz/sync_event.h"
 #include "rpcz/zmq_utils.h"
 
@@ -85,14 +84,6 @@ MessageVector* CreateQuitRequest() {
   request->push_back(StringToMessage("QUIT"));
   request->push_back(StringToMessage(""));
   return request;
-}
-
-void CheckResponse(RemoteResponse* response, SyncEvent* sync) {
-  ASSERT_EQ(RemoteResponse::DONE, response->status);
-  ASSERT_EQ(2, response->reply.size());
-  ASSERT_EQ("hello", MessageToString(response->reply[0]));
-  ASSERT_EQ("there_0", MessageToString(response->reply[1]));
-  sync->Signal();
 }
 
 void ExpectTimeout(ConnectionManager::Status status, MessageIterator& iter,

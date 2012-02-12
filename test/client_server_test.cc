@@ -15,10 +15,10 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include <iostream>
-#include "boost/thread/thread.hpp"
-#include "glog/logging.h"
-#include "gtest/gtest.h"
-#include "zmq.hpp"
+#include <boost/thread/thread.hpp>
+#include <glog/logging.h>
+#include <gtest/gtest.h>
+#include <zmq.hpp>
 
 #include "rpcz/callback.h"
 #include "rpcz/connection_manager.h"
@@ -119,9 +119,7 @@ class ServerTest : public ::testing::Test {
 
   ~ServerTest() {
     // Terminate the context, which will cause the thread to quit.
-    LOG(INFO)<<"HERE0";
     cm_.reset(NULL);
-    LOG(INFO)<<"HERE1";
     context_.reset(NULL);
   }
 

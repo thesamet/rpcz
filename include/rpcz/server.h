@@ -47,7 +47,7 @@ class Server {
   ~Server();
 
   // Registers an RPC Service with this server. All registrations must occur
-  // before Start() is called. The name parameter identifies the service for
+  // before Bind() is called. The name parameter identifies the service for
   // external clients. If you use the first form, the service name from the
   // protocol buffer definition will be used. Does not take ownership of the
   // provided service.

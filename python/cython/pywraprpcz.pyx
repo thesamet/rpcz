@@ -59,8 +59,8 @@ cdef extern from "rpcz/rpc.h" namespace "rpcz":
         int GetStatus()
         string GetErrorMessage()
         int GetApplicationErrorCode()
-        int GetDeadlineMs()
-        void SetDeadlineMs(int)
+        long GetDeadlineMs()
+        void SetDeadlineMs(long)
         int Wait() nogil
 
 
@@ -209,8 +209,8 @@ cdef extern from "python_rpc_service.h" namespace "rpcz":
 
 cdef extern from "rpcz/rpcz.h" namespace "rpcz":
     cdef cppclass _Server "rpcz::Server":
-        void Start() nogil
         void RegisterService(PythonRpcService*, string name)
+        void Bind(string endpoint)
 
 
 cdef class Server:
@@ -220,20 +220,21 @@ cdef class Server:
                         "Server.")
     def __dealloc__(self):
         del self.thisptr
-    def start(self):
-        with nogil:
-            self.thisptr.Start()
     def register_service(self, service, name=None):
         cdef PythonRpcService* rpc_service = new PythonRpcService(
             rpc_handler_bridge, service)
         self.thisptr.RegisterService(rpc_service, make_string(name))
+    def bind(self, endpoint):
+        self.thisptr.Bind(make_string(endpoint))
 
 
 cdef extern from "rpcz/rpcz.h" namespace "rpcz":
     cdef cppclass _Application "rpcz::Application":
         _Application()
         _RpcChannel* CreateRpcChannel(string)
-        _Server* CreateServer(string)
+        _Server* CreateServer()
+        void Terminate()
+        void Run() nogil
 
 
 cdef class Application:
@@ -248,7 +249,14 @@ cdef class Application:
         channel.thisptr = self.thisptr.CreateRpcChannel(make_string(endpoint))
         return channel
 
-    def create_server(self, endpoint):
+    def create_server(self):
         cdef Server server = Server.__new__(Server)
-        server.thisptr = self.thisptr.CreateServer(make_string(endpoint))
+        server.thisptr = self.thisptr.CreateServer()
         return server
+
+    def terminate(self):
+        self.thisptr.Terminate()
+
+    def run(self):
+        with nogil:
+            self.thisptr.Run()

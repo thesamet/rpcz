@@ -20,7 +20,6 @@
 #include <string>
 #include "Python.h"
 #include "rpcz/rpcz.h"
-#include <iostream>
 
 namespace rpcz {
 

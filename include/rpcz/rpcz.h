@@ -32,5 +32,4 @@
 // headers being around and probably most people will not need this low-level
 // functionality. These files are:
 //    zmq_utils.h
-//    remote_response.h
 #endif

@@ -14,14 +14,14 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "google/protobuf/descriptor.h"
-#include "zmq.hpp"
-#include "rpcz/rpc_channel_impl.h"
-#include "rpcz/connection_manager.h"
+#include <google/protobuf/descriptor.h>
+#include <zmq.hpp>
 #include "rpcz/callback.h"
+#include "rpcz/connection_manager.h"
 #include "rpcz/logging.h"
 #include "rpcz/remote_response.h"
 #include "rpcz/rpc.h"
+#include "rpcz/rpc_channel_impl.h"
 #include "rpcz/sync_event.h"
 
 namespace rpcz {
@@ -169,10 +169,10 @@ void RpcChannelImpl::HandleClientResponse(
         }
       }
       break;
-    case RemoteResponse::ACTIVE:
-    case RemoteResponse::INACTIVE:
+    case ConnectionManager::ACTIVE:
+    case ConnectionManager::INACTIVE:
     default:
-      CHECK(false) << "Unexpected RemoteResponse state: "
+      CHECK(false) << "Unexpected status: "
                    << status;
   }
   // We call Signal() before we execute closure since the closure may delete
