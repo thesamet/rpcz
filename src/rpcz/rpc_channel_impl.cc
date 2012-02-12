@@ -19,10 +19,10 @@
 #include "rpcz/callback.h"
 #include "rpcz/connection_manager.h"
 #include "rpcz/logging.h"
-#include "rpcz/remote_response.h"
 #include "rpcz/rpc.h"
 #include "rpcz/rpc_channel_impl.h"
 #include "rpcz/sync_event.h"
+#include "rpcz/zmq_utils.h"
 
 namespace rpcz {
 
