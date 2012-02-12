@@ -43,11 +43,10 @@ void SuperDone(SearchResponse *response,
 
 class SearchServiceImpl : public SearchService {
  public:
-  SearchServiceImpl(SearchService_Stub* backend)
-      : backend_(backend), delayed_reply_(NULL) {};
+  SearchServiceImpl(SearchService_Stub* backend, ConnectionManager* cm)
+      : backend_(backend), delayed_reply_(NULL), cm_(cm) {};
 
   ~SearchServiceImpl() {
-    LOG(INFO) << "Terminating";
   }
 
   virtual void Search(
@@ -68,16 +67,17 @@ class SearchServiceImpl : public SearchService {
     } else if (request.query() == "timeout") {
       // We "lose" the request. We are going to reply only when we get a request
       // for the query "delayed".
-      LOG(INFO) << "T";
       boost::unique_lock<boost::mutex> lock(mu_);
       delayed_reply_ = reply;
       timeout_request_received.Signal();
       return;
     } else if (request.query() == "delayed") {
-      LOG(INFO) << "D";
       boost::unique_lock<boost::mutex> lock(mu_);
       delayed_reply_.Send(SearchResponse());
       reply.Send(SearchResponse());
+    } else if (request.query() == "terminate") {
+      reply.Send(SearchResponse());
+      cm_->Terminate();
     } else {
       SearchResponse response;
       response.add_results("The search for " + request.query());
@@ -92,6 +92,7 @@ class SearchServiceImpl : public SearchService {
   scoped_ptr<SearchService_Stub> backend_;
   boost::mutex mu_;
   Reply<SearchResponse> delayed_reply_;
+  ConnectionManager* cm_;
 };
 
 // For handling complex delegated queries.
@@ -117,14 +118,10 @@ class ServerTest : public ::testing::Test {
   }
 
   ~ServerTest() {
-    // We have to wait until the servers are up before we tear down the event
-    // managers (since the servers will try to connect to it).
-    // The way we accomplish that here is by sending them a request and
-    // waiting for a response.
-    SendBlockingRequest(frontend_connection_, "simple");
-    SendBlockingRequest(backend_connection_, "simple");
     // Terminate the context, which will cause the thread to quit.
+    LOG(INFO)<<"HERE0";
     cm_.reset(NULL);
+    LOG(INFO)<<"HERE1";
     context_.reset(NULL);
   }
 
@@ -137,7 +134,7 @@ class ServerTest : public ::testing::Test {
     frontend_server_.RegisterService(
         frontend_service = new SearchServiceImpl(
             new SearchService_Stub(
-                RpcChannel::Create(backend_connection_), true)));
+                RpcChannel::Create(backend_connection_), true), cm_.get()));
     frontend_server_.Bind("inproc://myserver.frontend");
     frontend_connection_ = cm_->Connect("inproc://myserver.frontend");
   }
@@ -278,5 +275,20 @@ TEST_F(ServerTest, EasyBlockingRequestWithTimeout) {
   frontend_service->timeout_request_received.Wait();
   request.set_query("delayed");
   stub.Search(request, &response);
+}
+
+TEST_F(ServerTest, ConnectionManagerTermination) {
+  SearchService_Stub stub(RpcChannel::Create(frontend_connection_), true);
+  SearchRequest request;
+  request.set_query("terminate");
+  SearchResponse response;
+  try {
+    stub.Search(request, &response, 1);
+  } catch (RpcError &error) {
+    ASSERT_EQ(status::DEADLINE_EXCEEDED, error.GetStatus());
+  }
+  LOG(INFO)<<"I'm here";
+  cm_->Run();
+  LOG(INFO)<<"I'm there";
 }
 }  // namespace

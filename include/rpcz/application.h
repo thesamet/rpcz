@@ -71,12 +71,11 @@ class Application {
   // requests (by forwarding them to the event manager).
   virtual Server* CreateServer();
 
-  // Terminates the application. This call is asynchronous: by the time it
-  // returns the application may still be running.
-  virtual void Terminate();
-
-  // Returns after all worker threads have terminated.
+  // Blocks the current thread until another thread calls terminate.
   virtual void Run();
+
+  // Releases all the threads that are blocked inside Run()
+  virtual void Terminate();
 
  private:
   void Init(const Options& options);

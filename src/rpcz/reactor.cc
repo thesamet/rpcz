@@ -65,13 +65,14 @@ void Reactor::RunClosureAt(uint64 timestamp, Closure* closure) {
 }
 
 int Reactor::Loop() {
-  while (!should_quit_ && !g_interrupted) {
+  while (!should_quit_ || !closure_run_map_.empty()) {
     if (is_dirty_) {
       RebuildPollItems(sockets_, &pollitems_);
       is_dirty_ = false;
     }
-
     long poll_timeout = ProcessClosureRunMap();
+
+    if (should_quit_) continue;
     int rc = zmq_poll(&pollitems_[0], pollitems_.size(), poll_timeout);
     if (rc == -1) {
       int zmq_err = zmq_errno();

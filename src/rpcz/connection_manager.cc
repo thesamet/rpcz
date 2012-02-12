@@ -1,5 +1,5 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
-  // 
+// 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,9 +17,9 @@
 #include "rpcz/connection_manager.h"
 
 #include <algorithm>
-#include "boost/lexical_cast.hpp"
-#include "boost/thread/thread.hpp"
-#include "boost/thread/tss.hpp"
+#include <boost/lexical_cast.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/tss.hpp>
 #include <map>
 #include <ostream>
 #include <pthread.h>
@@ -63,15 +63,28 @@ class EventIdGenerator {
   DISALLOW_COPY_AND_ASSIGN(EventIdGenerator);
 };
 
-const char kRequest = 0x02;
-const char kConnect = 0x03;
-const char kBind = 0x04;
-const char kReply = 0x05;
-const char kRunClosure = 0x06;
-const char kReady = 0x07;
-const char kRunServerFunction = 0x08;
-const char kInvokeClientRequestCallback = 0x09;
-const char kQuit = 0xff;
+// Command codes for internal process communication.
+//
+// Message sent from outside to the broker thread:
+const char kRequest = 0x01;      // Send request to a connected socket.
+const char kConnect = 0x02;      // Connect to a given endpoint.
+const char kBind    = 0x03;      // Bind to an endpoint.
+const char kReply   = 0x04;      // Reply to a request
+const char kQuit    = 0x0f;      // Starts the quit second.
+
+// Messages sent from the broker to a worker thread:
+const char kRunClosure        = 0x11;   // Run a closure
+const char kRunServerFunction = 0x12;   // Handle a request (a reply path
+                                        // is given)
+const char kInvokeClientRequestCallback = 0x13;  // Run a user supplied
+                                                 // function that processes
+                                                 // a reply from a remote
+                                                 // server.
+const char kWorkerQuit = 0x1f;          // Asks the worker to quit.
+
+// Messages sent from a worker thread to the broker:
+const char kReady = 0x21;        // Always the first message sent.
+const char kWorkerDone = 0x22;   // Sent just before the worker quits.
 }  // unnamed namespace
 
 struct RemoteResponseWrapper {
@@ -120,7 +133,7 @@ void WorkerThread(ConnectionManager* connection_manager,
     CHECK_EQ(0, iter.next().size());
     char command(InterpretMessage<char>(iter.next()));
     switch (command) {
-      case kQuit:
+      case kWorkerQuit:
         should_quit = true;
         break;
       case kRunClosure:
@@ -149,6 +162,8 @@ void WorkerThread(ConnectionManager* connection_manager,
       }
     }
   }
+  SendEmptyMessage(&socket, ZMQ_SNDMORE);
+  SendChar(&socket, kWorkerDone);
 }
 
 class ConnectionManagerThread {
@@ -200,12 +215,12 @@ class ConnectionManagerThread {
     char command(InterpretMessage<char>(iter.next()));
     switch (command) {
       case kQuit:
+        // Ask the workers to quit. They'll in turn send kWorkerDone.
         for (int i = 0; i < workers_.size(); ++i) {
           SendString(frontend_socket_, workers_[i], ZMQ_SNDMORE);
           SendEmptyMessage(frontend_socket_, ZMQ_SNDMORE);
-          SendChar(frontend_socket_, kQuit, 0);
+          SendChar(frontend_socket_, kWorkerQuit, 0);
         }
-        reactor_.SetShouldQuit();
         break;
       case kConnect: 
         HandleConnectCommand(sender, MessageToString(iter.next()));
@@ -223,6 +238,15 @@ class ConnectionManagerThread {
         break;
       case kReady:
         CHECK(false);
+        break;
+      case kWorkerDone:
+        workers_.erase(std::remove(workers_.begin(), workers_.end(), sender));
+        current_worker_ = 0;
+        if (workers_.size() == 0) {
+          // All workers are gone, time to quit.
+          reactor_.SetShouldQuit();
+        }
+        break;
       case kRunClosure:
         AddClosure(InterpretMessage<Closure*>(iter.next()));
         break;
@@ -364,9 +388,8 @@ class ConnectionManagerThread {
 
 ConnectionManager::ConnectionManager(zmq::context_t* context, int nthreads)
   : context_(context),
-    frontend_endpoint_("inproc://" +
-                       boost::lexical_cast<std::string>(this) + ".cm.frontend")
-{
+    frontend_endpoint_(
+        "inproc://" + boost::lexical_cast<std::string>(this) + ".cm.frontend") {
   zmq::socket_t* frontend_socket = new zmq::socket_t(*context, ZMQ_ROUTER);
   int linger_ms = 0;
   frontend_socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
@@ -377,8 +400,8 @@ ConnectionManager::ConnectionManager(zmq::context_t* context, int nthreads)
   }
   SyncEvent event;
   broker_thread_ = boost::thread(&ConnectionManagerThread::Run,
-                          context, nthreads, &event,
-                          frontend_socket, this);
+                                 context, nthreads, &event,
+                                 frontend_socket, this);
   event.Wait();
 }
 
@@ -428,18 +451,17 @@ void ConnectionManager::Add(Closure* closure) {
 }
  
 void ConnectionManager::Run() {
-  broker_thread_.join();
-  worker_threads_.join_all();
+  is_termating_.Wait();
 }
 
 void ConnectionManager::Terminate() {
-  zmq::socket_t& socket = GetFrontendSocket();
-  SendEmptyMessage(&socket, ZMQ_SNDMORE);
-  SendChar(&socket, kQuit, 0);
+  is_termating_.Signal();
 }
 
 ConnectionManager::~ConnectionManager() {
-  Terminate();
+  zmq::socket_t& socket = GetFrontendSocket();
+  SendEmptyMessage(&socket, ZMQ_SNDMORE);
+  SendChar(&socket, kQuit, 0);
   broker_thread_.join();
   worker_threads_.join_all();
   socket_.reset(NULL);

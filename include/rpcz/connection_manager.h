@@ -82,6 +82,7 @@ class ConnectionManager {
   // ConnectionManager does not take ownership of the given ZeroMQ context.
   ConnectionManager(zmq::context_t* context, int nthreads);
 
+  // Blocks the current thread until all connection managers have completed.
   virtual ~ConnectionManager();
 
   // Connects all ConnectionManager threads to the given endpoint. On success
@@ -98,13 +99,11 @@ class ConnectionManager {
   // Executes the closure on one of the worker threads.
   virtual void Add(Closure* closure);
 
-  // Asks the connection manager to terminate. When the function returns the
-  // ConnectionManager may still be running. This function may be called
-  // multiple times.
-  virtual void Terminate();
-
-  // Returns after all ConnectionManager threads terminate.
+  // Blocks this thread until Terminate() is called from another thread.
   virtual void Run();
+
+  // Releases all the threads that are blocked inside Run()
+  virtual void Terminate();
 
  private:
   zmq::context_t* context_;
@@ -115,6 +114,7 @@ class ConnectionManager {
   boost::thread_group worker_threads_;
   boost::thread_specific_ptr<zmq::socket_t> socket_;
   std::string frontend_endpoint_;
+  SyncEvent is_termating_;
 
   DISALLOW_COPY_AND_ASSIGN(ConnectionManager);
   friend class Connection;
