@@ -16,11 +16,11 @@
 
 #include <iostream>
 #include <vector>
-#include "boost/bind.hpp"
-#include "boost/program_options.hpp"
-#include "google/protobuf/compiler/importer.h"
-#include "google/protobuf/dynamic_message.h"
-#include "google/protobuf/text_format.h"
+#include <boost/bind.hpp>
+#include <boost/program_options.hpp>
+#include <google/protobuf/compiler/importer.h>
+#include <google/protobuf/dynamic_message.h>
+#include <google/protobuf/text_format.h>
 #include "rpcz/application.h"
 #include "rpcz/rpc_channel.h"
 #include "rpcz/service.h"
@@ -57,9 +57,9 @@ class ErrorCollector : public MultiFileErrorCollector {
   }
 };
 
-int RunCall(const std::string& endpoint,
-            const std::string& method,
-            const std::string& payload) {
+int run_call(const std::string& endpoint,
+             const std::string& method,
+             const std::string& payload) {
   DiskSourceTree disk_source_tree;
   ErrorCollector error_collector;
   for_each(FLAGS_proto_path.begin(), FLAGS_proto_path.end(),
@@ -108,24 +108,24 @@ int RunCall(const std::string& endpoint,
     return -1;
   }
 
-  Application app;
-  scoped_ptr<RpcChannel> channel(app.CreateRpcChannel(endpoint));
-  RPC rpc;
+  application app;
+  scoped_ptr<rpc_channel> channel(app.create_rpc_channel(endpoint));
+  rpc rpc;
   ::Message *reply = factory.GetPrototype(
       method_desc->output_type())->New();
-  channel->CallMethod(
+  channel->call_method(
       FLAGS_service_name.empty() ? service_name : FLAGS_service_name,
       method_desc, *request, reply, &rpc, NULL);
-  rpc.Wait();
+  rpc.wait();
 
-  if (rpc.GetStatus() != status::OK) {
-    cerr << "Status: " << rpc.GetStatus() << endl;
-    cerr << "Error " << rpc.GetApplicationErrorCode() << ": "
-        << rpc.GetErrorMessage() << endl;
+  if (rpc.get_status() != status::OK) {
+    cerr << "status: " << rpc.get_status() << endl;
+    cerr << "Error " << rpc.get_application_error_code() << ": "
+        << rpc.get_error_message() << endl;
   } else {
     std::string out;
     ::TextFormat::PrintToString(*reply, &out);
-    cerr << out << endl;
+    cout << out << endl;
   }
   delete request;
   delete reply;
@@ -134,7 +134,7 @@ int RunCall(const std::string& endpoint,
 
 #define ARGV_ERROR -2
 
-int Run(std::vector<std::string> args) {
+int run(std::vector<std::string> args) {
   if (args.empty()) {
     cerr << "Expecting a command." << endl;
     return ARGV_ERROR;
@@ -153,13 +153,13 @@ int Run(std::vector<std::string> args) {
     std::string endpoint(args[1]);
     std::string method(args[2]);
     std::string payload(args[3]);
-    return RunCall(endpoint, method, payload);
+    return run_call(endpoint, method, payload);
   }
   return 0;
 }
 }  // namespace rpcz
 
-void ShowUsage(const char* pname, const po::options_description& desc) {
+void show_usage(const char* pname, const po::options_description& desc) {
   cout << pname << " Usage Instructions" << endl
        << endl
        << pname << " --proto=file.proto <command> [args]" << endl
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
       ("proto_path", po::value<std::vector<std::string> >(&FLAGS_proto_path),
        "List of directories to search.")
       ("service_name", po::value<std::string>(&FLAGS_service_name),
-       "Service name to use. Leave empty to use the same service name as in "
+       "service name to use. Leave empty to use the same service name as in "
        "the proto definition.");
 
   po::positional_options_description p;
@@ -192,12 +192,12 @@ int main(int argc, char *argv[]) {
     po::store(parsed, vm);
   } catch (po::error &e) {
     cerr << "Command line error: " << e.what() << endl;
-    ShowUsage(PNAME, desc);
+    show_usage(PNAME, desc);
     return 1;
   }
 
   if (vm.count("help")) {
-    ShowUsage(PNAME, desc);
+    show_usage(PNAME, desc);
     return 1;
   }
 
@@ -205,15 +205,15 @@ int main(int argc, char *argv[]) {
     po::notify(vm);
   } catch (po::error &e) {
     cerr << "Command line error: " << e.what() << endl;
-    ShowUsage(PNAME, desc);
+    show_usage(PNAME, desc);
     return 1;
   }
   std::vector<std::string> positional = po::collect_unrecognized(
       parsed.options, po::include_positional);
-  int retval = rpcz::Run(positional);
+  int retval = rpcz::run(positional);
   if (retval == ARGV_ERROR) {
     retval = 1;
-    ShowUsage(PNAME, desc);
+    show_usage(PNAME, desc);
   }
   return retval;
 }

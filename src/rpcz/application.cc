@@ -15,7 +15,7 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include <string>
-#include "zmq.hpp"
+#include <zmq.hpp>
 #include "rpcz/application.h"
 #include "rpcz/connection_manager.h"
 #include "rpcz/rpc_channel.h"
@@ -23,22 +23,22 @@
 
 namespace rpcz {
 
-Application::Application() {
-  Init(Options());
+application::application() {
+  init(options());
 };
 
-Application::Application(const Application::Options& options) {
-  Init(options);
+application::application(const application::options& options) {
+  init(options);
 };
 
-Application::~Application() {
+application::~application() {
   connection_manager_.reset();
   if (owns_context_) {
     delete context_;
   }
 }
 
-void Application::Init(const Application::Options& options) {
+void application::init(const application::options& options) {
   if (options.zeromq_context) {
     context_ = options.zeromq_context;
     owns_context_ = false;
@@ -46,26 +46,26 @@ void Application::Init(const Application::Options& options) {
     context_ = new zmq::context_t(options.zeromq_io_threads);
     owns_context_ = true;
   }
-  connection_manager_.reset(new ConnectionManager(
+  connection_manager_.reset(new connection_manager(
           context_,
           options.connection_manager_threads));
 }
 
-RpcChannel* Application::CreateRpcChannel(const std::string& endpoint) {
-  return RpcChannel::Create(
-      connection_manager_->Connect(endpoint));
+rpc_channel* application::create_rpc_channel(const std::string& endpoint) {
+  return rpc_channel::create(
+      connection_manager_->connect(endpoint));
 }
 
-Server* Application::CreateServer() {
-  Server* server = new Server(connection_manager_.get());
+server* application::create_server() {
+  server* server = new rpcz::server(connection_manager_.get());
   return server;
 }
 
-void Application::Run() {
-  connection_manager_->Run();
+void application::run() {
+  connection_manager_->run();
 }
 
-void Application::Terminate() {
-  connection_manager_->Terminate();
+void application::terminate() {
+  connection_manager_->terminate();
 }
 }  // namespace rpcz

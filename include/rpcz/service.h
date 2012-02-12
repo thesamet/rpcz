@@ -30,51 +30,51 @@ class ServiceDescriptor;
 
 namespace rpcz {
 
-class ServerChannel {
+class server_channel {
  public:
-  virtual void Send(const google::protobuf::Message& response) = 0;
-  virtual void SendError(int application_error,
+  virtual void send(const google::protobuf::Message& response) = 0;
+  virtual void send_error(int application_error,
                          const std::string& error_message = "") = 0;
-  virtual ~ServerChannel() {}
+  virtual ~server_channel() {}
 
   // Hack to allow language bindings to do the serialization at their
   // end. Do not use directly.
-  virtual void Send0(const std::string& response) = 0;
+  virtual void send0(const std::string& response) = 0;
 };
 
 template <typename MessageType>
-class Reply {
+class reply {
  public:
-  explicit Reply(ServerChannel* channel) :
+  explicit reply(server_channel* channel) :
       channel_(channel), replied_(false) {
   }
 
-  ~Reply() { }
+  ~reply() { }
 
-  void Send(const MessageType& response) {
+  void send(const MessageType& response) {
     assert(!replied_);
-    channel_->Send(response);
+    channel_->send(response);
     delete channel_;
     replied_ = true;
   }
 
   void Error(int application_error, const std::string& error_message="") {
     assert(!replied_);
-    channel_->SendError(application_error, error_message);
+    channel_->send_error(application_error, error_message);
     delete channel_;
     replied_ = true;
   }
 
  private:
-  ServerChannel* channel_;
+  server_channel* channel_;
   bool replied_;
 };
 
-class Service {
+class service {
  public:
-  Service() { };
+  service() { };
 
-  virtual ~Service() {};
+  virtual ~service() {};
 
   virtual const google::protobuf::ServiceDescriptor* GetDescriptor() = 0;
 
@@ -83,9 +83,9 @@ class Service {
   virtual const google::protobuf::Message& GetResponsePrototype(
       const google::protobuf::MethodDescriptor*) const = 0;
 
-  virtual void CallMethod(const google::protobuf::MethodDescriptor* method,
+  virtual void call_method(const google::protobuf::MethodDescriptor* method,
                           const google::protobuf::Message& request,
-                          ServerChannel* server_channel) = 0;
+                          server_channel* server_channel) = 0;
 };
 }  // namespace
 #endif

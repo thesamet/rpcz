@@ -55,7 +55,7 @@ void ServiceGenerator::GenerateDeclarations(io::Printer* printer) {
 
 void ServiceGenerator::GenerateInterface(io::Printer* printer) {
   printer->Print(vars_,
-    "class $dllexport$$classname$ : public rpcz::Service {\n"
+    "class $dllexport$$classname$ : public rpcz::service {\n"
     " protected:\n"
     "  // This class should be treated as an abstract interface.\n"
     "  inline $classname$() {};\n"
@@ -77,9 +77,9 @@ void ServiceGenerator::GenerateInterface(io::Printer* printer) {
     "// implements Service ----------------------------------------------\n"
     "\n"
     "const ::google::protobuf::ServiceDescriptor* GetDescriptor();\n"
-    "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
+    "void call_method(const ::google::protobuf::MethodDescriptor* method,\n"
     "                const ::google::protobuf::Message& request,\n"
-    "                ::rpcz::ServerChannel* channel);\n"
+    "                ::rpcz::server_channel* channel);\n"
     "const ::google::protobuf::Message& GetRequestPrototype(\n"
     "  const ::google::protobuf::MethodDescriptor* method) const;\n"
     "const ::google::protobuf::Message& GetResponsePrototype(\n"
@@ -102,14 +102,14 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
   printer->Indent();
 
   printer->Print(vars_,
-    "$classname$_Stub(::rpcz::RpcChannel* channel, \n"
+    "$classname$_Stub(::rpcz::rpc_channel* channel, \n"
     "                 bool owns_channel=false);\n"
-    "$classname$_Stub(::rpcz::RpcChannel* channel, \n"
+    "$classname$_Stub(::rpcz::rpc_channel* channel, \n"
     "                 const ::std::string& service_name,\n"
     "                 bool owns_channel=false);\n"
     "~$classname$_Stub();\n"
     "\n"
-    "inline ::rpcz::RpcChannel* channel() { return channel_; }\n"
+    "inline ::rpcz::rpc_channel* channel() { return channel_; }\n"
     "\n"
     "\n");
 
@@ -118,7 +118,7 @@ void ServiceGenerator::GenerateStubDefinition(io::Printer* printer) {
   printer->Outdent();
   printer->Print(vars_,
     " private:\n"
-    "  ::rpcz::RpcChannel* channel_;\n"
+    "  ::rpcz::rpc_channel* channel_;\n"
     "  ::std::string service_name_;\n"
     "  bool owns_channel_;\n"
     "  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS($classname$_Stub);\n"
@@ -140,8 +140,8 @@ void ServiceGenerator::GenerateMethodSignatures(
       printer->Print(sub_vars,
                      "$virtual$void $name$(const $input_type$& request,\n"
                      "                     $output_type$* response,\n"
-                     "                     ::rpcz::RPC* rpc,"
-                     "                     ::rpcz::Closure* done);\n");
+                     "                     ::rpcz::rpc* rpc,"
+                     "                     ::rpcz::closure* done);\n");
       printer->Print(sub_vars,
                      "$virtual$void $name$(const $input_type$& request,\n"
                      "                     $output_type$* response,\n"
@@ -150,7 +150,7 @@ void ServiceGenerator::GenerateMethodSignatures(
       printer->Print(
           sub_vars,
           "$virtual$void $name$(const $input_type$& request,\n"
-          "                     ::rpcz::Reply< $output_type$> response);\n");
+          "                     ::rpcz::reply< $output_type$> response);\n");
     }
   }
 }
@@ -192,12 +192,12 @@ void ServiceGenerator::GenerateImplementation(io::Printer* printer) {
 
   // Generate stub implementation.
   printer->Print(vars_,
-    "$classname$_Stub::$classname$_Stub(::rpcz::RpcChannel* channel,\n"
+    "$classname$_Stub::$classname$_Stub(::rpcz::rpc_channel* channel,\n"
     "                                   const ::std::string& service_name,\n"
     "                                   bool owns_channel)\n"
     "  : channel_(channel), service_name_(service_name),\n"
     "    owns_channel_(owns_channel) {}\n"
-    "$classname$_Stub::$classname$_Stub(::rpcz::RpcChannel* channel,\n"
+    "$classname$_Stub::$classname$_Stub(::rpcz::rpc_channel* channel,\n"
     "                                   bool owns_channel)\n"
     "  : channel_(channel), service_name_($classname$::descriptor()->name()),\n"
     "    owns_channel_(owns_channel) {}\n"
@@ -221,7 +221,7 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
 
     printer->Print(sub_vars,
       "void $classname$::$name$(const $input_type$&,\n"
-      "                         ::rpcz::Reply< $output_type$> reply) {\n"
+      "                         ::rpcz::reply< $output_type$> reply) {\n"
       "  reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,\n"
       "              \"Method $name$() not implemented.\");\n"
       "}\n"
@@ -231,9 +231,9 @@ void ServiceGenerator::GenerateNotImplementedMethods(io::Printer* printer) {
 
 void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
   printer->Print(vars_,
-    "void $classname$::CallMethod(const ::google::protobuf::MethodDescriptor* method,\n"
+    "void $classname$::call_method(const ::google::protobuf::MethodDescriptor* method,\n"
     "                             const ::google::protobuf::Message& request,\n"
-    "                             ::rpcz::ServerChannel* channel) {\n"
+    "                             ::rpcz::server_channel* channel) {\n"
     "  GOOGLE_DCHECK_EQ(method->service(), $classname$_descriptor_);\n"
     "  switch(method->index()) {\n");
 
@@ -251,7 +251,7 @@ void ServiceGenerator::GenerateCallMethod(io::Printer* printer) {
       "    case $index$:\n"
       "      $name$(\n"
       "          *::google::protobuf::down_cast<const $input_type$*>(&request),\n"
-      "          ::rpcz::Reply< $output_type$>(channel));\n"
+      "          ::rpcz::reply< $output_type$>(channel));\n"
       "      break;\n");
   }
 
@@ -315,24 +315,24 @@ void ServiceGenerator::GenerateStubMethods(io::Printer* printer) {
     printer->Print(sub_vars,
       "void $classname$_Stub::$name$(const $input_type$& request,\n"
       "                              $output_type$* response,\n"
-      "                              ::rpcz::RPC* rpc,\n"
-      "                              ::rpcz::Closure* done) {\n"
-      "  channel_->CallMethod(service_name_,\n"
-      "                       $classname$::descriptor()->method($index$),\n"
-      "                       request, response, rpc, done);\n"
+      "                              ::rpcz::rpc* rpc,\n"
+      "                              ::rpcz::closure* done) {\n"
+      "  channel_->call_method(service_name_,\n"
+      "                        $classname$::descriptor()->method($index$),\n"
+      "                        request, response, rpc, done);\n"
       "}\n");
     printer->Print(sub_vars,
       "void $classname$_Stub::$name$(const $input_type$& request,\n"
       "                              $output_type$* response,\n"
       "                              long deadline_ms) {\n"
-      "  ::rpcz::RPC rpc;\n"
-      "  rpc.SetDeadlineMs(deadline_ms);\n"
-      "  channel_->CallMethod(service_name_,\n"
-      "                       $classname$::descriptor()->method($index$),\n"
-      "                       request, response, &rpc, NULL);\n"
-      "  rpc.Wait();\n"
-      "  if (!rpc.OK()) {\n"
-      "    throw ::rpcz::RpcError(rpc);\n"
+      "  ::rpcz::rpc rpc;\n"
+      "  rpc.set_deadline_ms(deadline_ms);\n"
+      "  channel_->call_method(service_name_,\n"
+      "                        $classname$::descriptor()->method($index$),\n"
+      "                        request, response, &rpc, NULL);\n"
+      "  rpc.wait();\n"
+      "  if (!rpc.ok()) {\n"
+      "    throw ::rpcz::rpc_error(rpc);\n"
       "  }\n"
       "}\n");
   }

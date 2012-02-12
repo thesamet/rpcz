@@ -32,92 +32,92 @@
 
 namespace rpcz {
 
-class ConnectionManagerTest : public ::testing::Test {
+class connection_manager_test : public ::testing::Test {
  public:
-  ConnectionManagerTest() : context(1) {}
+  connection_manager_test() : context(1) {}
 
  protected:
   zmq::context_t context;
 };
 
-TEST_F(ConnectionManagerTest, TestStartsAndFinishes) {
-  ConnectionManager cm(&context, 4);
+TEST_F(connection_manager_test, TestStartsAndFinishes) {
+  connection_manager cm(&context, 4);
 }
 
-void EchoServer(zmq::socket_t *socket) {
+void echo_server(zmq::socket_t *socket) {
   bool should_quit = false;
   int messages = 0;
   while (!should_quit) {
-    MessageVector v;
-    GOOGLE_CHECK(ReadMessageToVector(socket, &v));
+    message_vector v;
+    GOOGLE_CHECK(read_message_to_vector(socket, &v));
     ++messages;
     ASSERT_EQ(4, v.size());
-    if (MessageToString(v[2]) == "hello") {
-      ASSERT_EQ("there", MessageToString(v[3]).substr(0, 5));
-    } else if (MessageToString(v[2]) == "QUIT") {
+    if (message_to_string(v[2]) == "hello") {
+      ASSERT_EQ("there", message_to_string(v[3]).substr(0, 5));
+    } else if (message_to_string(v[2]) == "QUIT") {
       should_quit = true;
     } else {
-      GOOGLE_CHECK(false) << "Unknown command: " << MessageToString(v[2]);
+      GOOGLE_CHECK(false) << "Unknown command: " << message_to_string(v[2]);
     }
-    WriteVectorToSocket(socket, v);
+    write_vector_to_socket(socket, v);
   }
   delete socket;
 }
 
-boost::thread StartServer(zmq::context_t* context) {
+boost::thread start_server(zmq::context_t* context) {
   zmq::socket_t* server = new zmq::socket_t(*context, ZMQ_DEALER);
   server->bind("inproc://server.test");
-  return boost::thread(boost::bind(EchoServer, server));
+  return boost::thread(boost::bind(echo_server, server));
 }
 
-MessageVector* CreateSimpleRequest(int number=0) {
-  MessageVector* request = new MessageVector;
-  request->push_back(StringToMessage("hello"));
+message_vector* create_simple_request(int number=0) {
+  message_vector* request = new message_vector;
+  request->push_back(string_to_message("hello"));
   char str[256];
   sprintf(str, "there_%d", number);
-  request->push_back(StringToMessage(str));
+  request->push_back(string_to_message(str));
   return request;
 }
 
-MessageVector* CreateQuitRequest() {
-  MessageVector* request = new MessageVector;
-  request->push_back(StringToMessage("QUIT"));
-  request->push_back(StringToMessage(""));
+message_vector* create_quit_request() {
+  message_vector* request = new message_vector;
+  request->push_back(string_to_message("QUIT"));
+  request->push_back(string_to_message(""));
   return request;
 }
 
-void ExpectTimeout(ConnectionManager::Status status, MessageIterator& iter,
-                   SyncEvent* sync) {
-  ASSERT_EQ(ConnectionManager::DEADLINE_EXCEEDED, status);
+void expect_timeout(connection_manager::status status, message_iterator& iter,
+                   sync_event* sync) {
+  ASSERT_EQ(connection_manager::DEADLINE_EXCEEDED, status);
   ASSERT_FALSE(iter.has_more());
-  sync->Signal();
+  sync->signal();
 }
 
-TEST_F(ConnectionManagerTest, TestTimeoutAsync) {
+TEST_F(connection_manager_test, TestTimeoutAsync) {
   zmq::socket_t server(context, ZMQ_DEALER);
   server.bind("inproc://server.test");
 
-  ConnectionManager cm(&context, 4);
-  Connection connection(cm.Connect("inproc://server.test"));
-  scoped_ptr<MessageVector> request(CreateSimpleRequest());
+  connection_manager cm(&context, 4);
+  connection connection(cm.connect("inproc://server.test"));
+  scoped_ptr<message_vector> request(create_simple_request());
 
-  SyncEvent event;
-  connection.SendRequest(*request, 0,
-                         boost::bind(&ExpectTimeout, _1, _2, &event));
-  event.Wait();
+  sync_event event;
+  connection.send_request(*request, 0,
+                         boost::bind(&expect_timeout, _1, _2, &event));
+  event.wait();
 }
 
-class BarrierClosure : public ConnectionManager::ClientRequestCallback {
+class barrier_closure : public connection_manager::client_request_callback {
  public:
-  BarrierClosure() : count_(0) {}
+  barrier_closure() : count_(0) {}
 
-  void Run(ConnectionManager::Status status, MessageIterator& iter) {
+  void run(connection_manager::status status, message_iterator& iter) {
     boost::unique_lock<boost::mutex> lock(mutex_);
     ++count_;
     cond_.notify_all();
   }
 
-  virtual void Wait(int n) {
+  virtual void wait(int n) {
     boost::unique_lock<boost::mutex> lock(mutex_);
     while (count_ < n) {
       cond_.wait(lock);
@@ -130,65 +130,65 @@ class BarrierClosure : public ConnectionManager::ClientRequestCallback {
   int count_;
 };
 
-void SendManyMessages(Connection connection, int thread_id) {
-  boost::ptr_vector<MessageVector> requests;
+void SendManyMessages(connection connection, int thread_id) {
+  boost::ptr_vector<message_vector> requests;
   const int request_count = 100;
-  BarrierClosure barrier;
+  barrier_closure barrier;
   for (int i = 0; i < request_count; ++i) {
-    MessageVector* request = CreateSimpleRequest(
+    message_vector* request = create_simple_request(
         thread_id * request_count * 17 + i);
     requests.push_back(request);
-    connection.SendRequest(*request, -1,
-                           bind(&BarrierClosure::Run, &barrier, _1, _2));
+    connection.send_request(*request, -1,
+                            bind(&barrier_closure::run, &barrier, _1, _2));
   }
-  barrier.Wait(request_count);
+  barrier.wait(request_count);
 }
 
-TEST_F(ConnectionManagerTest, ManyClientsTest) {
-  boost::thread thread(StartServer(&context));
-  ConnectionManager cm(&context, 4);
+TEST_F(connection_manager_test, ManyClientsTest) {
+  boost::thread thread(start_server(&context));
+  connection_manager cm(&context, 4);
 
-  Connection connection(cm.Connect("inproc://server.test"));
+  connection connection(cm.connect("inproc://server.test"));
   boost::thread_group group;
   for (int i = 0; i < 10; ++i) {
     group.add_thread(
         new boost::thread(boost::bind(SendManyMessages, connection, i)));
   }
   group.join_all();
-  scoped_ptr<MessageVector> request(CreateQuitRequest());
-  SyncEvent event;
-  connection.SendRequest(*request, -1,
-                         boost::bind(&SyncEvent::Signal, &event));
-  event.Wait();
+  scoped_ptr<message_vector> request(create_quit_request());
+  sync_event event;
+  connection.send_request(*request, -1,
+                         boost::bind(&sync_event::signal, &event));
+  event.wait();
   thread.join();
 }
 
-void HandleRequest(ClientConnection connection,
-                   MessageIterator& request) {
-  int value = boost::lexical_cast<int>(MessageToString(request.next()));
-  MessageVector v;
-  v.push_back(StringToMessage(boost::lexical_cast<std::string>(value + 1)));
-  connection.Reply(&v);
+void handle_request(client_connection connection,
+                   message_iterator& request) {
+  int value = boost::lexical_cast<int>(message_to_string(request.next()));
+  message_vector v;
+  v.push_back(string_to_message(boost::lexical_cast<std::string>(value + 1)));
+  connection.reply(&v);
 }
 
-void HandleServerResponse(SyncEvent* sync,
-                          ConnectionManager::Status status,
-                          MessageIterator& iter) {
-  CHECK_EQ(ConnectionManager::DONE, status);
-  CHECK_EQ("318", MessageToString(iter.next()));
-  sync->Signal();
+void handle_server_response(sync_event* sync,
+                            connection_manager::status status,
+                            message_iterator& iter) {
+  CHECK_EQ(connection_manager::DONE, status);
+  CHECK_EQ("318", message_to_string(iter.next()));
+  sync->signal();
 }
 
-TEST_F(ConnectionManagerTest, TestBindServer) {
-  ConnectionManager cm(&context, 4);
-  cm.Bind("inproc://server.point", &HandleRequest);
-  Connection c = cm.Connect("inproc://server.point");
-  MessageVector v;
-  v.push_back(StringToMessage("317"));
-  SyncEvent event;
-  c.SendRequest(v, -1,
-                boost::bind(&HandleServerResponse, &event, _1, _2));
-  event.Wait();
+TEST_F(connection_manager_test, TestBindServer) {
+  connection_manager cm(&context, 4);
+  cm.bind("inproc://server.point", &handle_request);
+  connection c = cm.connect("inproc://server.point");
+  message_vector v;
+  v.push_back(string_to_message("317"));
+  sync_event event;
+  c.send_request(v, -1,
+                boost::bind(&handle_server_response, &event, _1, _2));
+  event.wait();
 }
 
 const static char* kEndpoint = "inproc://test";
@@ -198,20 +198,20 @@ void DoThis(zmq::context_t* context) {
   LOG(INFO)<<"Creating socket. Context="<<context;
   zmq::socket_t socket(*context, ZMQ_PUSH);
   socket.connect(kEndpoint);
-  SendString(&socket, kReply);
+  send_string(&socket, kReply);
   socket.close();
   LOG(INFO)<<"socket closed";
 }
 
-TEST_F(ConnectionManagerTest, ProcessesSingleCallback) {
-  ConnectionManager cm(&context, 4);
+TEST_F(connection_manager_test, ProcessesSingleCallback) {
+  connection_manager cm(&context, 4);
   zmq::socket_t socket(context, ZMQ_PULL);
   socket.bind(kEndpoint);
-  cm.Add(NewCallback(&DoThis, &context));
-  MessageVector messages;
-  CHECK(ReadMessageToVector(&socket, &messages));
+  cm.add(new_callback(&DoThis, &context));
+  message_vector messages;
+  CHECK(read_message_to_vector(&socket, &messages));
   ASSERT_EQ(1, messages.size());
-  CHECK_EQ(kReply, MessageToString(messages[0]));
+  CHECK_EQ(kReply, message_to_string(messages[0]));
 }
 
 void Increment(boost::mutex* mu,
@@ -222,14 +222,14 @@ void Increment(boost::mutex* mu,
   mu->unlock();
 }
 
-void AddManyClosures(ConnectionManager* cm) {
+void add_many_closures(connection_manager* cm) {
   boost::mutex mu;
   boost::condition_variable cond;
   boost::unique_lock<boost::mutex> lock(mu);
   int x = 0;
   const int kMany = 137;
   for (int i = 0; i < kMany; ++i) {
-    cm->Add(NewCallback(&Increment, &mu, &cond, &x));
+    cm->add(new_callback(&Increment, &mu, &cond, &x));
   }
   CHECK_EQ(0, x);  // since we are holding the lock
   while (x != kMany) {
@@ -237,13 +237,13 @@ void AddManyClosures(ConnectionManager* cm) {
   }
 }
 
-TEST_F(ConnectionManagerTest, ProcessesManyCallbacksFromManyThreads) {
+TEST_F(connection_manager_test, ProcessesManyCallbacksFromManyThreads) {
   const int thread_count = 10;
-  ConnectionManager cm(&context, thread_count);
+  connection_manager cm(&context, thread_count);
   boost::thread_group thread_group;
   for (int i = 0; i < thread_count; ++i) {
     thread_group.add_thread(
-        new boost::thread(boost::bind(AddManyClosures, &cm)));
+        new boost::thread(boost::bind(add_many_closures, &cm)));
   }
   thread_group.join_all();
 }

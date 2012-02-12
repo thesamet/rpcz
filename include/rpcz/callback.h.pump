@@ -22,15 +22,15 @@ $var max_args = 7
 
 namespace rpcz {
 
-class Closure {
+class closure {
  public:
-  Closure() {}
-  virtual ~Closure() {}
+  closure() {}
+  virtual ~closure() {}
 
-  virtual void Run() = 0;
+  virtual void run() = 0;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(Closure);
+  DISALLOW_COPY_AND_ASSIGN(closure);
 };
 
 
@@ -44,16 +44,16 @@ $if args > 0 [[
 template <$for arg , [[typename Arg$arg]]>
 
 ]]
-class FunctionClosure$args : public Closure {
+class function_closure_$args : public closure {
  public:
   typedef void (*FunctionType)($for arg , [[Arg$arg arg$arg]]);
 
-  FunctionClosure$args(FunctionType function, bool self_deleting$for arg [[, Arg$arg arg$arg]])
+  function_closure_$args(FunctionType function, bool self_deleting$for arg [[, Arg$arg arg$arg]])
     : function_(function), self_deleting_(self_deleting)$for arg [[
 , arg$(arg)_(arg$arg)]] {}
-  virtual ~FunctionClosure$args() {}
+  virtual ~function_closure_$args() {}
 
-  void Run() {
+  void run() {
     bool needs_delete = self_deleting_;  // read in case callback deletes
     function_($for arg , [[arg$(arg)_]]);
     if (needs_delete) delete this;
@@ -70,15 +70,15 @@ $for arg [[
 };
 
 template <typename Class$for arg [[, typename Arg$arg]]>
-class MethodClosure$args : public Closure {
+class method_closure_$args : public closure {
  public:
   typedef void (Class::*MethodType)($for arg , [[Arg$arg arg$arg]]);
 
-  MethodClosure$args(Class* object, MethodType method, bool self_deleting$for arg [[, Arg$arg arg$arg]])    : object_(object), method_(method), self_deleting_(self_deleting)$for arg [[
+  method_closure_$args(Class* object, MethodType method, bool self_deleting$for arg [[, Arg$arg arg$arg]])    : object_(object), method_(method), self_deleting_(self_deleting)$for arg [[
 , arg$(arg)_(arg$arg)]] {}
-  virtual ~MethodClosure$args() {}
+  virtual ~method_closure_$args() {}
 
-  void Run() {
+  void run() {
     bool needs_delete = self_deleting_;  // read in case callback deletes
     (object_->*method_)($for arg , [[arg$(arg)_]]);
     if (needs_delete) delete this;
@@ -101,9 +101,9 @@ $if args > 0[[
 template <$for arg , [[typename Arg$arg]]>
 
 ]]
-inline Closure* NewCallback(void (*function)($for arg , [[Arg$arg]])
+inline closure* new_callback(void (*function)($for arg , [[Arg$arg]])
 $for arg [[, Arg$arg arg$arg]]) {
-  return new internal::FunctionClosure$args$if args > 0 [[
+  return new internal::function_closure_$args$if args > 0 [[
 <$for arg , [[Arg$arg]]>]](function, true[[]]
 $for arg [[, arg$arg]]);
 }
@@ -112,27 +112,27 @@ $if args > 0[[
 template <$for arg , [[typename Arg$arg]]>
 
 ]]
-inline Closure* NewPermanentCallback(void (*function)($for arg , [[Arg$arg]])
+inline closure* new_permanent_callback(void (*function)($for arg , [[Arg$arg]])
 $for arg [[, Arg$arg arg$arg]]) {
-  return new internal::FunctionClosure$args$if args > 0 [[
+  return new internal::function_closure_$args$if args > 0 [[
 <$for arg , [[Arg$arg]]>]](function, false[[]]
 $for arg [[, arg$arg]]);
 }
 
 template <typename Class$for arg [[, typename Arg$arg]]>
-inline Closure* NewCallback(Class* object, void (Class::*method)(
+inline closure* new_callback(Class* object, void (Class::*method)(
 $for arg , [[Arg$arg]])
 $for arg [[, Arg$arg arg$arg]]) {
-  return new internal::MethodClosure$args<Class$for arg [[, Arg$arg]]
+  return new internal::method_closure_$args<Class$for arg [[, Arg$arg]]
 >(object, method, true[[]]
 $for arg [[, arg$arg]]);
 }
 
 template <typename Class$for arg [[, typename Arg$arg]]>
-inline Closure* NewPermanentCallback(Class* object, void (Class::*method)(
+inline closure* new_permanent_callback(Class* object, void (Class::*method)(
 $for arg , [[Arg$arg]])
 $for arg [[, Arg$arg arg$arg]]) {
-  return new internal::MethodClosure$args<Class$for arg [[, Arg$arg]]
+  return new internal::method_closure_$args<Class$for arg [[, Arg$arg]]
 >(object, method, false[[]]
 $for arg [[, arg$arg]]);
 }

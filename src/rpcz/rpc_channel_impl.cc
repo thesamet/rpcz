@@ -26,35 +26,35 @@
 
 namespace rpcz {
 
-RpcChannel* RpcChannel::Create(Connection connection) {
-  return new RpcChannelImpl(connection);
+rpc_channel* rpc_channel::create(connection connection) {
+  return new rpc_channel_impl(connection);
 }
 
-RpcChannelImpl::RpcChannelImpl(Connection connection)
+rpc_channel_impl::rpc_channel_impl(connection connection)
     : connection_(connection) {
 }
 
-RpcChannelImpl::~RpcChannelImpl() {
+rpc_channel_impl::~rpc_channel_impl() {
 }
 
-struct RpcResponseContext {
-  RPC* rpc;
+struct rpc_response_context {
+  rpc* rpc;
   ::google::protobuf::Message* response_msg;
   std::string* response_str;
-  Closure* user_closure;
+  closure* user_closure;
 };
 
-void RpcChannelImpl::CallMethodFull(
+void rpc_channel_impl::call_method_full(
     const std::string& service_name,
     const std::string& method_name,
     const ::google::protobuf::Message* request_msg,
     const std::string& request,
     ::google::protobuf::Message* response_msg,
     std::string* response_str,
-    RPC* rpc,
-    Closure* done) {
-  CHECK_EQ(rpc->GetStatus(), status::INACTIVE);
-  RpcRequestHeader generic_request;
+    rpc* rpc,
+    closure* done) {
+  CHECK_EQ(rpc->get_status(), status::INACTIVE);
+  rpc_request_header generic_request;
   generic_request.set_service(service_name);
   generic_request.set_method(method_name);
 
@@ -68,37 +68,37 @@ void RpcChannelImpl::CallMethodFull(
     payload_out.reset(new zmq::message_t(bytes));
     if (!request_msg->SerializeToArray(payload_out->data(),
                                        bytes)) {
-      throw new InvalidMessageError("Request serialization failed.");
+      throw invalid_message_error("Request serialization failed.");
     }
   } else {
-    payload_out.reset(StringToMessage(request));
+    payload_out.reset(string_to_message(request));
   }
 
-  MessageVector msg_vector;
+  message_vector msg_vector;
   msg_vector.push_back(msg_out.release());
   msg_vector.push_back(payload_out.release());
 
-  RpcResponseContext response_context;
+  rpc_response_context response_context;
   response_context.rpc = rpc;
   response_context.user_closure = done;
   response_context.response_str = response_str;
   response_context.response_msg = response_msg;
-  rpc->SetStatus(status::ACTIVE);
+  rpc->set_status(status::ACTIVE);
 
-  connection_.SendRequest(
+  connection_.send_request(
       msg_vector,
-      rpc->GetDeadlineMs(),
-      bind(&RpcChannelImpl::HandleClientResponse, this,
+      rpc->get_deadline_ms(),
+      bind(&rpc_channel_impl::handle_client_response, this,
            response_context, _1, _2));
 }
 
-void RpcChannelImpl::CallMethod0(const std::string& service_name,
+void rpc_channel_impl::call_method0(const std::string& service_name,
                                 const std::string& method_name,
                                 const std::string& request,
                                 std::string* response,
-                                RPC* rpc,
-                                Closure* done) {
-  CallMethodFull(service_name,
+                                rpc* rpc,
+                                closure* done) {
+  call_method_full(service_name,
                  method_name,
                  NULL,
                  request,
@@ -108,14 +108,14 @@ void RpcChannelImpl::CallMethod0(const std::string& service_name,
                  done);
 }
 
-void RpcChannelImpl::CallMethod(
+void rpc_channel_impl::call_method(
     const std::string& service_name,
     const google::protobuf::MethodDescriptor* method,
     const google::protobuf::Message& request,
     google::protobuf::Message* response,
-    RPC* rpc,
-    Closure* done) {
-  CallMethodFull(service_name,
+    rpc* rpc,
+    closure* done) {
+  call_method_full(service_name,
                  method->name(),
                  &request,
                  "",
@@ -125,38 +125,38 @@ void RpcChannelImpl::CallMethod(
                  done);
 }
 
-void RpcChannelImpl::HandleClientResponse(
-    RpcResponseContext response_context, ConnectionManager::Status status,
-    MessageIterator& iter) {
+void rpc_channel_impl::handle_client_response(
+    rpc_response_context response_context, connection_manager::status status,
+    message_iterator& iter) {
   switch (status) {
-    case ConnectionManager::DEADLINE_EXCEEDED:
-      response_context.rpc->SetStatus(
+    case connection_manager::DEADLINE_EXCEEDED:
+      response_context.rpc->set_status(
           status::DEADLINE_EXCEEDED);
       break;
-    case ConnectionManager::DONE: {
+    case connection_manager::DONE: {
         if (!iter.has_more()) {
-          response_context.rpc->SetFailed(application_error::INVALID_MESSAGE,
+          response_context.rpc->set_failed(application_error::INVALID_MESSAGE,
                                            "");
           break;
         }
-        RpcResponseHeader generic_response;
+        rpc_response_header generic_response;
         zmq::message_t& msg_in = iter.next();
         if (!generic_response.ParseFromArray(msg_in.data(), msg_in.size())) {
-          response_context.rpc->SetFailed(application_error::INVALID_MESSAGE,
+          response_context.rpc->set_failed(application_error::INVALID_MESSAGE,
                                            "");
           break;
         }
         if (generic_response.status() != status::OK) {
-          response_context.rpc->SetFailed(generic_response.application_error(),
+          response_context.rpc->set_failed(generic_response.application_error(),
                                            generic_response.error());
         } else {
-          response_context.rpc->SetStatus(status::OK);
+          response_context.rpc->set_status(status::OK);
           zmq::message_t& payload = iter.next();
           if (response_context.response_msg) {
             if (!response_context.response_msg->ParseFromArray(
                     payload.data(),
                     payload.size())) {
-              response_context.rpc->SetFailed(application_error::INVALID_MESSAGE,
+              response_context.rpc->set_failed(application_error::INVALID_MESSAGE,
                                               "");
               break;
             }
@@ -169,17 +169,17 @@ void RpcChannelImpl::HandleClientResponse(
         }
       }
       break;
-    case ConnectionManager::ACTIVE:
-    case ConnectionManager::INACTIVE:
+    case connection_manager::ACTIVE:
+    case connection_manager::INACTIVE:
     default:
       CHECK(false) << "Unexpected status: "
                    << status;
   }
-  // We call Signal() before we execute closure since the closure may delete
-  // the RPC object (which contains the sync_event).
-  response_context.rpc->sync_event_->Signal();
+  // We call signal() before we execute closure since the closure may delete
+  // the rpc object (which contains the sync_event).
+  response_context.rpc->sync_event_->signal();
   if (response_context.user_closure) {
-    response_context.user_closure->Run();
+    response_context.user_closure->run();
   }
 }
 }  // namespace rpcz

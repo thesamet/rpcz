@@ -25,116 +25,110 @@
 
 namespace rpcz {
 
-typedef RpcResponseHeader::Status Status;
-typedef RpcResponseHeader::ApplicationError ApplicationError;
+typedef rpc_response_header::status_code status_code;
+typedef rpc_response_header::application_error_code application_error_code;
 
 namespace status {
-static const Status INACTIVE = RpcResponseHeader::INACTIVE;
-static const Status ACTIVE = RpcResponseHeader::ACTIVE;
-static const Status OK = RpcResponseHeader::OK;
-static const Status CANCELLED = RpcResponseHeader::CANCELLED;
-static const Status APPLICATION_ERROR = RpcResponseHeader::APPLICATION_ERROR;
-static const Status DEADLINE_EXCEEDED = RpcResponseHeader::DEADLINE_EXCEEDED;
-static const Status TERMINATED = RpcResponseHeader::TERMINATED;
+static const status_code INACTIVE = rpc_response_header::INACTIVE;
+static const status_code ACTIVE = rpc_response_header::ACTIVE;
+static const status_code OK = rpc_response_header::OK;
+static const status_code CANCELLED = rpc_response_header::CANCELLED;
+static const status_code APPLICATION_ERROR = rpc_response_header::APPLICATION_ERROR;
+static const status_code DEADLINE_EXCEEDED = rpc_response_header::DEADLINE_EXCEEDED;
+static const status_code TERMINATED = rpc_response_header::TERMINATED;
 }  // namespace status
 namespace application_error {
-static const ApplicationError NO_ERROR =
-    RpcResponseHeader::NO_ERROR;
-static const ApplicationError INVALID_HEADER =
-    RpcResponseHeader::INVALID_HEADER;
-static const ApplicationError NO_SUCH_SERVICE =
-    RpcResponseHeader::NO_SUCH_SERVICE;
-static const ApplicationError NO_SUCH_METHOD =
-    RpcResponseHeader::NO_SUCH_METHOD;
-static const ApplicationError INVALID_MESSAGE =
-    RpcResponseHeader::INVALID_MESSAGE;
-static const ApplicationError METHOD_NOT_IMPLEMENTED =
-    RpcResponseHeader::METHOD_NOT_IMPLEMENTED;
+static const application_error_code NO_ERROR = rpc_response_header::NO_ERROR;
+static const application_error_code INVALID_HEADER = rpc_response_header::INVALID_HEADER;
+static const application_error_code NO_SUCH_SERVICE = rpc_response_header::NO_SUCH_SERVICE;
+static const application_error_code NO_SUCH_METHOD = rpc_response_header::NO_SUCH_METHOD;
+static const application_error_code INVALID_MESSAGE = rpc_response_header::INVALID_MESSAGE;
+static const application_error_code METHOD_NOT_IMPLEMENTED = rpc_response_header::METHOD_NOT_IMPLEMENTED;
 }  // namespace application_error
 
-class SyncEvent;
+class sync_event;
 
-class RPC {
+class rpc {
  public:
-  RPC();
+  rpc();
 
-  ~RPC();
+  ~rpc();
 
-  inline bool OK() const {
-    return GetStatus() == status::OK;
+  inline bool ok() const {
+    return get_status() == status::OK;
   }
 
-  Status GetStatus() const {
+  status_code get_status() const {
     return status_;
   }
 
-  inline std::string GetErrorMessage() const {
+  inline std::string get_error_message() const {
     return error_message_;
   }
 
-  inline int GetApplicationErrorCode() const {
+  inline int get_application_error_code() const {
     return application_error_code_;
   }
 
-  inline int64 GetDeadlineMs() const {
+  inline int64 get_deadline_ms() const {
     return deadline_ms_;
   }
 
-  inline void SetDeadlineMs(int deadline_ms) {
+  inline void set_deadline_ms(int deadline_ms) {
     deadline_ms_ = deadline_ms;
   }
 
-  void SetFailed(int application_error_code, const std::string& message);
+  void set_failed(int application_error_code, const std::string& message);
 
-  int Wait();
+  int wait();
 
-  std::string ToString() const;
+  std::string to_string() const;
 
  private:
-  void SetStatus(Status status);
+  void set_status(status_code status);
 
-  Status status_;
+  status_code status_;
   std::string error_message_;
   int application_error_code_;
   int64 deadline_ms_;
-  scoped_ptr<SyncEvent> sync_event_;
+  scoped_ptr<sync_event> sync_event_;
 
-  friend class RpcChannelImpl;
-  friend class ServerChannelImpl;
-  DISALLOW_COPY_AND_ASSIGN(RPC);
+  friend class rpc_channel_impl;
+  friend class server_channel_impl;
+  DISALLOW_COPY_AND_ASSIGN(rpc);
 };
 
-class RpcError : public std::runtime_error {
+class rpc_error : public std::runtime_error {
  public:
-  explicit RpcError(const RPC& rpc_) 
-      : std::runtime_error(rpc_.ToString()),
-        status_(rpc_.GetStatus()),
-        error_message_(rpc_.GetErrorMessage()),
-        application_error_code_(rpc_.GetApplicationErrorCode()) {}
+  explicit rpc_error(const rpc& rpc_) 
+      : std::runtime_error(rpc_.to_string()),
+        status_(rpc_.get_status()),
+        error_message_(rpc_.get_error_message()),
+        application_error_code_(rpc_.get_application_error_code()) {}
 
-  virtual ~RpcError() throw() {}
+  virtual ~rpc_error() throw() {}
 
-  Status GetStatus() const {
+  status_code get_status() const {
     return status_;
   }
 
-  inline std::string GetErrorMessage() const {
+  inline std::string get_error_message() const {
     return error_message_;
   }
 
-  inline int GetApplicationErrorCode() const {
+  inline int get_application_error_code() const {
     return application_error_code_;
   }
 
  private:
-  Status status_;
+  status_code status_;
   std::string error_message_;
   int application_error_code_;
 };
 
-class InvalidMessageError : public std::runtime_error {
+class invalid_message_error : public std::runtime_error {
  public:
-  explicit InvalidMessageError(const std::string& message)
+  explicit invalid_message_error(const std::string& message)
       : std::runtime_error(message) {}
 };
 }  // namespace

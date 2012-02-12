@@ -27,24 +27,24 @@ class SearchServiceImpl : public SearchService {
 
   virtual void Search(
       const SearchRequest& request,
-      rpcz::Reply<SearchResponse> reply) {
+      rpcz::reply<SearchResponse> reply) {
     cout << "Got request for '" << request.query() << "'" << endl;
     SearchResponse response;
     response.add_results("result1 for " + request.query());
     response.add_results("this is result2");
-    reply.Send(response);
+    reply.send(response);
   }
 
 };
 }  // namespace examples
 
 int main() {
-  rpcz::Application application;
-  rpcz::Server* server = application.CreateServer();
+  rpcz::application application;
+  rpcz::server* server = application.create_server();
   examples::SearchServiceImpl search_service;
-  server->RegisterService(&search_service);
+  server->register_service(&search_service);
   cout << "Serving requests on port 5555." << endl;
-  server->Bind("tcp://*:5555");
-  application.Run();
+  server->bind("tcp://*:5555");
+  application.run();
   delete server;
 }

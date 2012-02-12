@@ -23,11 +23,11 @@
 #include <iostream>
 #include <utility>
 
-#include "boost/bind.hpp"
-#include "google/protobuf/descriptor.h"
-#include "google/protobuf/message.h"
-#include "google/protobuf/stubs/common.h"
-#include "zmq.hpp"
+#include <boost/bind.hpp>
+#include <google/protobuf/descriptor.h>
+#include <google/protobuf/message.h>
+#include <google/protobuf/stubs/common.h>
+#include <zmq.hpp>
 
 #include "rpcz/callback.h"
 #include "rpcz/connection_manager.h"
@@ -41,49 +41,49 @@
 
 namespace rpcz {
 
-class ServerChannelImpl : public ServerChannel {
+class server_channel_impl : public server_channel {
  public:
-  ServerChannelImpl(const ClientConnection& connection)
+  server_channel_impl(const client_connection& connection)
       : connection_(connection) {
       }
 
-  virtual void Send(const google::protobuf::Message& response) {
-    RpcResponseHeader generic_rpc_response;
+  virtual void send(const google::protobuf::Message& response) {
+    rpc_response_header generic_rpc_response;
     int msg_size = response.ByteSize();
     scoped_ptr<zmq::message_t> payload(new zmq::message_t(msg_size));
     if (!response.SerializeToArray(payload->data(), msg_size)) {
-      throw InvalidMessageError("Invalid response message");
+      throw invalid_message_error("Invalid response message");
     }
-    SendGenericResponse(generic_rpc_response,
+    send_generic_response(generic_rpc_response,
                         payload.release());
   }
 
-  virtual void Send0(const std::string& response) {
-    RpcResponseHeader generic_rpc_response;
-    SendGenericResponse(generic_rpc_response,
-                        StringToMessage(response));
+  virtual void send0(const std::string& response) {
+    rpc_response_header generic_rpc_response;
+    send_generic_response(generic_rpc_response,
+                        string_to_message(response));
   }
 
-  virtual void SendError(int application_error,
-                         const std::string& error_message="") {
-    RpcResponseHeader generic_rpc_response;
+  virtual void send_error(int application_error,
+                          const std::string& error_message="") {
+    rpc_response_header generic_rpc_response;
     zmq::message_t* payload = new zmq::message_t();
     generic_rpc_response.set_status(status::APPLICATION_ERROR);
     generic_rpc_response.set_application_error(application_error);
     if (!error_message.empty()) {
       generic_rpc_response.set_error(error_message);
     }
-    SendGenericResponse(generic_rpc_response,
+    send_generic_response(generic_rpc_response,
                         payload);
   }
 
  private:
-  ClientConnection connection_;
+  client_connection connection_;
   scoped_ptr<google::protobuf::Message> request_;
 
   // Sends the response back to a function server through the reply function.
   // Takes ownership of the provided payload message.
-  void SendGenericResponse(const RpcResponseHeader& generic_rpc_response,
+  void send_generic_response(const rpc_response_header& generic_rpc_response,
                            zmq::message_t* payload) {
     size_t msg_size = generic_rpc_response.ByteSize();
     zmq::message_t* zmq_response_message = new zmq::message_t(msg_size);
@@ -91,25 +91,25 @@ class ServerChannelImpl : public ServerChannel {
             zmq_response_message->data(),
             msg_size));
 
-    MessageVector v;
+    message_vector v;
     v.push_back(zmq_response_message);
     v.push_back(payload);
-    connection_.Reply(&v);
+    connection_.reply(&v);
   }
 
-  friend class ProtoRpcService;
+  friend class proto_rpc_service;
 };
 
-class ProtoRpcService : public RpcService {
+class proto_rpc_service : public rpc_service {
  public:
-  explicit ProtoRpcService(Service* service) : service_(service) {
+  explicit proto_rpc_service(service* service) : service_(service) {
   }
 
-  virtual void DispatchRequest(const std::string& method,
+  virtual void dispatch_request(const std::string& method,
                                const void* payload, size_t payload_len,
-                               ServerChannel* channel_) {
-    scoped_ptr<ServerChannelImpl> channel(
-        static_cast<ServerChannelImpl*>(channel_));
+                               server_channel* channel_) {
+    scoped_ptr<server_channel_impl> channel(
+        static_cast<server_channel_impl*>(channel_));
 
     const ::google::protobuf::MethodDescriptor* descriptor =
         service_->GetDescriptor()->FindMethodByName(
@@ -117,7 +117,7 @@ class ProtoRpcService : public RpcService {
     if (descriptor == NULL) {
       // Invalid method name
       DLOG(INFO) << "Invalid method name: " << method,
-      channel->SendError(application_error::NO_SUCH_METHOD);
+      channel->send_error(application_error::NO_SUCH_METHOD);
       return;
     }
     channel->request_.reset(CHECK_NOTNULL(
@@ -125,62 +125,62 @@ class ProtoRpcService : public RpcService {
     if (!channel->request_->ParseFromArray(payload, payload_len)) {
       DLOG(INFO) << "Failed to parse request.";
       // Invalid proto;
-      channel->SendError(application_error::INVALID_MESSAGE);
+      channel->send_error(application_error::INVALID_MESSAGE);
       return;
     }
-    ServerChannelImpl* channel_ptr = channel.release();
-    service_->CallMethod(descriptor,
+    server_channel_impl* channel_ptr = channel.release();
+    service_->call_method(descriptor,
                          *channel_ptr->request_,
                          channel_ptr);
   }
 
  private:
-  scoped_ptr<Service> service_;
+  scoped_ptr<service> service_;
 };
 
-Server::Server(ConnectionManager* connection_manager)
+server::server(connection_manager* connection_manager)
   : connection_manager_(connection_manager) {
 }
 
-Server::~Server() {
-  DeleteContainerSecondPointer(service_map_.begin(),
-                               service_map_.end());
+server::~server() {
+  delete_container_second_pointer(service_map_.begin(),
+                                  service_map_.end());
 }
 
-void Server::RegisterService(rpcz::Service *service) {
-  RegisterService(service,
+void server::register_service(rpcz::service *service) {
+  register_service(service,
                   service->GetDescriptor()->name());
 }
 
-void Server::RegisterService(rpcz::Service *service, const std::string& name) {
-  RegisterService(new ProtoRpcService(service),
+void server::register_service(rpcz::service *service, const std::string& name) {
+  register_service(new proto_rpc_service(service),
                   name);
 }
 
-void Server::RegisterService(rpcz::RpcService *rpc_service,
+void server::register_service(rpcz::rpc_service *rpc_service,
                              const std::string& name) {
   service_map_[name] = rpc_service;
 }
 
-void Server::Bind(const std::string& endpoint) {
-  ConnectionManager::ServerFunction f = boost::bind(
-      &Server::HandleRequest, this, _1, _2);
-  connection_manager_->Bind(endpoint, f);
+void server::bind(const std::string& endpoint) {
+  connection_manager::server_function f = boost::bind(
+      &server::handle_request, this, _1, _2);
+  connection_manager_->bind(endpoint, f);
 }
 
-void Server::HandleRequest(const ClientConnection& connection,
-                           MessageIterator& iter) {
+void server::handle_request(const client_connection& connection,
+                           message_iterator& iter) {
   if (!iter.has_more()) {
     return;
   }
-  RpcRequestHeader rpc_request_header;
-  scoped_ptr<ServerChannel> channel(new ServerChannelImpl(connection));
+  rpc_request_header rpc_request_header;
+  scoped_ptr<server_channel> channel(new server_channel_impl(connection));
   {
     zmq::message_t& msg = iter.next();
     if (!rpc_request_header.ParseFromArray(msg.data(), msg.size())) {
-      // Handle bad RPC.
+      // Handle bad rpc.
       DLOG(INFO) << "Received bad header.";
-      channel->SendError(application_error::INVALID_HEADER);
+      channel->send_error(application_error::INVALID_HEADER);
       return;
     };
   }
@@ -192,16 +192,16 @@ void Server::HandleRequest(const ClientConnection& connection,
     return;
   }
 
-  RpcServiceMap::const_iterator service_it = service_map_.find(
+  rpc_service_map::const_iterator service_it = service_map_.find(
       rpc_request_header.service());
   if (service_it == service_map_.end()) {
     // Handle invalid service.
     DLOG(INFO) << "Invalid service: " << rpc_request_header.service();
-    channel->SendError(application_error::NO_SUCH_SERVICE);
+    channel->send_error(application_error::NO_SUCH_SERVICE);
     return;
   }
-  rpcz::RpcService* service = service_it->second;
-  service->DispatchRequest(rpc_request_header.method(),
+  rpcz::rpc_service* service = service_it->second;
+  service->dispatch_request(rpc_request_header.method(),
                            payload.data(), payload.size(),
                            channel.release());
 }

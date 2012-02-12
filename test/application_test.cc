@@ -21,24 +21,24 @@
 
 namespace rpcz {
 
-class ApplicationTest : public ::testing::Test {
+class application_test : public ::testing::Test {
  protected:
   void InitDefaultApp() {
-    application_.reset(new Application);
+    application_.reset(new application);
   }
 
-  scoped_ptr<Application> application_;
+  scoped_ptr<application> application_;
 };
 
-TEST_F(ApplicationTest, Initializes) {
+TEST_F(application_test, Initializes) {
   InitDefaultApp();
 }
 
-TEST_F(ApplicationTest, InitializesWithProvidedZeroMQContext) {
+TEST_F(application_test, InitializesWithProvidedZeroMQContext) {
   zmq::context_t* context = new zmq::context_t(1);
-  Application::Options options;
+  application::options options;
   options.zeromq_context = context;
-  application_.reset(new Application(options));
+  application_.reset(new application(options));
   application_.reset();
   delete context;
 }

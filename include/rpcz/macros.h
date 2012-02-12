@@ -32,7 +32,7 @@ using google::protobuf::int64;
 
 // Deletes each pointer in the range [begin, end)
 template<typename IteratorType>
-void DeleteContainerPointers(const IteratorType& begin,
+void delete_container_pointers(const IteratorType& begin,
                              const IteratorType& end) {
   for (IteratorType i = begin; i != end; ++i) {
     delete *i;
@@ -41,7 +41,7 @@ void DeleteContainerPointers(const IteratorType& begin,
 
 // For each item in the range [begin, end), delete item->first and item->second.
 template<typename IteratorType>
-void DeleteContainerPairPointers(const IteratorType& begin,
+void delete_container_pair_pointers(const IteratorType& begin,
                                  const IteratorType& end) {
   for (IteratorType i = begin; i != end; ++i) {
     delete i->first;
@@ -51,7 +51,7 @@ void DeleteContainerPairPointers(const IteratorType& begin,
 
 // For each item in the range [begin, end), delete item->second.
 template<typename IteratorType>
-void DeleteContainerSecondPointer(const IteratorType& begin,
+void delete_container_second_pointer(const IteratorType& begin,
                                   const IteratorType& end) {
   for (IteratorType i = begin; i != end; ++i) {
     delete i->second;

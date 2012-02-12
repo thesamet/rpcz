@@ -22,23 +22,23 @@
 
 namespace rpcz {
 
-// SyncEvent provides a mechanism for threads to wait for an event.
-class SyncEvent {
+// sync_event provides a mechanism for threads to wait for an event.
+class sync_event {
  public:
-  SyncEvent();
+  sync_event();
 
-  // Blocks the current thread until another thread calls Signal().
-  void Wait();
+  // Blocks the current thread until another thread calls signal().
+  void wait();
 
-  // Signals that the event has occured. All threads that called Wait() are
+  // Signals that the event has occured. All threads that called wait() are
   // released.
-  void Signal();
+  void signal();
 
  private:
   bool ready_;
   boost::mutex mu_;
   boost::condition_variable cond_;
-  DISALLOW_COPY_AND_ASSIGN(SyncEvent);
+  DISALLOW_COPY_AND_ASSIGN(sync_event);
 };
 
 }  // namespace rpcz

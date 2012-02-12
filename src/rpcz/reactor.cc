@@ -26,30 +26,30 @@
 namespace rpcz {
 namespace {
 static bool g_interrupted = false;
-void SignalHandler(int signal_value) {
+void signal_handler(int signal_value) {
   g_interrupted = true;
 }
 }  // unnamed namespace
 
-Reactor::Reactor() : should_quit_(false) {
+reactor::reactor() : should_quit_(false) {
 };
 
-Reactor::~Reactor() {
-  DeleteContainerPairPointers(sockets_.begin(), sockets_.end());
-  for (ClosureRunMap::const_iterator it = closure_run_map_.begin();
+reactor::~reactor() {
+  delete_container_pair_pointers(sockets_.begin(), sockets_.end());
+  for (closure_run_map::const_iterator it = closure_run_map_.begin();
        it != closure_run_map_.end(); ++it) {
-    DeleteContainerPointers(it->second.begin(), it->second.end());
+    delete_container_pointers(it->second.begin(), it->second.end());
   }
 }
 
-void Reactor::AddSocket(zmq::socket_t* socket, Closure* closure) {
+void reactor::add_socket(zmq::socket_t* socket, closure* closure) {
   sockets_.push_back(std::make_pair(socket, closure));
   is_dirty_ = true;
 }
 
 namespace {
-void RebuildPollItems(
-    const std::vector<std::pair<zmq::socket_t*, Closure*> >& sockets,
+void rebuild_poll_items(
+    const std::vector<std::pair<zmq::socket_t*, closure*> >& sockets,
     std::vector<zmq::pollitem_t>* pollitems) {
   pollitems->resize(sockets.size());
   for (size_t i = 0; i < sockets.size(); ++i) {
@@ -60,17 +60,17 @@ void RebuildPollItems(
 }
 }  // namespace
 
-void Reactor::RunClosureAt(uint64 timestamp, Closure* closure) {
+void reactor::run_closure_at(uint64 timestamp, closure* closure) {
   closure_run_map_[timestamp].push_back(closure);
 }
 
-int Reactor::Loop() {
+int reactor::loop() {
   while (!should_quit_ || !closure_run_map_.empty()) {
     if (is_dirty_) {
-      RebuildPollItems(sockets_, &pollitems_);
+      rebuild_poll_items(sockets_, &pollitems_);
       is_dirty_ = false;
     }
-    long poll_timeout = ProcessClosureRunMap();
+    long poll_timeout = process_closure_run_map();
 
     if (should_quit_) continue;
     int rc = zmq_poll(&pollitems_[0], pollitems_.size(), poll_timeout);
@@ -86,7 +86,7 @@ int Reactor::Loop() {
         continue;
       }
       pollitems_[i].revents = 0;
-      sockets_[i].second->Run();
+      sockets_[i].second->run();
     }
   }
   if (g_interrupted) {
@@ -96,15 +96,15 @@ int Reactor::Loop() {
   }
 }
 
-long Reactor::ProcessClosureRunMap() {
+long reactor::process_closure_run_map() {
   uint64 now = zclock_time();
-  ClosureRunMap::iterator ub(closure_run_map_.upper_bound(now));
-  for (ClosureRunMap::const_iterator it = closure_run_map_.begin();
+  closure_run_map::iterator ub(closure_run_map_.upper_bound(now));
+  for (closure_run_map::const_iterator it = closure_run_map_.begin();
        it != ub;
        ++it) {
-    for (std::vector<Closure*>::const_iterator vit = it->second.begin();
+    for (std::vector<closure*>::const_iterator vit = it->second.begin();
          vit != it->second.end(); ++vit) {
-      (*vit)->Run();
+      (*vit)->run();
     }
   }
   long poll_timeout = -1;
@@ -115,13 +115,13 @@ long Reactor::ProcessClosureRunMap() {
   return poll_timeout;
 }
 
-void Reactor::SetShouldQuit() {
+void reactor::set_should_quit() {
   should_quit_ = true;
 }
 
-void InstallSignalHandler() {
+void install_signal_handler() {
   struct sigaction action;
-  action.sa_handler = SignalHandler;
+  action.sa_handler = signal_handler;
   action.sa_flags = 0;
   sigemptyset(&action.sa_mask);
   sigaction(SIGINT, &action, NULL);

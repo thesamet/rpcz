@@ -24,11 +24,11 @@
 namespace rpcz {
 
 // A subclass of RpcService that helps forwarding the requests to Python-land.
-class PythonRpcService : public RpcService {
+class PythonRpcService : public rpc_service {
  public:
   typedef void(*Handler)(PyObject* user_data, std::string& method,
                          void* payload, size_t payload_len,
-                         ServerChannel* channel);
+                         server_channel* channel);
 
   PythonRpcService(Handler handler, PyObject *user_data)
       : user_data_(user_data), handler_(handler) {
@@ -39,9 +39,9 @@ class PythonRpcService : public RpcService {
     Py_DECREF(user_data_);
   }
 
-  virtual void DispatchRequest(const std::string& method,
-                               const void* payload, size_t payload_len,
-                               ServerChannel* channel) {
+  virtual void dispatch_request(const std::string& method,
+                                const void* payload, size_t payload_len,
+                                server_channel* channel) {
     handler_(user_data_,
              *const_cast<std::string*>(&method),
              const_cast<void*>(payload), payload_len, channel);

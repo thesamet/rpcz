@@ -23,44 +23,45 @@
 
 namespace rpcz {
 
-RPC::RPC()
+rpc::rpc()
     : status_(status::INACTIVE),
       application_error_code_(0),
       deadline_ms_(-1),
-      sync_event_(new SyncEvent()) {
+      sync_event_(new sync_event()) {
 };
 
-RPC::~RPC() {}
+rpc::~rpc() {}
 
-void RPC::SetFailed(int application_error, const std::string& error_message) {
-  SetStatus(status::APPLICATION_ERROR);
+void rpc::set_failed(int application_error, const std::string& error_message) {
+  set_status(status::APPLICATION_ERROR);
   error_message_ = error_message;
   application_error_code_ = application_error;
 }
 
-void RPC::SetStatus(Status status) {
+void rpc::set_status(status_code status) {
   status_ = status;
 }
 
-int RPC::Wait() {
-  Status status = GetStatus();
+int rpc::wait() {
+  status_code status = get_status();
   CHECK_NE(status, status::INACTIVE)
-      << "Request must be sent before calling Wait()";
+      << "Request must be sent before calling wait()";
   if (status != status::ACTIVE) {
-    return GetStatus();
+    return get_status();
   }
-  sync_event_->Wait();
+  sync_event_->wait();
   return 0;
 }
 
-std::string RPC::ToString() const {
+std::string rpc::to_string() const {
   std::string result =
-      "status: " + RpcResponseHeader_Status_Name(GetStatus());
-  if (GetStatus() == status::APPLICATION_ERROR) {
-    result += "(" + boost::lexical_cast<std::string>(GetApplicationErrorCode())
+      "status: " + rpc_response_header_status_code_Name(get_status());
+  if (get_status() == status::APPLICATION_ERROR) {
+    result += "(" + boost::lexical_cast<std::string>(
+            get_application_error_code())
            + ")";
   }
-  std::string error_message = GetErrorMessage();
+  std::string error_message = get_error_message();
   if (!error_message.empty()) {
     result += ": " + error_message;
   }

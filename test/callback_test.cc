@@ -26,7 +26,7 @@ void ZeroCallback() {
   called = true;
 }
 
-class TestObject {
+class test_object {
  public:
   void Method(int arg1, std::string arg2) {
     EXPECT_EQ(17, arg1);
@@ -36,17 +36,17 @@ class TestObject {
 };
 
 TEST(CallbackTest, TestCallbackSimple) {
-  Closure* c = NewCallback(&ZeroCallback);
+  closure* c = new_callback(&ZeroCallback);
   called = false;
-  c->Run();
+  c->run();
   EXPECT_TRUE(called);
 }
 
 TEST(CallbackTest, TestPermanentCallbackSimple) {
-  Closure* c = NewPermanentCallback(&ZeroCallback);
+  closure* c = new_permanent_callback(&ZeroCallback);
   for (int i = 1; i < 10; ++i) {
     called = false;
-    c->Run();
+    c->run();
     EXPECT_TRUE(called);
   }
   delete c;
@@ -54,22 +54,22 @@ TEST(CallbackTest, TestPermanentCallbackSimple) {
 }
 
 TEST(CallbackTest, TestMethodCallback) {
-  TestObject object;
+  test_object object;
   called = false;
-  Closure *c = NewCallback(&object, &TestObject::Method, 17,
+  closure *c = new_callback(&object, &test_object::Method, 17,
                            std::string("super!"));
-  c->Run();
+  c->run();
   EXPECT_TRUE(called);
 }
 
 TEST(CallbackTest, TestMethodPermanentCallback) {
-  TestObject object;
+  test_object object;
   called = false;
-  Closure *c = NewPermanentCallback(&object, &TestObject::Method, 17,
-                                    std::string("super!"));
+  closure *c = new_permanent_callback(&object, &test_object::Method, 17,
+                                      std::string("super!"));
   for (int i = 1; i < 10; ++i) {
     called = false;
-    c->Run();
+    c->run();
     EXPECT_TRUE(called);
   }
   delete c;

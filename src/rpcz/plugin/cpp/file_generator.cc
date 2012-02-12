@@ -67,9 +67,9 @@ void FileGenerator::GenerateHeader(io::Printer* printer) {
     "}  // namespace protobuf\n"
     "}  // namespace google\n"
     "namespace rpcz {\n"
-    "class RPC;\n"
-    "class Closure;\n"
-    "class RpcChannel;\n"
+    "class rpc;\n"
+    "class closure;\n"
+    "class rpc_channel;\n"
     "}  //namesacpe rpcz\n"
     ,
     "filename", file_->name(),

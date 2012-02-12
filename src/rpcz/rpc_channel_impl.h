@@ -22,45 +22,45 @@
 
 namespace rpcz {
 
-class Connection;
-class Closure;
-class MessageVector;
-struct RpcResponseContext;
+class connection;
+class closure;
+class message_vector;
+struct rpc_response_context;
 
-class RpcChannelImpl: public RpcChannel {
+class rpc_channel_impl: public rpc_channel {
  public:
-  RpcChannelImpl(Connection connection);
+  rpc_channel_impl(connection connection);
 
-  virtual ~RpcChannelImpl();
+  virtual ~rpc_channel_impl();
 
-  virtual void CallMethod(const std::string& service_name,
+  virtual void call_method(const std::string& service_name,
                           const google::protobuf::MethodDescriptor* method,
                           const google::protobuf::Message& request,
-                          google::protobuf::Message* response, RPC* rpc,
-                          Closure* done);
+                          google::protobuf::Message* response, rpc* rpc,
+                          closure* done);
 
-  virtual void CallMethod0(
+  virtual void call_method0(
       const std::string& service_name,
       const std::string& method_name,
       const std::string& request,
-      std::string* response, RPC* rpc, Closure* done);
+      std::string* response, rpc* rpc, closure* done);
 
  private:
-  virtual void HandleClientResponse(
-      RpcResponseContext response_context, ConnectionManager::Status status,
-      MessageIterator& iter);
+  virtual void handle_client_response(
+      rpc_response_context response_context, connection_manager::status status,
+      message_iterator& iter);
 
-  void CallMethodFull(
+  void call_method_full(
     const std::string& service_name,
     const std::string& method_name,
     const ::google::protobuf::Message* request_msg,
     const std::string& request,
     ::google::protobuf::Message* response_msg,
     std::string* response_str,
-    RPC* rpc,
-    Closure* done);
+    rpc* rpc,
+    closure* done);
 
-  Connection connection_;
+  connection connection_;
 };
 } // namespace rpcz
 #endif /* RPCZ_SIMPLE_RPC_CHANNEL_IMPL_H_ */

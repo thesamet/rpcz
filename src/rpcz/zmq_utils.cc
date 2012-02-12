@@ -30,18 +30,18 @@
 #include "rpcz/macros.h"
 
 namespace rpcz {
-std::string MessageToString(zmq::message_t& msg) {
+std::string message_to_string(zmq::message_t& msg) {
   return std::string((char*)msg.data(), msg.size());
 }
 
-zmq::message_t* StringToMessage(const std::string& str) {
+zmq::message_t* string_to_message(const std::string& str) {
   zmq::message_t* message = new zmq::message_t(str.length());
   memcpy(message->data(), str.c_str(), str.length());
   return message;
 }
 
-bool ReadMessageToVector(zmq::socket_t* socket,
-                         MessageVector* data) {
+bool read_message_to_vector(zmq::socket_t* socket,
+                            message_vector* data) {
   while (1) {
     zmq::message_t *msg = new zmq::message_t;
     socket->recv(msg, 0);
@@ -56,9 +56,9 @@ bool ReadMessageToVector(zmq::socket_t* socket,
   return true;
 }
 
-bool ReadMessageToVector(zmq::socket_t* socket,
-                         MessageVector* routes,
-                         MessageVector* data) {
+bool read_message_to_vector(zmq::socket_t* socket,
+                         message_vector* routes,
+                         message_vector* data) {
   bool first_part = true;
   while (1) {
     zmq::message_t *msg = new zmq::message_t;
@@ -80,9 +80,9 @@ bool ReadMessageToVector(zmq::socket_t* socket,
   }
 }
 
-void WriteVectorToSocket(zmq::socket_t* socket,
-                         MessageVector& data,
-                         int flags) {
+void write_vector_to_socket(zmq::socket_t* socket,
+                            message_vector& data,
+                            int flags) {
   for (size_t i = 0; i < data.size(); ++i) {
     socket->send(data[i], 
                  flags |
@@ -90,55 +90,55 @@ void WriteVectorToSocket(zmq::socket_t* socket,
   }
 }
 
-void WriteVectorsToSocket(zmq::socket_t* socket,
-                          MessageVector& routes,
-                          MessageVector& data) {
+void write_vectors_to_socket(zmq::socket_t* socket,
+                          message_vector& routes,
+                          message_vector& data) {
   CHECK_GE(data.size(), 1u);
-  WriteVectorToSocket(socket, routes, ZMQ_SNDMORE);
-  WriteVectorToSocket(socket, data, 0);
+  write_vector_to_socket(socket, routes, ZMQ_SNDMORE);
+  write_vector_to_socket(socket, data, 0);
 }
 
-bool SendEmptyMessage(zmq::socket_t* socket,
-                      int flags) {
+bool send_empty_message(zmq::socket_t* socket,
+                        int flags) {
   zmq::message_t message(0);
   return socket->send(message, flags);
 }
 
-bool SendString(zmq::socket_t* socket,
-                const std::string& str,
-                int flags) {
+bool send_string(zmq::socket_t* socket,
+                 const std::string& str,
+                 int flags) {
   zmq::message_t msg(str.size());
   str.copy((char*)msg.data(), str.size(), 0);
   return socket->send(msg, flags);
 }
 
-bool SendUint64(zmq::socket_t* socket,
-                google::protobuf::uint64 value,
-                int flags) {
+bool send_uint64(zmq::socket_t* socket,
+                 google::protobuf::uint64 value,
+                 int flags) {
   zmq::message_t msg(8);
   memcpy(msg.data(), &value, 8);
   return socket->send(msg, flags);
 }
 
-bool ForwardMessage(zmq::socket_t &socket_in,
-                    zmq::socket_t &socket_out) {
-  MessageVector routes;
-  MessageVector data;
-  CHECK(!ReadMessageToVector(&socket_in, &routes, &data));
-  WriteVectorToSocket(&socket_out, routes); 
+bool forward_message(zmq::socket_t &socket_in,
+                     zmq::socket_t &socket_out) {
+  message_vector routes;
+  message_vector data;
+  CHECK(!read_message_to_vector(&socket_in, &routes, &data));
+  write_vector_to_socket(&socket_out, routes); 
   return true;
 }
 
-void LogMessageVector(MessageVector& vector) {
+void log_message_vector(message_vector& vector) {
   LOG(INFO) << "---- " << vector.size() << "----";
   boost::hash<std::string> hash;
   for (int i = 0; i < vector.size(); ++i) {
-    std::string message(MessageToString(vector[i]));
+    std::string message(message_to_string(vector[i]));
     std::stringstream ss;
     ss << std::hex << hash(message);
     LOG(INFO) << "(" << vector[i].size() << "): " << "[" << ss.str()
         << "]: "
-        << MessageToString(vector[i]);
+        << message_to_string(vector[i]);
   }
   LOG(INFO) << "----------";
 }

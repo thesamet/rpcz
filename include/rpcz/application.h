@@ -25,17 +25,17 @@ class context_t;
 }  // namespace zmq
 
 namespace rpcz {
-class ConnectionManager;
-class RpcChannel;
-class Server;
+class connection_manager;
+class rpc_channel;
+class server;
 
-// rpcz::Application is a simple interface that helps setting up a common
+// rpcz::application is a simple interface that helps setting up a common
 // RPCZ client or server application.
-class Application {
+class application {
  public:
-  class Options {
+  class options {
    public:
-    Options() : connection_manager_threads(10),
+    options() : connection_manager_threads(10),
                 zeromq_context(NULL),
                 zeromq_io_threads(1) {}
 
@@ -43,9 +43,9 @@ class Application {
     // running user code: handling server requests or running callbacks.
     int connection_manager_threads;
 
-    // ZeroMQ context to use for our application. If NULL, then Application will
+    // ZeroMQ context to use for our application. If NULL, then application will
     // construct its own ZeroMQ context and own it. If you provide your own
-    // ZeroMQ context, Application will not take ownership of it. The ZeroMQ
+    // ZeroMQ context, application will not take ownership of it. The ZeroMQ
     // context must outlive the application.
     zmq::context_t* zeromq_context;
 
@@ -54,35 +54,35 @@ class Application {
     int zeromq_io_threads;
   };
 
-  Application();
+  application();
 
-  explicit Application(const Options& options);
+  explicit application(const options& options);
 
-  virtual ~Application();
+  virtual ~application();
 
-  // Creates an RpcChannel to the given endpoint. Attach it to a Stub and you
+  // Creates an rpc_channel to the given endpoint. Attach it to a Stub and you
   // can start making calls through this channel from any thread. No locking
   // needed. It is your responsibility to delete this object.
-  virtual RpcChannel* CreateRpcChannel(const std::string& endpoint);
+  virtual rpc_channel* create_rpc_channel(const std::string& endpoint);
 
   // Creates a server that listens to connection on the provided endpoint.
   // Call RegisterServer on the provided object to add services your
   // implemented, and then call Start(). The calling thread will start serving
   // requests (by forwarding them to the event manager).
-  virtual Server* CreateServer();
+  virtual server* create_server();
 
   // Blocks the current thread until another thread calls terminate.
-  virtual void Run();
+  virtual void run();
 
-  // Releases all the threads that are blocked inside Run()
-  virtual void Terminate();
+  // Releases all the threads that are blocked inside run()
+  virtual void terminate();
 
  private:
-  void Init(const Options& options);
+  void init(const options& options);
 
   bool owns_context_;
   zmq::context_t* context_;
-  scoped_ptr<ConnectionManager> connection_manager_;
+  scoped_ptr<connection_manager> connection_manager_;
 };
 }  // namespace rpcz
 #endif

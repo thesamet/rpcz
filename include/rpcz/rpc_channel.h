@@ -31,31 +31,31 @@ class MethodDescriptor;
 }  // namespace google
 
 namespace rpcz {
-class Closure;
-class Connection;
-class RPC;
+class closure;
+class connection;
+class rpc;
 
-class RpcChannel {
+class rpc_channel {
  public:
-  virtual void CallMethod(const std::string& service_name,
+  virtual void call_method(const std::string& service_name,
                           const google::protobuf::MethodDescriptor* method,
                           const google::protobuf::Message& request,
                           google::protobuf::Message* response,
-                          RPC* rpc,
-                          Closure* done) = 0;
+                          rpc* rpc,
+                          closure* done) = 0;
 
   // DO NOT USE: this method exists only for language bindings and may be
   // removed.
-  virtual void CallMethod0(const std::string& service_name,
+  virtual void call_method0(const std::string& service_name,
                            const std::string& method_name,
                            const std::string& request,
                            std::string* response,
-                           RPC* rpc,
-                           Closure* done) = 0;
+                           rpc* rpc,
+                           closure* done) = 0;
 
-  static RpcChannel* Create(Connection connection);
+  static rpc_channel* create(connection connection);
 
-  virtual ~RpcChannel() {};
+  virtual ~rpc_channel() {};
 };
 }  // namespace
 #endif

@@ -29,18 +29,18 @@ class message_t;
 
 namespace rpcz {
 
-class MessageIterator {
+class message_iterator {
  public:
-  explicit MessageIterator(zmq::socket_t& socket) :
+  explicit message_iterator(zmq::socket_t& socket) :
       socket_(socket), has_more_(true), more_size_(sizeof(has_more_)) { };
 
-  MessageIterator(const MessageIterator& other) :
+  message_iterator(const message_iterator& other) :
       socket_(other.socket_),
       has_more_(other.has_more_),
       more_size_(other.more_size_) {
   }
 
-  ~MessageIterator() {
+  ~message_iterator() {
     while (has_more()) next();
   }
 
@@ -58,10 +58,10 @@ class MessageIterator {
   int64_t has_more_;
   size_t more_size_;
 
-  MessageIterator& operator=(const MessageIterator&);
+  message_iterator& operator=(const message_iterator&);
 };
 
-class MessageVector {
+class message_vector {
  public:
   zmq::message_t& operator[](int index) {
     return data_[index];
@@ -70,8 +70,8 @@ class MessageVector {
   size_t size() const { return data_.size(); }
 
   // transfers points in the the range [from, to) from the other
-  // MessageVector to the beginning of this messsage vector.
-  void transfer(size_t from, size_t to, MessageVector& other) {
+  // message_vector to the beginning of this messsage vector.
+  void transfer(size_t from, size_t to, message_vector& other) {
     data_.transfer(data_.begin(),
                    other.data_.begin() + from, other.data_.begin() + to,
                    other.data_);
@@ -95,48 +95,48 @@ class MessageVector {
   DataType data_;
 };
 
-bool ReadMessageToVector(zmq::socket_t* socket,
-                         MessageVector* data);
+bool read_message_to_vector(zmq::socket_t* socket,
+                         message_vector* data);
 
-bool ReadMessageToVector(zmq::socket_t* socket,
-                         MessageVector* routes,
-                         MessageVector* data);
+bool read_message_to_vector(zmq::socket_t* socket,
+                         message_vector* routes,
+                         message_vector* data);
 
-void WriteVectorToSocket(zmq::socket_t* socket,
-                         MessageVector& data,
+void write_vector_to_socket(zmq::socket_t* socket,
+                         message_vector& data,
                          int flags=0);
 
-void WriteVectorsToSocket(zmq::socket_t* socket,
-                          MessageVector& routes,
-                          MessageVector& data);
+void write_vectors_to_socket(zmq::socket_t* socket,
+                          message_vector& routes,
+                          message_vector& data);
 
-std::string MessageToString(zmq::message_t& msg);
+std::string message_to_string(zmq::message_t& msg);
 
-zmq::message_t* StringToMessage(const std::string& str);
+zmq::message_t* string_to_message(const std::string& str);
 
-bool SendEmptyMessage(zmq::socket_t* socket,
+bool send_empty_message(zmq::socket_t* socket,
                       int flags=0);
 
-bool SendString(zmq::socket_t* socket,
+bool send_string(zmq::socket_t* socket,
                 const std::string& str,
                 int flags=0);
 
-bool SendUint64(zmq::socket_t* socket,
+bool send_uint64(zmq::socket_t* socket,
                 uint64 value,
                 int flags=0);
 
-bool ForwardMessage(zmq::socket_t &socket_in,
+bool forward_message(zmq::socket_t &socket_in,
                     zmq::socket_t &socket_out);
 
 template<typename T, typename Message>
-inline T& InterpretMessage(Message& msg) {
+inline T& interpret_message(Message& msg) {
   assert(msg.size() == sizeof(T));
   T &t = *static_cast<T*>(msg.data());
   return t;
 }
 
 template<typename T>
-inline bool SendPointer(zmq::socket_t* socket, T* ptr, int flags=0) {
+inline bool send_pointer(zmq::socket_t* socket, T* ptr, int flags=0) {
   zmq::message_t msg(sizeof(T*));
   memcpy(msg.data(), &ptr, sizeof(T*));
   return socket->send(msg, flags);
@@ -144,27 +144,27 @@ inline bool SendPointer(zmq::socket_t* socket, T* ptr, int flags=0) {
 
 namespace internal {
 template<typename T>
-void DeleteT(void* data, void* hint) {
+void delete_t(void* data, void* hint) {
   delete (T*)data;
 }
 }
 
 template<typename T>
-inline bool SendObject(zmq::socket_t* socket, const T& object, int flags=0) {
+inline bool send_object(zmq::socket_t* socket, const T& object, int flags=0) {
   T* clone = new T(object);
-  zmq::message_t msg(clone, sizeof(*clone), &rpcz::internal::DeleteT<T>);
+  zmq::message_t msg(clone, sizeof(*clone), &rpcz::internal::delete_t<T>);
   return socket->send(msg, flags);
 }
 
-inline bool SendChar(zmq::socket_t* socket, char ch, int flags=0) {
+inline bool send_char(zmq::socket_t* socket, char ch, int flags=0) {
   zmq::message_t msg(1);
   *(char*)msg.data() = ch;
   return socket->send(msg, flags);
 }
 
-void LogMessageVector(MessageVector& vector);
+void log_message_vector(message_vector& vector);
 
-inline void ForwardMessages(MessageIterator& iter, zmq::socket_t& socket) {
+inline void forward_messages(message_iterator& iter, zmq::socket_t& socket) {
   while (iter.has_more()) {
     zmq::message_t& msg = iter.next();
     socket.send(msg, iter.has_more() ? ZMQ_SNDMORE : 0);

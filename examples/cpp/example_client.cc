@@ -22,8 +22,8 @@
 using namespace std;
 
 int main() {
-  rpcz::Application application;
-  examples::SearchService_Stub search_stub(application.CreateRpcChannel(
+  rpcz::application application;
+  examples::SearchService_Stub search_stub(application.create_rpc_channel(
           "tcp://localhost:5555"), true);
   examples::SearchRequest request;
   examples::SearchResponse response;
@@ -33,7 +33,7 @@ int main() {
   try {
     search_stub.Search(request, &response, 1000);
     cout << response.DebugString() << endl;
-  } catch (rpcz::RpcError &e) {
+  } catch (rpcz::rpc_error &e) {
     cout << "Error: " << e.what() << endl;;
   }
 }
