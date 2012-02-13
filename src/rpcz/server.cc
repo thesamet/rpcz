@@ -14,7 +14,7 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "rpcz/server.h"
+#include "rpcz/server.hpp"
 #include <signal.h>
 #include <string.h>
 #include <sys/errno.h>
@@ -29,14 +29,14 @@
 #include <google/protobuf/stubs/common.h>
 #include <zmq.hpp>
 
-#include "rpcz/callback.h"
-#include "rpcz/connection_manager.h"
-#include "rpcz/logging.h"
-#include "rpcz/macros.h"
-#include "rpcz/rpc.h"
-#include "rpcz/reactor.h"
-#include "rpcz/service.h"
-#include "rpcz/zmq_utils.h"
+#include "rpcz/callback.hpp"
+#include "rpcz/connection_manager.hpp"
+#include "rpcz/logging.hpp"
+#include "rpcz/macros.hpp"
+#include "rpcz/rpc.hpp"
+#include "rpcz/reactor.hpp"
+#include "rpcz/service.hpp"
+#include "rpcz/zmq_utils.hpp"
 #include "rpcz/rpcz.pb.h"
 
 namespace rpcz {

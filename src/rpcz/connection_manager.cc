@@ -14,7 +14,7 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "rpcz/connection_manager.h"
+#include "rpcz/connection_manager.hpp"
 
 #include <algorithm>
 #include <boost/lexical_cast.hpp>
@@ -33,12 +33,12 @@
 #include "zmq.hpp"
 
 #include "google/protobuf/stubs/common.h"
-#include "rpcz/callback.h"
-#include "rpcz/clock.h"
-#include "rpcz/logging.h"
-#include "rpcz/macros.h"
-#include "rpcz/reactor.h"
-#include "rpcz/zmq_utils.h"
+#include "rpcz/callback.hpp"
+#include "rpcz/clock.hpp"
+#include "rpcz/logging.hpp"
+#include "rpcz/macros.hpp"
+#include "rpcz/reactor.hpp"
+#include "rpcz/zmq_utils.hpp"
 
 namespace rpcz {
 namespace {

@@ -23,11 +23,11 @@
 #include <stdio.h>
 #include <zmq.hpp>
 #include "gtest/gtest.h"
-#include "rpcz/callback.h"
-#include "rpcz/connection_manager.h"
-#include "rpcz/macros.h"
-#include "rpcz/sync_event.h"
-#include "rpcz/zmq_utils.h"
+#include "rpcz/callback.hpp"
+#include "rpcz/connection_manager.hpp"
+#include "rpcz/macros.hpp"
+#include "rpcz/sync_event.hpp"
+#include "rpcz/zmq_utils.hpp"
 
 
 namespace rpcz {

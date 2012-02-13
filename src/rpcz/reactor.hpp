@@ -20,7 +20,7 @@
 #include <map>
 #include <vector>
 #include "zmq.hpp"
-#include "rpcz/macros.h"
+#include "rpcz/macros.hpp"
 
 namespace rpcz {
 

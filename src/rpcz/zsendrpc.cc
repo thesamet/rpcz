@@ -21,10 +21,10 @@
 #include <google/protobuf/compiler/importer.h>
 #include <google/protobuf/dynamic_message.h>
 #include <google/protobuf/text_format.h>
-#include "rpcz/application.h"
-#include "rpcz/rpc_channel.h"
-#include "rpcz/service.h"
-#include "rpcz/rpc.h"
+#include "rpcz/application.hpp"
+#include "rpcz/rpc_channel.hpp"
+#include "rpcz/service.hpp"
+#include "rpcz/rpc.hpp"
 
 using google::protobuf::DynamicMessageFactory;
 using google::protobuf::FileDescriptor;

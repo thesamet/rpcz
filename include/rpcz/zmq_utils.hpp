@@ -20,7 +20,7 @@
 #include <string>
 #include "boost/ptr_container/ptr_vector.hpp"
 #include "zmq.hpp"
-#include "rpcz/macros.h"
+#include "rpcz/macros.hpp"
 
 namespace zmq {
 class socket_t;

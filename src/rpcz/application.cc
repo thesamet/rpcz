@@ -16,10 +16,10 @@
 
 #include <string>
 #include <zmq.hpp>
-#include "rpcz/application.h"
-#include "rpcz/connection_manager.h"
-#include "rpcz/rpc_channel.h"
-#include "rpcz/server.h"
+#include "rpcz/application.hpp"
+#include "rpcz/connection_manager.hpp"
+#include "rpcz/rpc_channel.hpp"
+#include "rpcz/server.hpp"
 
 namespace rpcz {
 

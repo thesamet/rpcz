@@ -58,7 +58,7 @@ void FileGenerator::GenerateHeader(io::Printer* printer) {
     "#define RPCZ_$filename_identifier$__INCLUDED\n"
     "\n"
     "#include <string>\n"
-    "#include <rpcz/service.h>\n"
+    "#include <rpcz/service.hpp>\n"
     "\n"
     "namespace google {\n"
     "namespace protobuf {\n"
@@ -114,10 +114,7 @@ void FileGenerator::GenerateSource(io::Printer* printer) {
     "#include \"$basename$.pb.h\"\n"
     "#include <google/protobuf/descriptor.h>\n"
     "#include <google/protobuf/stubs/once.h>\n"
-    "#include <rpcz/callback.h>\n"
-    "#include <rpcz/rpc.h>\n"
-    "#include <rpcz/rpc_channel.h>\n"
-    "#include <rpcz/service.h>\n"
+    "#include <rpcz/rpcz.hpp>\n"
     "namespace {\n",
     "basename", StripProto(file_->name()));
 

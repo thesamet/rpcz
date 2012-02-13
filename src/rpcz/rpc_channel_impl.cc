@@ -16,13 +16,13 @@
 
 #include <google/protobuf/descriptor.h>
 #include <zmq.hpp>
-#include "rpcz/callback.h"
-#include "rpcz/connection_manager.h"
-#include "rpcz/logging.h"
-#include "rpcz/rpc.h"
-#include "rpcz/rpc_channel_impl.h"
-#include "rpcz/sync_event.h"
-#include "rpcz/zmq_utils.h"
+#include "rpcz/callback.hpp"
+#include "rpcz/connection_manager.hpp"
+#include "rpcz/logging.hpp"
+#include "rpcz/rpc.hpp"
+#include "rpcz/rpc_channel_impl.hpp"
+#include "rpcz/sync_event.hpp"
+#include "rpcz/zmq_utils.hpp"
 
 namespace rpcz {
 

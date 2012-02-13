@@ -21,7 +21,7 @@
 #include <set>
 
 #include "google/protobuf/stubs/common.h"
-#include "rpcz/macros.h"
+#include "rpcz/macros.hpp"
 
 namespace google {
 namespace protobuf {

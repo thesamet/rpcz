@@ -18,15 +18,15 @@
 #define RPCZ_RPCZ_H
 
 // Master include file
-#include "rpcz/application.h"
-#include "rpcz/callback.h"
-#include "rpcz/connection_manager.h"
-#include "rpcz/macros.h"
-#include "rpcz/rpc.h"
-#include "rpcz/rpc_channel.h"
-#include "rpcz/server.h"
-#include "rpcz/service.h"
-#include "rpcz/sync_event.h"
+#include "rpcz/application.hpp"
+#include "rpcz/callback.hpp"
+#include "rpcz/connection_manager.hpp"
+#include "rpcz/macros.hpp"
+#include "rpcz/rpc.hpp"
+#include "rpcz/rpc_channel.hpp"
+#include "rpcz/server.hpp"
+#include "rpcz/service.hpp"
+#include "rpcz/sync_event.hpp"
 
 // Two include files were intentionally left out since they rely on ZeroMQ
 // headers being around and probably most people will not need this low-level

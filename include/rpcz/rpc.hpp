@@ -20,7 +20,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "rpcz/macros.h"
+#include "rpcz/macros.hpp"
 #include "rpcz/rpcz.pb.h"
 
 namespace rpcz {

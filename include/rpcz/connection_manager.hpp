@@ -20,8 +20,8 @@
 #include <string>
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
-#include "rpcz/macros.h"
-#include "rpcz/sync_event.h"
+#include "rpcz/macros.hpp"
+#include "rpcz/sync_event.hpp"
 
 namespace zmq {
 class context_t;

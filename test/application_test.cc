@@ -15,8 +15,8 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include "zmq.hpp"
-#include "rpcz/application.h"
-#include "rpcz/macros.h"
+#include "rpcz/application.hpp"
+#include "rpcz/macros.hpp"
 #include "gtest/gtest.h"
 
 namespace rpcz {

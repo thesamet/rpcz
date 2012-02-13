@@ -14,7 +14,7 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "rpcz/callback.h"
+#include "rpcz/callback.hpp"
 
 #include <string>
 #include "gtest/gtest.h"

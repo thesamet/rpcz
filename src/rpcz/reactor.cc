@@ -14,13 +14,13 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "rpcz/reactor.h"
+#include "rpcz/reactor.hpp"
 #include <signal.h>
 #include <vector>
-#include "rpcz/callback.h"
-#include "rpcz/clock.h"
-#include "rpcz/logging.h"
-#include "rpcz/macros.h"
+#include "rpcz/callback.hpp"
+#include "rpcz/clock.hpp"
+#include "rpcz/logging.hpp"
+#include "rpcz/macros.hpp"
 #include "zmq.hpp"
 
 namespace rpcz {

@@ -17,7 +17,7 @@
 #ifndef RPCZ_SERVER_H
 #define RPCZ_SERVER_H
 
-#include "rpcz/macros.h"
+#include "rpcz/macros.hpp"
 #include "rpcz/rpcz.pb.h"
 
 namespace zmq {

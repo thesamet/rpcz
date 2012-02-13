@@ -6,11 +6,11 @@ cdef extern from "Python.h":
     void PyEval_InitThreads()
 
 
-cdef extern from "rpcz/connection_manager.h" namespace "rpcz":
+cdef extern from "rpcz/connection_manager.hpp" namespace "rpcz":
     cdef void install_signal_handler()
 
 
-cdef extern from "rpcz/callback.h" namespace "rpcz":
+cdef extern from "rpcz/callback.hpp" namespace "rpcz":
   pass
 
 
@@ -48,12 +48,12 @@ cdef string_to_pystring(string s):
     return s.c_str()[:s.size()]
 
 
-cdef extern from "rpcz/sync_event.h" namespace "rpcz":
+cdef extern from "rpcz/sync_event.hpp" namespace "rpcz":
     cdef cppclass _sync_event "rpcz::sync_event":
         void signal() nogil
         void wait() nogil
 
-cdef extern from "rpcz/rpc.h" namespace "rpcz":
+cdef extern from "rpcz/rpc.hpp" namespace "rpcz":
     cdef cppclass _rpc "rpcz::rpc":
         bint ok()
         int get_status()
@@ -103,7 +103,7 @@ cdef struct ClosureWrapper:
     void* rpc
 
 
-cdef extern from "rpcz/macros.h" namespace "rpcz":
+cdef extern from "rpcz/macros.hpp" namespace "rpcz":
     cdef cppclass closure:
         pass
 
@@ -128,7 +128,7 @@ cdef void python_callback_bridge(ClosureWrapper *closure_wrapper) with gil:
     free(closure_wrapper)
 
 
-cdef extern from "rpcz/rpc_channel.h" namespace "rpcz":
+cdef extern from "rpcz/rpc_channel.hpp" namespace "rpcz":
     cdef cppclass _rpc_channel "rpcz::rpc_channel":
         void call_method0(string service_name, string method_name,
                           string request, string* response, _rpc* rpc, 
@@ -163,7 +163,7 @@ cdef class RpcChannel:
                     python_callback_bridge, closure_wrapper))
 
 
-cdef extern from "rpcz/service.h" namespace "rpcz":
+cdef extern from "rpcz/service.hpp" namespace "rpcz":
   cdef cppclass _server_channel "rpcz::server_channel":
     void send_error(int, string)
     void send0(string)
@@ -201,12 +201,12 @@ cdef void rpc_handler_bridge(user_data, string& method,
                          channel_)
 
 
-cdef extern from "python_rpc_service.h" namespace "rpcz":
+cdef extern from "python_rpc_service.hpp" namespace "rpcz":
     cdef cppclass PythonRpcService:
         PythonRpcService(Handler, object)
 
 
-cdef extern from "rpcz/rpcz.h" namespace "rpcz":
+cdef extern from "rpcz/rpcz.hpp" namespace "rpcz":
     cdef cppclass _server "rpcz::server":
         void register_service(PythonRpcService*, string name)
         void bind(string endpoint)
@@ -227,7 +227,7 @@ cdef class Server:
         self.thisptr.bind(make_string(endpoint))
 
 
-cdef extern from "rpcz/rpcz.h" namespace "rpcz":
+cdef extern from "rpcz/rpcz.hpp" namespace "rpcz":
     cdef cppclass _Application "rpcz::application":
         _Application()
         _rpc_channel* create_rpc_channel(string)

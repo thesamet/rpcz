@@ -18,7 +18,7 @@
 #define RPCZ_APPLICATION_H
 
 #include <string>
-#include "rpcz/macros.h"
+#include "rpcz/macros.hpp"
 
 namespace zmq {
 class context_t; 

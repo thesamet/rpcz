@@ -15,10 +15,10 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include "boost/lexical_cast.hpp"
-#include "rpcz/logging.h"
-#include "rpcz/reactor.h"
-#include "rpcz/rpc.h"
-#include "rpcz/sync_event.h"
+#include "rpcz/logging.hpp"
+#include "rpcz/reactor.hpp"
+#include "rpcz/rpc.hpp"
+#include "rpcz/sync_event.hpp"
 #include "rpcz/rpcz.pb.h"
 
 namespace rpcz {

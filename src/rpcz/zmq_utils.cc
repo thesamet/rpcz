@@ -14,7 +14,7 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "rpcz/zmq_utils.h"
+#include "rpcz/zmq_utils.hpp"
 #include <boost/functional/hash.hpp>
 #include <sstream>
 #include <stddef.h>
@@ -26,8 +26,8 @@
 
 #include "google/protobuf/stubs/common.h"
 #include "zmq.hpp"
-#include "rpcz/logging.h"
-#include "rpcz/macros.h"
+#include "rpcz/logging.hpp"
+#include "rpcz/macros.hpp"
 
 namespace rpcz {
 std::string message_to_string(zmq::message_t& msg) {

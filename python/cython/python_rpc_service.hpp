@@ -19,7 +19,7 @@
 
 #include <string>
 #include "Python.h"
-#include "rpcz/rpcz.h"
+#include "rpcz/rpcz.hpp"
 
 namespace rpcz {
 

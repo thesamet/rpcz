@@ -14,7 +14,7 @@
 //
 // Author: nadavs@google.com <Nadav Samet>
 
-#include "clock.h"
+#include "rpcz/clock.hpp"
 #include <sys/time.h>
 
 namespace rpcz {

@@ -20,12 +20,12 @@
 #include <gtest/gtest.h>
 #include <zmq.hpp>
 
-#include "rpcz/callback.h"
-#include "rpcz/connection_manager.h"
-#include "rpcz/rpc_channel.h"
-#include "rpcz/rpc.h"
-#include "rpcz/server.h"
-#include "rpcz/sync_event.h"
+#include "rpcz/callback.hpp"
+#include "rpcz/connection_manager.hpp"
+#include "rpcz/rpc_channel.hpp"
+#include "rpcz/rpc.hpp"
+#include "rpcz/server.hpp"
+#include "rpcz/sync_event.hpp"
 
 #include "proto/search.pb.h"
 #include "proto/search.rpcz.h"
