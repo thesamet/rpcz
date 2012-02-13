@@ -29,6 +29,7 @@
 #include <google/protobuf/stubs/common.h>
 #include <zmq.hpp>
 
+#include "rpcz/application.hpp"
 #include "rpcz/callback.hpp"
 #include "rpcz/connection_manager.hpp"
 #include "rpcz/logging.hpp"
@@ -138,7 +139,11 @@ class proto_rpc_service : public rpc_service {
   scoped_ptr<service> service_;
 };
 
-server::server(connection_manager* connection_manager)
+server::server(application& application)
+  : connection_manager_(*application.connection_manager_.get()) {
+}
+
+server::server(connection_manager& connection_manager)
   : connection_manager_(connection_manager) {
 }
 
@@ -158,18 +163,18 @@ void server::register_service(rpcz::service *service, const std::string& name) {
 }
 
 void server::register_service(rpcz::rpc_service *rpc_service,
-                             const std::string& name) {
+                              const std::string& name) {
   service_map_[name] = rpc_service;
 }
 
 void server::bind(const std::string& endpoint) {
   connection_manager::server_function f = boost::bind(
       &server::handle_request, this, _1, _2);
-  connection_manager_->bind(endpoint, f);
+  connection_manager_.bind(endpoint, f);
 }
 
 void server::handle_request(const client_connection& connection,
-                           message_iterator& iter) {
+                            message_iterator& iter) {
   if (!iter.has_more()) {
     return;
   }

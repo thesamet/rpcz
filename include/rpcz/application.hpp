@@ -65,12 +65,6 @@ class application {
   // needed. It is your responsibility to delete this object.
   virtual rpc_channel* create_rpc_channel(const std::string& endpoint);
 
-  // Creates a server that listens to connection on the provided endpoint.
-  // Call RegisterServer on the provided object to add services your
-  // implemented, and then call Start(). The calling thread will start serving
-  // requests (by forwarding them to the event manager).
-  virtual server* create_server();
-
   // Blocks the current thread until another thread calls terminate.
   virtual void run();
 
@@ -83,6 +77,7 @@ class application {
   bool owns_context_;
   zmq::context_t* context_;
   scoped_ptr<connection_manager> connection_manager_;
+  friend class server;
 };
 }  // namespace rpcz
 #endif

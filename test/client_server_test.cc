@@ -112,8 +112,8 @@ class server_test : public ::testing::Test {
   server_test() :
       context_(new zmq::context_t(1)),
       cm_(new connection_manager(context_.get(), 10)),
-      frontend_server_(cm_.get()),
-      backend_server_(cm_.get()) {
+      frontend_server_(*cm_.get()),
+      backend_server_(*cm_.get()) {
     start_server();
   }
 
@@ -138,7 +138,7 @@ class server_test : public ::testing::Test {
   }
 
   SearchResponse send_blocking_request(connection connection,
-                                     const std::string& query) {
+                                       const std::string& query) {
     SearchService_Stub stub(rpc_channel::create(connection), true);
     SearchRequest request;
     SearchResponse response;

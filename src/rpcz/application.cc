@@ -56,11 +56,6 @@ rpc_channel* application::create_rpc_channel(const std::string& endpoint) {
       connection_manager_->connect(endpoint));
 }
 
-server* application::create_server() {
-  server* server = new rpcz::server(connection_manager_.get());
-  return server;
-}
-
 void application::run() {
   connection_manager_->run();
 }

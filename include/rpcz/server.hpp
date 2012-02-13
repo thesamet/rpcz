@@ -25,6 +25,7 @@ class socket_t;
 };
 
 namespace rpcz {
+class application;
 class client_connection;
 class connection_manager;
 class message_iterator;
@@ -32,17 +33,17 @@ class rpc_service;
 class server_channel;
 class service;
 
-// server receives incoming rpc requests on a socket. When such a request
-// arrives it forwards it to an event manager for processing, and later passes
-// the response back to the caller. This class is not thread-safe: construct it
-// and use it from a single thread.
+// A server object maps incoming RPC requests to a provided service interface.
+// The service interface methods are executed inside a worker thread.
 class server {
  public:
-  // Creates a server that will receive requests from the given socket that has
-  // already been bound to some endpoint. We assume that the socket is of ROUTER
-  // type. The provided event manager will be used to handle the requests.
-  // The server takes ownership of the socket, but not of event_manager.
-  server(connection_manager* connection_manager);
+  // Constructs a server that uses the provided application. The
+  // application must outlive the server.
+  explicit server(application& application);
+
+  // Constructs a server that uses the provided connection_manager. The
+  // connection_manager must outlive the server.
+  explicit server(connection_manager& connection_manager);
 
   ~server();
 
@@ -61,9 +62,9 @@ class server {
 
  private:
   void handle_request(const client_connection& connection,
-                     message_iterator& iter);
+                      message_iterator& iter);
 
-  connection_manager* connection_manager_;
+  connection_manager& connection_manager_;
   typedef std::map<std::string, rpcz::rpc_service*> rpc_service_map;
   rpc_service_map service_map_;
   DISALLOW_COPY_AND_ASSIGN(server);

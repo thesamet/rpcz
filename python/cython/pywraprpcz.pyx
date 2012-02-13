@@ -1,4 +1,5 @@
 from cpython cimport Py_DECREF, Py_INCREF
+from cython.operator cimport dereference as deref
 from libc.stdlib cimport malloc, free
 
 
@@ -207,16 +208,41 @@ cdef extern from "python_rpc_service.hpp" namespace "rpcz":
 
 
 cdef extern from "rpcz/rpcz.hpp" namespace "rpcz":
+    cdef cppclass _application "rpcz::application":
+        _application()
+        _rpc_channel* create_rpc_channel(string)
+        void terminate()
+        void run() nogil
+
+
+cdef class Application:
+    cdef _application *thisptr
+    def __cinit__(self):
+        self.thisptr = new _application()
+    def __dealloc__(self):
+        del self.thisptr
+    def create_rpc_channel(self, endpoint):
+        cdef RpcChannel channel = RpcChannel.__new__(RpcChannel)
+        channel.thisptr = self.thisptr.create_rpc_channel(make_string(endpoint))
+        return channel
+    def terminate(self):
+        self.thisptr.terminate()
+    def run(self):
+        with nogil:
+            self.thisptr.run()
+
+
+cdef extern from "rpcz/rpcz.hpp" namespace "rpcz":
     cdef cppclass _server "rpcz::server":
+        _server(_application&)
         void register_service(PythonRpcService*, string name)
         void bind(string endpoint)
 
 
 cdef class Server:
     cdef _server *thisptr
-    def __init__(self):
-        raise TypeError("Use Application.CreateServer to create a "
-                        "Server.")
+    def __cinit__(self, Application application):
+        self.thisptr = new _server(deref(application.thisptr))
     def __dealloc__(self):
         del self.thisptr
     def register_service(self, service, name=None):
@@ -227,35 +253,3 @@ cdef class Server:
         self.thisptr.bind(make_string(endpoint))
 
 
-cdef extern from "rpcz/rpcz.hpp" namespace "rpcz":
-    cdef cppclass _Application "rpcz::application":
-        _Application()
-        _rpc_channel* create_rpc_channel(string)
-        _server* create_server()
-        void terminate()
-        void run() nogil
-
-
-cdef class Application:
-    cdef _Application *thisptr
-    def __cinit__(self):
-        self.thisptr = new _Application()
-    def __dealloc__(self):
-        del self.thisptr
-
-    def create_rpc_channel(self, endpoint):
-        cdef RpcChannel channel = RpcChannel.__new__(RpcChannel)
-        channel.thisptr = self.thisptr.create_rpc_channel(make_string(endpoint))
-        return channel
-
-    def create_server(self):
-        cdef Server server = Server.__new__(Server)
-        server.thisptr = self.thisptr.create_server()
-        return server
-
-    def terminate(self):
-        self.thisptr.terminate()
-
-    def run(self):
-        with nogil:
-            self.thisptr.run()
