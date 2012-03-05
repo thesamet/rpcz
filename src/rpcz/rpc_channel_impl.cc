@@ -38,7 +38,7 @@ rpc_channel_impl::~rpc_channel_impl() {
 }
 
 struct rpc_response_context {
-  rpc* rpc;
+  rpc* rpc_;
   ::google::protobuf::Message* response_msg;
   std::string* response_str;
   closure* user_closure;
@@ -51,9 +51,9 @@ void rpc_channel_impl::call_method_full(
     const std::string& request,
     ::google::protobuf::Message* response_msg,
     std::string* response_str,
-    rpc* rpc,
+    rpc* rpc_,
     closure* done) {
-  CHECK_EQ(rpc->get_status(), status::INACTIVE);
+  CHECK_EQ(rpc_->get_status(), status::INACTIVE);
   rpc_request_header generic_request;
   generic_request.set_service(service_name);
   generic_request.set_method(method_name);
@@ -79,15 +79,15 @@ void rpc_channel_impl::call_method_full(
   msg_vector.push_back(payload_out.release());
 
   rpc_response_context response_context;
-  response_context.rpc = rpc;
+  response_context.rpc_ = rpc_;
   response_context.user_closure = done;
   response_context.response_str = response_str;
   response_context.response_msg = response_msg;
-  rpc->set_status(status::ACTIVE);
+  rpc_->set_status(status::ACTIVE);
 
   connection_.send_request(
       msg_vector,
-      rpc->get_deadline_ms(),
+      rpc_->get_deadline_ms(),
       bind(&rpc_channel_impl::handle_client_response, this,
            response_context, _1, _2));
 }
@@ -130,33 +130,33 @@ void rpc_channel_impl::handle_client_response(
     message_iterator& iter) {
   switch (status) {
     case connection_manager::DEADLINE_EXCEEDED:
-      response_context.rpc->set_status(
+      response_context.rpc_->set_status(
           status::DEADLINE_EXCEEDED);
       break;
     case connection_manager::DONE: {
         if (!iter.has_more()) {
-          response_context.rpc->set_failed(application_error::INVALID_MESSAGE,
+          response_context.rpc_->set_failed(application_error::INVALID_MESSAGE,
                                            "");
           break;
         }
         rpc_response_header generic_response;
         zmq::message_t& msg_in = iter.next();
         if (!generic_response.ParseFromArray(msg_in.data(), msg_in.size())) {
-          response_context.rpc->set_failed(application_error::INVALID_MESSAGE,
+          response_context.rpc_->set_failed(application_error::INVALID_MESSAGE,
                                            "");
           break;
         }
         if (generic_response.status() != status::OK) {
-          response_context.rpc->set_failed(generic_response.application_error(),
+          response_context.rpc_->set_failed(generic_response.application_error(),
                                            generic_response.error());
         } else {
-          response_context.rpc->set_status(status::OK);
+          response_context.rpc_->set_status(status::OK);
           zmq::message_t& payload = iter.next();
           if (response_context.response_msg) {
             if (!response_context.response_msg->ParseFromArray(
                     payload.data(),
                     payload.size())) {
-              response_context.rpc->set_failed(application_error::INVALID_MESSAGE,
+              response_context.rpc_->set_failed(application_error::INVALID_MESSAGE,
                                               "");
               break;
             }
@@ -177,7 +177,7 @@ void rpc_channel_impl::handle_client_response(
   }
   // We call signal() before we execute closure since the closure may delete
   // the rpc object (which contains the sync_event).
-  response_context.rpc->sync_event_->signal();
+  response_context.rpc_->sync_event_->signal();
   if (response_context.user_closure) {
     response_context.user_closure->run();
   }
