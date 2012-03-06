@@ -67,8 +67,8 @@ class event_id_generator {
 //
 // Message sent from outside to the broker thread:
 const char kRequest = 0x01;      // send request to a connected socket.
-const char kconnect = 0x02;      // connect to a given endpoint.
-const char kbind    = 0x03;      // bind to an endpoint.
+const char kConnect = 0x02;      // connect to a given endpoint.
+const char kBind    = 0x03;      // bind to an endpoint.
 const char kReply   = 0x04;      // reply to a request
 const char kQuit    = 0x0f;      // Starts the quit second.
 
@@ -222,15 +222,17 @@ class connection_manager_thread {
           send_char(frontend_socket_, kWorkerQuit, 0);
         }
         break;
-      case kconnect: 
+      case kConnect:
         handle_connect_command(sender, message_to_string(iter.next()));
         break;
-      case kbind: 
-        handle_bind_command(
-            sender, message_to_string(iter.next()),
+      case kBind: {
+        std::string endpoint(message_to_string(iter.next()));
+        connection_manager::server_function sf(
             interpret_message<connection_manager::server_function>(
-                              iter.next()));
+                iter.next()));
+        handle_bind_command(sender, endpoint, sf);
         break;
+      }
       case kRequest:
         send_request(iter);
         break;
@@ -421,7 +423,7 @@ zmq::socket_t& connection_manager::get_frontend_socket() {
 connection connection_manager::connect(const std::string& endpoint) {
   zmq::socket_t& socket = get_frontend_socket();
   send_empty_message(&socket, ZMQ_SNDMORE);
-  send_char(&socket, kconnect, ZMQ_SNDMORE);
+  send_char(&socket, kConnect, ZMQ_SNDMORE);
   send_string(&socket, endpoint, 0);
   zmq::message_t msg;
   socket.recv(&msg);
@@ -434,7 +436,7 @@ void connection_manager::bind(const std::string& endpoint,
                              server_function function) {
   zmq::socket_t& socket = get_frontend_socket();
   send_empty_message(&socket, ZMQ_SNDMORE);
-  send_char(&socket, kbind, ZMQ_SNDMORE);
+  send_char(&socket, kBind, ZMQ_SNDMORE);
   send_string(&socket, endpoint, ZMQ_SNDMORE);
   send_object(&socket, function, 0);
   zmq::message_t msg;
