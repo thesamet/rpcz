@@ -6,7 +6,7 @@ from rpcz import rpcz_pb2
 def _call_method(service, method, request_proto, channel):
     method_descriptor = service._exposed_methods.get(method)
     if method_descriptor is None:
-        channel.send_error(rpcz_pb2.RpcResponseHeader.NO_SUCH_METHOD)
+        channel.send_error(rpcz_pb2.rpc_response_header.NO_SUCH_METHOD)
         return
     handler = getattr(service, method, service._default_handler)
     request = method_descriptor.input_type._concrete_class()
@@ -16,7 +16,7 @@ def _call_method(service, method, request_proto, channel):
          
 
 def _default_handler(service, request, channel):
-    channel.send_error(rpcz_pb2.RpcResponseHeader.METHOD_NOT_IMPLEMENTED)
+    channel.send_error(rpcz_pb2.rpc_response_header.METHOD_NOT_IMPLEMENTED)
 
     
 class GeneratedServiceType(type):
