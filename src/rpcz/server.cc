@@ -147,10 +147,7 @@ server::server(connection_manager& connection_manager)
   : connection_manager_(connection_manager) {
 }
 
-server::~server() {
-  delete_container_second_pointer(service_map_.begin(),
-                                  service_map_.end());
-}
+server::~server() { }
 
 void server::register_service(rpcz::service *service) {
   register_service(service,
