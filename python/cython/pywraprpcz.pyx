@@ -208,8 +208,13 @@ cdef extern from "python_rpc_service.hpp" namespace "rpcz":
 
 
 cdef extern from "rpcz/rpcz.hpp" namespace "rpcz":
+    cdef cppclass _application_options "rpcz::application::options":
+        _application_options()
+        int connection_manager_threads
+
     cdef cppclass _application "rpcz::application":
         _application()
+        _application(_application_options options)
         _rpc_channel* create_rpc_channel(string)
         void terminate()
         void run() nogil
@@ -217,8 +222,12 @@ cdef extern from "rpcz/rpcz.hpp" namespace "rpcz":
 
 cdef class Application:
     cdef _application *thisptr
-    def __cinit__(self):
-        self.thisptr = new _application()
+
+    def __cinit__(self, connection_manager_threads=None):
+        cdef _application_options opts
+        if connection_manager_threads:
+            opts.connection_manager_threads = connection_manager_threads
+        self.thisptr = new _application(opts)
     def __dealloc__(self):
         del self.thisptr
     def create_rpc_channel(self, endpoint):
