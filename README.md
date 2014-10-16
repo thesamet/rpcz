@@ -19,7 +19,8 @@ Introduction
 
   * RPCZ has been tested on Ubuntu 11.10 and Mac OS X Lion. I believe it should not be hard to get it to compile on Windows but I have not tried.
 
-==Quick Examples (API show off) ==
+Quick Examples (API show off)
+-----------------------------
 
 Let's write a C++ server and a Python client for a search service defined as follows:
 
@@ -38,7 +39,8 @@ service SearchService {
 }
 }}}
 
-===Example: Python Client===
+Example: Python Client
+----------------------
 [http://code.google.com/p/rpcz/source/browse/#git%2Fexamples%2Fpython Source code]
 
 {{{
@@ -53,7 +55,8 @@ print stub.Search(request, deadline_ms=1000)
 }}}
 
 
-===Example: C++ Server ==
+Example: C++ Server
+-------------------
 
 [http://code.google.com/p/rpcz/source/browse/#git%2Fexamples%2Fcpp Source code]
 
@@ -79,7 +82,8 @@ int main() {
 }
 }}}
 
-== Getting Started: Installing ==
+Getting Started: Installing
+---------------------------
 
   * Make sure you have RPCZ's dependencies installed: Protocol Buffers (duh!), ZeroMQ, Boost (threads and program_options only), and CMake. If you are on Ubuntu:
 {{{
@@ -111,7 +115,9 @@ python setup.py build_ext -f --rpath=/path/to/build/src/rpcz
 pip install -e .
 }}}
 
-==Generating Client and Server classes==
+Generating Client and Server classes
+------------------------------------
+
 RPCZ comes with a protoc plugins that generate client and server code in C++ and Python. They are used only to generate the service code. The message serialization and parsing is still done by the original Protocol Buffer implementation.
 
 To generate C++ RPCZ classes:
