@@ -3,7 +3,7 @@ compiler:
     - gcc
 
 before_install:
-    - sudo apt-get install libprotobuf-dev libprotoc-dev libzmq-dev libboost-thread-dev libboost-program-options-dev cmake
+    - sudo apt-get install libprotobuf-dev libprotoc-dev libzmq3-dev libboost-thread-dev libboost-program-options-dev cmake
 
 script:
     - mkdir build
