@@ -24,11 +24,31 @@
 #include "zmq.hpp"
 
 namespace rpcz {
+
 namespace {
 static bool g_interrupted = false;
+
+#ifdef WIN32
+#include <windows.h>
+BOOL ConsoleSignalHandler(DWORD fdwCtrlType) 
+{ 
+  switch( fdwCtrlType ) 
+  { 
+    case CTRL_C_EVENT: 
+    case CTRL_CLOSE_EVENT: 
+    case CTRL_BREAK_EVENT: 
+    case CTRL_LOGOFF_EVENT: 
+    case CTRL_SHUTDOWN_EVENT: 
+		g_interrupted = true;
+		return TRUE;
+  }
+  return FALSE;
+}
+#else
 void signal_handler(int signal_value) {
   g_interrupted = true;
 }
+#endif
 }  // unnamed namespace
 
 reactor::reactor() : should_quit_(false) {
@@ -65,7 +85,7 @@ void reactor::run_closure_at(uint64 timestamp, closure* closure) {
 }
 
 int reactor::loop() {
-  while (!should_quit_) {
+  while (!should_quit_ && !g_interrupted) {
     if (is_dirty_) {
       rebuild_poll_items(sockets_, &pollitems_);
       is_dirty_ = false;
@@ -119,11 +139,15 @@ void reactor::set_should_quit() {
 }
 
 void install_signal_handler() {
+#ifdef WIN32
+  SetConsoleCtrlHandler((PHANDLER_ROUTINE)ConsoleSignalHandler, TRUE);
+#else
   struct sigaction action;
   action.sa_handler = signal_handler;
   action.sa_flags = 0;
   sigemptyset(&action.sa_mask);
   sigaction(SIGINT, &action, NULL);
   sigaction(SIGTERM, &action, NULL);
+#endif
 }
 }  // namespace rpcz

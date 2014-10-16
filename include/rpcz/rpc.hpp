@@ -23,6 +23,11 @@
 #include "rpcz/macros.hpp"
 #include "rpcz/rpcz.pb.h"
 
+#ifdef WIN32
+// winerror.h contains #define NO_ERROR 0 
+#undef NO_ERROR
+#endif
+
 namespace rpcz {
 
 typedef rpc_response_header::status_code status_code;
