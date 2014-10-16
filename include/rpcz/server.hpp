@@ -50,7 +50,7 @@ class server {
   // Registers an rpc service with this server. All registrations must occur
   // before bind() is called. The name parameter identifies the service for
   // external clients. If you use the first form, the service name from the
-  // protocol buffer definition will be used. Does not take ownership of the
+  // protocol buffer definition will be used. Takes ownership of the
   // provided service.
   void register_service(service* service);
   void register_service(service* service, const std::string& name);
