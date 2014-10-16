@@ -343,7 +343,7 @@ class connection_manager_thread {
 
   void handle_client_socket(zmq::socket_t* socket) {
     message_iterator iter(*socket);
-    if (!iter.next().size() == 0) {
+    if (iter.next().size() != 0) {
       return;
     }
     if (!iter.has_more()) {
