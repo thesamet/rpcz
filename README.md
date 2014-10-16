@@ -41,7 +41,7 @@ service SearchService {
 
 Example: Python Client
 ----------------------
-[http://code.google.com/p/rpcz/source/browse/#git%2Fexamples%2Fpython Source code]
+[Source code](https://github.com/thesamet/rpcz/tree/master/examples/cpp)
 
 ```python
 app = rpcz.Application()
@@ -58,7 +58,7 @@ print stub.Search(request, deadline_ms=1000)
 Example: C++ Server
 -------------------
 
-[http://code.google.com/p/rpcz/source/browse/#git%2Fexamples%2Fcpp Source code]
+[Source code](https://github.com/thesamet/rpcz/tree/master/examples/cpp)
 
 ```cpp
 class SearchServiceImpl : public SearchService {
