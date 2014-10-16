@@ -21,6 +21,7 @@
 #include "rpcz/clock.hpp"
 #include "rpcz/logging.hpp"
 #include "rpcz/macros.hpp"
+#include "rpcz/zmq_utils.hpp"
 #include "zmq.hpp"
 
 namespace rpcz {
@@ -128,7 +129,7 @@ long reactor::process_closure_run_map() {
   }
   long poll_timeout = -1;
   if (ub != closure_run_map_.end()) {
-    poll_timeout = 1000 * (ub->first - now);
+    poll_timeout = ZMQ_POLL_MSEC * (ub->first - now);
   }
   closure_run_map_.erase(closure_run_map_.begin(), ub);
   return poll_timeout;
