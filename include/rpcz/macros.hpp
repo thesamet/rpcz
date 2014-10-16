@@ -19,6 +19,11 @@
 
 #include "google/protobuf/stubs/common.h"
 
+#ifdef WIN32
+// winerror.h contains #define NO_ERROR 0 
+#undef NO_ERROR
+#endif
+
 namespace rpcz {
 using google::protobuf::scoped_ptr; 
 using google::protobuf::uint64;
