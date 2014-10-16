@@ -1,0 +1,13 @@
+compiler:
+    - clang
+    - gcc
+
+before_install:
+    - sudo apt-get install libprotobuf-dev libprotoc-dev libzmq-dev libboost-thread-dev libboost-program-options-dev cmake
+
+script:
+    - mkdir build
+    - cd build
+    - cmake .. -Drpcz_build_examples=1 -Drpcz_build_tests=1
+    - make && make test
+
