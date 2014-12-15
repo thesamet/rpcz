@@ -11,7 +11,16 @@ option(rpcz_build_examples "Build rpcz's examples." OFF)
 option(rpcz_enable_ipv6 "Enable IPv6 protocol." OFF)
 
 find_package(ProtobufPlugin REQUIRED)
-find_package(Boost REQUIRED COMPONENTS thread program_options system)
+
+add_definitions(-DBOOST_ALL_NO_LIB)
+add_definitions(-DBOOST_ALL_DYN_LINK)
+add_definitions(-DBOOST_LIB_DIAGNOSTIC)
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+
+find_package(Boost REQUIRED COMPONENTS thread program_options system date_time)
+
 find_package(ZeroMQ REQUIRED)
 
 include_directories(${ZeroMQ_INCLUDE_DIRS})
