@@ -16,7 +16,7 @@ set(RPCZ_SOURCES
     sync_event.cc zmq_utils.cc
     ${PROTO_SOURCES})
 set(RPCZ_LIB_DEPS ${ZeroMQ_LIBRARIES}
-                  ${PROTOBUF_LIBRARY}
+                  ${PROTOBUF_LIBRARIES}
                   ${Boost_THREAD_LIBRARIES}
                   ${Boost_SYSTEM_LIBRARIES}
                   ${Boost_DATE_TIME_LIBRARIES})
