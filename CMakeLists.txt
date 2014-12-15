@@ -39,3 +39,4 @@ endif(rpcz_build_examples)
 
 file(GLOB RPCZ_PUBLIC_HEADERS include/rpcz/*.hpp)
 install(FILES ${RPCZ_PUBLIC_HEADERS} DESTINATION include/rpcz)
+install(FILES ${PROJECT_BINARY_DIR}/src/rpcz/rpcz.pb.h DESTINATION include/rpcz)
