@@ -1,3 +1,5 @@
+cmake_minimum_required (VERSION 2.8.10)
+
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
 if (NOT CMAKE_BUILD_TYPE)
@@ -6,9 +8,14 @@ endif()
 message("-- Build type: ${CMAKE_BUILD_TYPE}")
 
 option(rpcz_build_tests "Build rpcz's tests." OFF)
-option(rpcz_build_static "Build static library." OFF)
 option(rpcz_build_examples "Build rpcz's examples." OFF)
 option(rpcz_enable_ipv6 "Enable IPv6 protocol." OFF)
+
+if(MSVC)
+    option(rpcz_build_static "Build static library." ON)
+else()
+    option(rpcz_build_static "Build static library." OFF)
+endif()
 
 find_package(ProtobufPlugin REQUIRED)
 
@@ -29,10 +36,15 @@ include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_BINARY_DIR}/src)
 
-cmake_minimum_required (VERSION 2.8.0)
-set(CMAKE_CXX_FLAGS
-  "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-sign-compare -Wno-unused-parameter")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g -Werror")
+if(MSVC)
+    add_definitions("/W3 /wd4996")
+    set(CMAKE_DEBUG_POSTFIX "_d")
+else()
+    set(CMAKE_CXX_FLAGS
+        "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-sign-compare -Wno-unused-parameter")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g -Werror")
+endif()
+
 set(CMAKE_OSX_ARCHITECTURES x86_64)
 
 add_subdirectory(src)

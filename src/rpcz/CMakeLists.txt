@@ -28,16 +28,14 @@ if (RPCZ_ENABLE_IPV6)
 	)
 endif()
 
-add_library(rpcz SHARED ${RPCZ_SOURCES})
+if(rpcz_build_static)
+    add_library(rpcz STATIC ${RPCZ_SOURCES})
+else()
+    add_library(rpcz SHARED ${RPCZ_SOURCES})
+endif()
+
 target_link_libraries(rpcz ${RPCZ_LIB_DEPS})
 set(RPCZ_TARGET_LIBS rpcz)
-
-if(rpcz_build_static)
-    add_library(rpcz_static STATIC ${RPCZ_SOURCES})
-    target_link_libraries(rpcz_static ${RPCZ_LIB_DEPS})
-    set_target_properties(rpcz_static PROPERTIES OUTPUT_NAME rpcz)
-    list(APPEND RPCZ_TARGET_LIBS rpcz_static)
-endif(rpcz_build_static)
 
 add_executable(zsendrpc zsendrpc.cc)
 target_link_libraries(zsendrpc rpcz ${Boost_PROGRAM_OPTIONS_LIBRARIES})
