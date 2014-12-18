@@ -1,9 +1,3 @@
-project (RPCZ)
-
-# The version number.
-set (RPCZ_VERSION_MAJOR 0)
-set (RPCZ_VERSION_MINOR 9)
-
 add_subdirectory(plugin)
 
 protobuf_generate_cpp(RPCZ_PB_SRCS RPCZ_PB_HDRS proto/rpcz.proto)
