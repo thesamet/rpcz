@@ -17,7 +17,8 @@ set(RPCZ_SOURCES
     ${PROTO_SOURCES})
 set(RPCZ_LIB_DEPS ${ZeroMQ_LIBRARIES}
                   ${PROTOBUF_LIBRARY}
-                  ${Boost_THREAD_LIBRARIES})
+                  ${Boost_THREAD_LIBRARIES}
+                  ${Boost_SYSTEM_LIBRARIES})
 
 add_library(rpcz SHARED ${RPCZ_SOURCES})
 target_link_libraries(rpcz ${RPCZ_LIB_DEPS})
