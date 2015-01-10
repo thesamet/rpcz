@@ -39,3 +39,6 @@ install(TARGETS ${RPCZ_TARGET_LIBS} zsendrpc
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )
+
+install( FILES ${RPCZ_PB_HDRS} DESTINATION include/rpcz )
+
