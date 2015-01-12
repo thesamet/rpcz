@@ -6,6 +6,7 @@ from distutils.command import build as build_module
 from distutils.extension import Extension
 from distutils.core import setup
 
+BUILD_DIR='../build'
 
 def _build_rpcz_proto():
     compiler.generate_proto('../src/rpcz/proto/rpcz.proto', 'rpcz')
@@ -17,7 +18,7 @@ def _build_test_protos():
             '../test/proto/search.proto', 'tests',
             with_plugin='python_rpcz', suffix='_rpcz.py',
             plugin_binary=
-                '../build/src/rpcz/plugin/python/protoc-gen-python_rpcz')
+                BUILD_DIR + '/src/rpcz/plugin/python/protoc-gen-python_rpcz')
 
 
 class build(build_module.build):
@@ -62,8 +63,8 @@ setup(
     ext_modules=[
         Extension("rpcz.pywraprpcz", ["cython/pywraprpcz.cpp"],
                   libraries=["rpcz"],
-                  include_dirs=['../include', '../build/src'],
-                  library_dirs=['../build/deps/lib', '../build/src/rpcz'],
+                  include_dirs=['../include', BUILD_DIR + '/src'],
+                  library_dirs=[ BUILD_DIR + '/deps/lib', BUILD_DIR + '/src/rpcz'],
                   language='c++')
     ],
 )
