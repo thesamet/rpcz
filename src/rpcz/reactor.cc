@@ -108,7 +108,13 @@ long reactor::process_closure_run_map() {
   }
   long poll_timeout = -1;
   if (ub != closure_run_map_.end()) {
+// Since ZeroMQ 3, the zmp_poll's timeout is in milliseconds
+// In the previous version, the timeout was in microseconds      
+#if (ZMQ_VERSION_MAJOR >= 3)
+    poll_timeout = ub->first - now;
+#else
     poll_timeout = 1000 * (ub->first - now);
+#endif
   }
   closure_run_map_.erase(closure_run_map_.begin(), ub);
   return poll_timeout;
