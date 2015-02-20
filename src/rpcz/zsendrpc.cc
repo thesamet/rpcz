@@ -176,7 +176,12 @@ int main(int argc, char *argv[]) {
 
   desc.add_options()
       ("help", "produce help message")
+// the required() method is only avalaible since Boost 1.42
+#if (BOOST_VERSION <= 104100)
+      ("proto", po::value<std::string>(&FLAGS_proto),
+#else
       ("proto", po::value<std::string>(&FLAGS_proto)->required(),
+#endif
        "Protocol Buffer file to use.")
       ("proto_path", po::value<std::vector<std::string> >(&FLAGS_proto_path),
        "List of directories to search.")
