@@ -20,13 +20,13 @@
 #include <stdexcept>
 #include <string>
 
-#include "rpcz/macros.hpp"
-#include "rpcz/rpcz.pb.h"
-
 #ifdef WIN32
 // winerror.h contains #define NO_ERROR 0 
 #undef NO_ERROR
 #endif
+
+#include "rpcz/macros.hpp"
+#include "rpcz/rpcz.pb.h"
 
 namespace rpcz {
 
