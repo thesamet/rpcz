@@ -27,10 +27,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#ifndef WIN32
-#include <pthread.h>
-#include <unistd.h>
-#endif
 
 #include "zmq.h"
 #include "zmq.hpp"
