@@ -275,6 +275,17 @@ class connection_manager_thread {
     send_pointer(frontend_socket_, closure, 0);
   }
 
+  inline static void enable_ipv6(zmq::socket_t* socket)
+  {
+#if ZMQ_VERSION_MAJOR == 3
+    int ipv4only = 0;
+    socket->setsockopt(ZMQ_IPV4ONLY, &ipv4only, sizeof(ipv4only));
+#elif ZMQ_VERSION_MAJOR >= 4
+    int ipv6 = 1;
+    socket->setsockopt(ZMQ_IPV6, &ipv6, sizeof(ipv6));
+#endif
+  }
+
   inline void handle_connect_command(const std::string& sender,
                                    const std::string& endpoint) {
     zmq::socket_t* socket = new zmq::socket_t(*context_, ZMQ_DEALER);
@@ -282,8 +293,7 @@ class connection_manager_thread {
     int linger_ms = 0;
     socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
 #if RPCZ_ENABLE_IPV6
-    int ipv6 = 1;
-    socket->setsockopt(ZMQ_IPV6, &ipv6, sizeof(ipv6));
+   enable_ipv6(socket);
 #endif
     socket->connect(endpoint.c_str());
     reactor_.add_socket(socket, new_permanent_callback(
