@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 import os
 import sys
@@ -28,10 +29,10 @@ def generate_proto(source, output_dir,
 
     if (os.path.exists(output) and
         os.path.getmtime(source) <= os.path.getmtime(output)):
-        print "Generated proto %s is up-to-date." % output
+        print ("Generated proto " , output , " is up-to-date." )
         return
 
-    print "Generating %s" % output
+    print ("Generating ", output )
 
     protoc_command = protoc + ' -I "%s" --%s_out="%s" "%s"' % (
             os.path.dirname(source), with_plugin, output_dir, source)
@@ -40,11 +41,11 @@ def generate_proto(source, output_dir,
             protoc_command += ' --plugin=protoc-gen-%s=%s' % (with_plugin,
                                                               plugin_binary)
         else:
-            print ("Plugin not found at '%s'. We are going to run protoc "
+            print ("Plugin not found at '", plugin_binary , "'. We are going to run protoc "
                    "anyway, and perhaps it will be able to find it in its "
-                   "search path." % plugin_binary)
+                   "search path.")
     if os.system(protoc_command) != 0:
         raise CompilerException(
             "Error occurred while running protoc.")
     else:
-        print "Generated source successfully."
+        print ("Generated source successfully.")

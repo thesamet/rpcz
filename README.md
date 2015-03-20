@@ -64,22 +64,25 @@ Example: C++ Server
 class SearchServiceImpl : public SearchService {
   virtual void Search(
       const SearchRequest& request,
-      rpcz::Reply<SearchResponse> reply) {
+      rpcz::reply<SearchResponse> reply) {
+    cout << "Got request for '" << request.query() << "'" << endl;
     SearchResponse response;
     response.add_results("result1 for " + request.query());
     response.add_results("this is result2");
-    reply.Send(response);
+    reply.send(response);
   }
 };
 
 int main() {
-  rpcz::Application application;
-  rpcz::Server* server = application.CreateServer("tcp://*:5555");
-  examples::SearchServiceImpl search_service;
-  server->RegisterService(&search_service);
-  server->Start();
-  delete server;
+  rpcz::application application;
+  rpcz::server server(application);
+  SearchServiceImpl search_service;
+  server.register_service(&search_service);
+  cout << "Serving requests on port 5555." << endl;
+  server.bind("tcp://*:5555");
+  application.run();
 }
+
 ```
 
 Getting Started: Installing

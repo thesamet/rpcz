@@ -10,7 +10,7 @@ option(rpcz_build_static "Build static library." OFF)
 option(rpcz_build_examples "Build rpcz's examples." OFF)
 
 find_package(ProtobufPlugin REQUIRED)
-find_package(Boost REQUIRED COMPONENTS thread program_options)
+find_package(Boost REQUIRED COMPONENTS thread program_options system)
 find_package(ZeroMQ REQUIRED)
 
 include_directories(${ZeroMQ_INCLUDE_DIRS})
@@ -36,5 +36,5 @@ if(rpcz_build_examples)
   add_subdirectory(examples/cpp)
 endif(rpcz_build_examples)
 
-file(GLOB RPCZ_PUBLIC_HEADERS include/rpcz/*.h)
+file(GLOB RPCZ_PUBLIC_HEADERS include/rpcz/*.hpp)
 install(FILES ${RPCZ_PUBLIC_HEADERS} DESTINATION include/rpcz)

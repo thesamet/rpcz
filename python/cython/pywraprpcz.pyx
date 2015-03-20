@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from cpython cimport Py_DECREF, Py_INCREF
 from cython.operator cimport dereference as deref
 from libc.stdlib cimport malloc, free
@@ -34,7 +35,10 @@ cdef extern from "string" namespace "std":
 
 
 cdef string make_string(pystring) except *:
-    return string(pystring, len(pystring))
+    if type( pystring ) == type('a string' ):
+        return string(pystring.encode('utf-8'), len(pystring))
+    else:   
+        return string( pystring , len( pystring ) )
 
 
 cdef string_ptr_to_pystring(string* s):
