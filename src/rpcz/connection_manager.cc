@@ -312,6 +312,9 @@ class connection_manager_thread {
     zmq::socket_t* socket = new zmq::socket_t(*context_, ZMQ_ROUTER);
     int linger_ms = 0;
     socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
+#if RPCZ_ENABLE_IPV6
+   enable_ipv6(socket);
+#endif
     socket->bind(endpoint.c_str());
     uint64 socket_id = server_sockets_.size();
     server_sockets_.push_back(socket);
