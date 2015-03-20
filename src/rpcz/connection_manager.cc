@@ -281,6 +281,10 @@ class connection_manager_thread {
     connections_.push_back(socket);
     int linger_ms = 0;
     socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
+#if RPCZ_ENABLE_IPV6
+    int ipv6 = 1;
+    socket->setsockopt(ZMQ_IPV6, &ipv6, sizeof(ipv6));
+#endif
     socket->connect(endpoint.c_str());
     reactor_.add_socket(socket, new_permanent_callback(
             this, &connection_manager_thread::handle_client_socket,

@@ -20,6 +20,13 @@ set(RPCZ_LIB_DEPS ${ZeroMQ_LIBRARIES}
                   ${Boost_THREAD_LIBRARIES}
                   ${Boost_SYSTEM_LIBRARIES})
 
+if (RPCZ_ENABLE_IPV6)
+	set_source_files_properties(
+		connection_manager.cc
+		PROPERTIES COMPILE_FLAGS -DRPCZ_ENABLE_IPV6=1
+	)
+endif()
+
 add_library(rpcz SHARED ${RPCZ_SOURCES})
 target_link_libraries(rpcz ${RPCZ_LIB_DEPS})
 set(RPCZ_TARGET_LIBS rpcz)
