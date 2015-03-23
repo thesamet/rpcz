@@ -8,6 +8,7 @@ message("-- Build type: ${CMAKE_BUILD_TYPE}")
 option(rpcz_build_tests "Build rpcz's tests." OFF)
 option(rpcz_build_static "Build static library." OFF)
 option(rpcz_build_examples "Build rpcz's examples." OFF)
+option(rpcz_enable_ipv6 "Enable IPv6 protocol." OFF)
 
 find_package(ProtobufPlugin REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread program_options system)

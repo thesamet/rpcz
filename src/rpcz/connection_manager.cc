@@ -22,13 +22,12 @@
 #include <boost/thread/tss.hpp>
 #include <map>
 #include <ostream>
-#include <pthread.h>
 #include <sstream>
 #include <stddef.h>
 #include <string>
-#include <unistd.h>
 #include <utility>
 #include <vector>
+
 #include "zmq.h"
 #include "zmq.hpp"
 
@@ -50,7 +49,12 @@ typedef uint64 event_id;
 class event_id_generator {
  public:
   event_id_generator() {
-    state_ = (reinterpret_cast<uint64>(this) << 32) + getpid();
+    state_ = (reinterpret_cast<uint64>(this) << 32);
+#ifdef WIN32
+		state_ += GetCurrentProcessId();
+#else
+		state_ += getpid();
+#endif
   }
 
   event_id get_next() {
@@ -271,12 +275,26 @@ class connection_manager_thread {
     send_pointer(frontend_socket_, closure, 0);
   }
 
+  inline static void enable_ipv6(zmq::socket_t* socket)
+  {
+#if ZMQ_VERSION_MAJOR == 3
+    int ipv4only = 0;
+    socket->setsockopt(ZMQ_IPV4ONLY, &ipv4only, sizeof(ipv4only));
+#elif ZMQ_VERSION_MAJOR >= 4
+    int ipv6 = 1;
+    socket->setsockopt(ZMQ_IPV6, &ipv6, sizeof(ipv6));
+#endif
+  }
+
   inline void handle_connect_command(const std::string& sender,
                                    const std::string& endpoint) {
     zmq::socket_t* socket = new zmq::socket_t(*context_, ZMQ_DEALER);
     connections_.push_back(socket);
     int linger_ms = 0;
     socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
+#if RPCZ_ENABLE_IPV6
+   enable_ipv6(socket);
+#endif
     socket->connect(endpoint.c_str());
     reactor_.add_socket(socket, new_permanent_callback(
             this, &connection_manager_thread::handle_client_socket,
@@ -294,6 +312,9 @@ class connection_manager_thread {
     zmq::socket_t* socket = new zmq::socket_t(*context_, ZMQ_ROUTER);
     int linger_ms = 0;
     socket->setsockopt(ZMQ_LINGER, &linger_ms, sizeof(linger_ms));
+#if RPCZ_ENABLE_IPV6
+   enable_ipv6(socket);
+#endif
     socket->bind(endpoint.c_str());
     uint64 socket_id = server_sockets_.size();
     server_sockets_.push_back(socket);
@@ -335,7 +356,7 @@ class connection_manager_thread {
 
   void handle_client_socket(zmq::socket_t* socket) {
     message_iterator iter(*socket);
-    if (!iter.next().size() == 0) {
+    if (iter.next().size() != 0) {
       return;
     }
     if (!iter.has_more()) {

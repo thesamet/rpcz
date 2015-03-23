@@ -20,6 +20,11 @@
 #include <stdexcept>
 #include <string>
 
+#ifdef WIN32
+// winerror.h contains #define NO_ERROR 0 
+#undef NO_ERROR
+#endif
+
 #include "rpcz/macros.hpp"
 #include "rpcz/rpcz.pb.h"
 

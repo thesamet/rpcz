@@ -15,14 +15,28 @@
 // Author: nadavs@google.com <Nadav Samet>
 
 #include "rpcz/clock.hpp"
+#ifdef WIN32
+#include <windows.h>
+#else
 #include <sys/time.h>
+#endif
 
 namespace rpcz {
 
 uint64 zclock_time(void) {
-    struct timeval tv;
+#ifdef WIN32
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft);
+	// ft now contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (UTC).
+	ULARGE_INTEGER temp;
+	temp.HighPart = ft.dwHighDateTime;
+	temp.LowPart = ft.dwLowDateTime;
+    return (uint64) (temp.QuadPart / 10000);
+#else
+	struct timeval tv;
     gettimeofday (&tv, NULL);
-    return (int64_t) (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+    return (uint64) (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+#endif
 }
 
 }  // namespace rpcz

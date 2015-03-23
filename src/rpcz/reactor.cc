@@ -21,14 +21,35 @@
 #include "rpcz/clock.hpp"
 #include "rpcz/logging.hpp"
 #include "rpcz/macros.hpp"
+#include "rpcz/zmq_utils.hpp"
 #include "zmq.hpp"
 
 namespace rpcz {
+
 namespace {
 static bool g_interrupted = false;
+
+#ifdef WIN32
+#include <windows.h>
+BOOL ConsoleSignalHandler(DWORD fdwCtrlType) 
+{ 
+  switch( fdwCtrlType ) 
+  { 
+    case CTRL_C_EVENT: 
+    case CTRL_CLOSE_EVENT: 
+    case CTRL_BREAK_EVENT: 
+    case CTRL_LOGOFF_EVENT: 
+    case CTRL_SHUTDOWN_EVENT: 
+		g_interrupted = true;
+		return TRUE;
+  }
+  return FALSE;
+}
+#else
 void signal_handler(int signal_value) {
   g_interrupted = true;
 }
+#endif
 }  // unnamed namespace
 
 reactor::reactor() : should_quit_(false) {
@@ -65,7 +86,7 @@ void reactor::run_closure_at(uint64 timestamp, closure* closure) {
 }
 
 int reactor::loop() {
-  while (!should_quit_) {
+  while (!should_quit_ && !g_interrupted) {
     if (is_dirty_) {
       rebuild_poll_items(sockets_, &pollitems_);
       is_dirty_ = false;
@@ -108,13 +129,7 @@ long reactor::process_closure_run_map() {
   }
   long poll_timeout = -1;
   if (ub != closure_run_map_.end()) {
-// Since ZeroMQ 3, the zmp_poll's timeout is in milliseconds
-// In the previous version, the timeout was in microseconds      
-#if (ZMQ_VERSION_MAJOR >= 3)
-    poll_timeout = ub->first - now;
-#else
-    poll_timeout = 1000 * (ub->first - now);
-#endif
+    poll_timeout = ZMQ_POLL_MSEC * (ub->first - now);
   }
   closure_run_map_.erase(closure_run_map_.begin(), ub);
   return poll_timeout;
@@ -125,11 +140,15 @@ void reactor::set_should_quit() {
 }
 
 void install_signal_handler() {
+#ifdef WIN32
+  SetConsoleCtrlHandler((PHANDLER_ROUTINE)ConsoleSignalHandler, TRUE);
+#else
   struct sigaction action;
   action.sa_handler = signal_handler;
   action.sa_flags = 0;
   sigemptyset(&action.sa_mask);
   sigaction(SIGINT, &action, NULL);
   sigaction(SIGTERM, &action, NULL);
+#endif
 }
 }  // namespace rpcz

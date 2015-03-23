@@ -17,11 +17,13 @@
 #include "rpcz/server.hpp"
 #include <signal.h>
 #include <string.h>
-#include <sys/errno.h>
-#include <sys/signal.h>
 #include <functional>
 #include <iostream>
 #include <utility>
+#ifndef WIN32
+#include <sys/errno.h>
+#include <sys/signal.h>
+#endif
 
 #include <boost/bind.hpp>
 #include <google/protobuf/descriptor.h>
