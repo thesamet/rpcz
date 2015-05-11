@@ -25,8 +25,8 @@ link_directories(${binary_dir})
 function(rpcz_test TESTNAME)
   CMAKE_PARSE_ARGUMENTS(OPTIONS "" "" "SRCS;LIBS" ${ARGN})
   add_executable(${TESTNAME} ${OPTIONS_SRCS})
-  set(LIBS rpcz rpcz_gtest_main pthread
-      gtest ${GLOG_LIBRARIES}
+  set(LIBS rpcz rpcz_gtest_main
+      gtest ${GLOG_LIBRARIES} pthread
   )
   list(APPEND LIBS ${OPTIONS_LIBS})
   target_link_libraries(${TESTNAME} ${LIBS})
