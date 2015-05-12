@@ -1,9 +1,3 @@
-project (RPCZ)
-
-# The version number.
-set (RPCZ_VERSION_MAJOR 0)
-set (RPCZ_VERSION_MINOR 9)
-
 add_subdirectory(plugin)
 
 protobuf_generate_cpp(RPCZ_PB_SRCS RPCZ_PB_HDRS proto/rpcz.proto)
@@ -16,9 +10,10 @@ set(RPCZ_SOURCES
     sync_event.cc zmq_utils.cc
     ${PROTO_SOURCES})
 set(RPCZ_LIB_DEPS ${ZeroMQ_LIBRARIES}
-                  ${PROTOBUF_LIBRARY}
+                  ${PROTOBUF_LIBRARIES}
                   ${Boost_THREAD_LIBRARIES}
-                  ${Boost_SYSTEM_LIBRARIES})
+                  ${Boost_SYSTEM_LIBRARIES}
+                  ${Boost_DATE_TIME_LIBRARIES})
 
 if (RPCZ_ENABLE_IPV6)
 	set_source_files_properties(
@@ -27,16 +22,14 @@ if (RPCZ_ENABLE_IPV6)
 	)
 endif()
 
-add_library(rpcz SHARED ${RPCZ_SOURCES})
+if(rpcz_build_static)
+    add_library(rpcz STATIC ${RPCZ_SOURCES})
+else()
+    add_library(rpcz SHARED ${RPCZ_SOURCES})
+endif()
+
 target_link_libraries(rpcz ${RPCZ_LIB_DEPS})
 set(RPCZ_TARGET_LIBS rpcz)
-
-if(rpcz_build_static)
-    add_library(rpcz_static STATIC ${RPCZ_SOURCES})
-    target_link_libraries(rpcz_static ${RPCZ_LIB_DEPS})
-    set_target_properties(rpcz_static PROPERTIES OUTPUT_NAME rpcz)
-    list(APPEND RPCZ_TARGET_LIBS rpcz_static)
-endif(rpcz_build_static)
 
 add_executable(zsendrpc zsendrpc.cc)
 target_link_libraries(zsendrpc rpcz ${Boost_PROGRAM_OPTIONS_LIBRARIES})
