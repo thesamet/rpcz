@@ -208,7 +208,8 @@ if(MSVC)
     set(PROTOBUF_ORIG_FIND_LIBRARY_PREFIXES "${CMAKE_FIND_LIBRARY_PREFIXES}")
     set(CMAKE_FIND_LIBRARY_PREFIXES "lib" "")
 
-    find_path(PROTOBUF_SRC_ROOT_FOLDER protobuf.pc.in)
+    find_path(PROTOBUF_SRC_ROOT_FOLDER protobuf.pc.in
+              PATHS $ENV{PROTOBUF_SRC_ROOT_FOLDER})    
 endif()
 
 # The Protobuf library

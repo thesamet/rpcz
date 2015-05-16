@@ -25,14 +25,18 @@ endif()
 
 find_package(ProtobufPlugin REQUIRED)
 
-add_definitions(-DBOOST_ALL_NO_LIB)
-add_definitions(-DBOOST_ALL_DYN_LINK)
-add_definitions(-DBOOST_LIB_DIAGNOSTIC)
-set(Boost_USE_STATIC_LIBS OFF)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-
-find_package(Boost REQUIRED COMPONENTS thread program_options system date_time)
+if(WIN32)
+    add_definitions(-DBOOST_ALL_NO_LIB)
+    add_definitions(-DBOOST_ALL_DYN_LINK)
+    add_definitions(-DBOOST_LIB_DIAGNOSTIC)
+    set(Boost_USE_STATIC_LIBS OFF)
+    set(Boost_USE_MULTITHREADED ON)
+    set(Boost_USE_STATIC_RUNTIME OFF)
+    # date_time is required only on Windows
+    find_package(Boost REQUIRED COMPONENTS thread program_options system date_time)
+else()
+    find_package(Boost REQUIRED COMPONENTS thread program_options system)
+endif()
 
 find_package(ZeroMQ REQUIRED)
 
@@ -92,4 +96,3 @@ endif()
 if(CPACK_GENERATOR)
     include(CPack)
 endif(CPACK_GENERATOR)
-
