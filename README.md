@@ -96,7 +96,7 @@ apt-get install libprotobuf-dev libprotoc-dev libzmq-dev \
 
   * Download, build and install:
 ```bash
-git clone https://code.google.com/p/rpcz/
+git clone git@github.com:thesamet/rpcz.git
 cd rpcz
 mkdir build
 cd build
@@ -128,6 +128,39 @@ pip install -e .
 python setup.py build_ext -f --rpath=/path/to/build/src/rpcz
 pip install -e .
 ```
+
+Getting Started: Installing on OS/X with Homebrew
+-------------------------------------------------
+
+These instructions assume a "default" [Homebrew](http://brew.sh) environment, installed by the current logged on user, under `/usr/local`, and owned by the user (e.g. no `sudo` used). YMMV.
+
+  * Make sure you have RPCZ's dependencies installed: Protocol Buffers (duh!), ZeroMQ, Boost, and CMake.
+```bash
+brew install protobuf zeromq boost cmake
+wget https://raw.githubusercontent.com/zeromq/cppzmq/master/zmq.hpp -O /usr/local/include/zmq.hpp
+```
+  * Download, build and install:
+```bash
+git clone git@github.com:thesamet/rpcz.git
+cd rpcz
+mkdir build
+cd build
+cmake .. -Drpcz_build_examples=0
+make
+make install
+```
+
+Currently, building the examples on OS/X is not supported.
+
+You don't really have to `make install` if you don't want to. Just make sure that when you compile your code, your compiler is aware of RPCZ's include and library directories.
+
+  * Python support (optional):
+```bash
+cd ../python
+python setup.py install
+```
+  Just make sure to use the ["brewed Python"](https://github.com/Homebrew/homebrew/blob/master/share/doc/homebrew/Homebrew-and-Python.md)! Otherwise the install will fail.
+
 
 Getting Started: Installing on Windows
 --------------------------------------
