@@ -88,7 +88,18 @@ if(UNIX)
     # Debian package specific config
     set(CPACK_GENERATOR "DEB")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Philippe Hamelin")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libzmq3, libprotobuf8, protobuf-compiler, protobuf-c-compiler")
+
+    # On recent Ubuntu versions, RPCZ may be build with either ZMQ 2 or 3
+    if(${ZMQ_VERSION_MAJOR} GREATER 2)
+        # Depends on ZMQ 3
+        set(CPACK_DEBIAN_ZEROMQ_DEPENDS "libzmq3")
+    else()
+        # Depends on ZMQ 2
+         set(CPACK_DEBIAN_ZEROMQ_DEPENDS "libzmq1")
+    endif()
+
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_ZEROMQ_DEPENDS}, libprotobuf8, protobuf-compiler")
+
 elseif(WIN32)
     set(CPACK_GENERATOR "ZIP")
 endif()

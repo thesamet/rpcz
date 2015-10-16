@@ -90,8 +90,8 @@ Getting Started: Installing on Linux
 
   * Make sure you have RPCZ's dependencies installed: Protocol Buffers (duh!), ZeroMQ, Boost (threads and program_options), and CMake. If you are on Ubuntu:
 ```bash
-apt-get install libprotobuf-dev libprotoc-dev libzmq-dev \
-        libboost-thread-dev libboost-program-options-dev cmake
+apt-get install libprotobuf-dev libprotoc-dev protobuf-compiler libzmq-dev \
+    libboost-thread-dev libboost-program-options-dev cmake
 ```
 
   * Download, build and install:
