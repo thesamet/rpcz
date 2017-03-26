@@ -1,7 +1,7 @@
 RPCZ: Protocol Buffer RPC transport
 ===================================
 
-*NOTE*: rpcz is no longer being maintained. Consider using [grpc](http://www.grpc.io).
+**NOTE**: rpcz is no longer being maintained. Consider using [grpc](http://www.grpc.io).
 
 RPC implementation for Protocol Buffers over ZeroMQ
 
